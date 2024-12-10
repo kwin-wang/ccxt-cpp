@@ -4,100 +4,114 @@
 #include <random>
 #include <sstream>
 #include <iomanip>
+#include <regex>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <curl/curl.h>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+#include <optional>
+#include <stdexcept>
 
 namespace ccxt {
 
-Exchange::Exchange() : rateLimit(2000), lastRestRequestTimestamp(0) {
-    certified = false;
-    pro = false;
+Exchange::Exchange(const Config& config) : config_(config), rateLimit(2000), pro(false), certified(false), lastRestRequestTimestamp(0) {
+    init();
 }
 
-json Exchange::fetchMarkets(const json& params) {
-    throw NotSupported("fetchMarkets not supported yet");
+void Exchange::init() {
+    // Default implementation
 }
 
-json Exchange::fetchTicker(const String& symbol, const json& params) {
-    throw NotSupported("fetchTicker not supported yet");
+json Exchange::describe() const {
+    return describeImpl();
 }
 
-json Exchange::fetchTickers(const std::vector<String>& symbols, const json& params) {
-    throw NotSupported("fetchTickers not supported yet");
+json Exchange::fetchMarkets() const {
+    return fetchMarketsImpl();
 }
 
-json Exchange::fetchOrderBook(const String& symbol, int limit, const json& params) {
-    throw NotSupported("fetchOrderBook not supported yet");
+json Exchange::fetchTicker(const std::string& symbol) const {
+    return fetchTickerImpl(symbol);
 }
 
-json Exchange::fetchTrades(const String& symbol, int since, int limit, const json& params) {
-    throw NotSupported("fetchTrades not supported yet");
+json Exchange::fetchTickers(const std::vector<std::string>& symbols) const {
+    return fetchTickersImpl(symbols);
 }
 
-json Exchange::fetchOHLCV(const String& symbol, const String& timeframe,
-                         int since, int limit, const json& params) {
-    throw NotSupported("fetchOHLCV not supported yet");
+json Exchange::fetchOrderBook(const std::string& symbol, const std::optional<int>& limit) const {
+    return fetchOrderBookImpl(symbol, limit);
 }
 
-json Exchange::fetchBalance(const json& params) {
-    throw NotSupported("fetchBalance not supported yet");
+json Exchange::fetchOHLCV(const std::string& symbol, const std::string& timeframe,
+                         const std::optional<long long>& since,
+                         const std::optional<int>& limit) const {
+    return fetchOHLCVImpl(symbol, timeframe, since, limit);
 }
 
-json Exchange::createOrder(const String& symbol, const String& type, const String& side,
-                         double amount, double price, const json& params) {
-    throw NotSupported("createOrder not supported yet");
+json Exchange::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
+                         const std::optional<double>& price) {
+    return createOrderImpl(symbol, type, side, amount, price);
 }
 
-json Exchange::cancelOrder(const String& id, const String& symbol, const json& params) {
-    throw NotSupported("cancelOrder not supported yet");
+json Exchange::cancelOrder(const std::string& id, const std::string& symbol) {
+    return cancelOrderImpl(id, symbol);
 }
 
-json Exchange::fetchOrder(const String& id, const String& symbol, const json& params) {
-    throw NotSupported("fetchOrder not supported yet");
+json Exchange::fetchOrder(const std::string& id, const std::string& symbol) const {
+    return fetchOrderImpl(id, symbol);
 }
 
-json Exchange::fetchOrders(const String& symbol, int since, int limit, const json& params) {
-    throw NotSupported("fetchOrders not supported yet");
+json Exchange::fetchOpenOrders(const std::string& symbol,
+                             const std::optional<long long>& since,
+                             const std::optional<int>& limit) const {
+    return fetchOpenOrdersImpl(symbol, since, limit);
 }
 
-json Exchange::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
-    throw NotSupported("fetchOpenOrders not supported yet");
+json Exchange::fetchMyTrades(const std::string& symbol,
+                           const std::optional<long long>& since,
+                           const std::optional<int>& limit) const {
+    return fetchMyTradesImpl(symbol, since, limit);
 }
 
-json Exchange::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
-    throw NotSupported("fetchClosedOrders not supported yet");
+json Exchange::fetchOrderTrades(const std::string& id, const std::string& symbol) const {
+    return fetchOrderTradesImpl(id, symbol);
 }
 
-String Exchange::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+json Exchange::fetchBalance() const {
+    return fetchBalanceImpl();
+}
+
+std::string Exchange::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
-    throw NotSupported("sign not implemented yet");
+    // TODO: Implement actual signing logic
+    return path;
 }
 
 void Exchange::checkRequiredCredentials() {
-    if (apiKey.empty()) {
+    if (config_.apiKey.empty()) {
         throw AuthenticationError("apiKey required");
     }
-    if (secret.empty()) {
+    if (config_.secret.empty()) {
         throw AuthenticationError("secret required");
     }
 }
 
-String Exchange::implodeParams(const String& path, const json& params) {
-    String result = path;
-    auto keys = extractParams(path);
-    for (const auto& key : keys) {
-        if (params.contains(key)) {
-            result = std::regex_replace(result, std::regex("\\{" + key + "\\}"),
-                                      params[key].get<String>());
-        }
+std::string Exchange::implodeParams(const std::string& path, const json& params) {
+    std::string result = path;
+    for (const auto& [key, value] : params.items()) {
+        result = std::regex_replace(result, std::regex("\\{" + key + "\\}"),
+                                  value.get<std::string>());
     }
     return result;
 }
 
-json Exchange::omit(const json& params, const std::vector<String>& keys) {
+json Exchange::omit(const json& params, const std::vector<std::string>& keys) {
     json result = params;
     for (const auto& key : keys) {
         result.erase(key);
@@ -105,82 +119,84 @@ json Exchange::omit(const json& params, const std::vector<String>& keys) {
     return result;
 }
 
-std::vector<String> Exchange::extractParams(const String& path) {
-    std::vector<String> result;
+std::vector<std::string> Exchange::extractParams(const std::string& path) {
+    std::vector<std::string> result;
     std::regex pattern("\\{([^}]+)\\}");
     auto words_begin = std::sregex_iterator(path.begin(), path.end(), pattern);
     auto words_end = std::sregex_iterator();
     for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
-        result.push_back((*i)[1].str());
+        std::smatch match = *i;
+        result.push_back(match[1].str());
     }
     return result;
 }
 
-String Exchange::urlencode(const json& params) {
-    if (params.empty()) {
-        return "";
-    }
-    std::stringstream ss;
+std::string Exchange::urlencode(const json& params) {
+    std::ostringstream result;
     bool first = true;
-    for (auto it = params.begin(); it != params.end(); ++it) {
+    for (const auto& [key, value] : params.items()) {
         if (!first) {
-            ss << "&";
+            result << "&";
         }
         first = false;
-        ss << it.key() << "=" << encode(it.value().dump());
+        result << encode(key) << "=" << encode(value.get<std::string>());
     }
-    return ss.str();
+    return result.str();
 }
 
-String Exchange::encode(const String& string) {
-    static const char* hex = "0123456789ABCDEF";
-    std::string result;
+std::string Exchange::encode(const std::string& string) {
+    std::ostringstream escaped;
+    escaped.fill('0');
+    escaped << std::hex;
+
     for (char c : string) {
         if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-            result += c;
-        } else {
-            result += '%';
-            result += hex[c >> 4];
-            result += hex[c & 15];
+            escaped << c;
+            continue;
         }
+        escaped << std::uppercase;
+        escaped << '%' << std::setw(2) << int((unsigned char)c);
+        escaped << std::nouppercase;
     }
-    return result;
+
+    return escaped.str();
 }
 
-String Exchange::hmac(const String& message, const String& secret,
-                     const String& algorithm, const String& digest) {
-    unsigned char* result = nullptr;
-    unsigned int len = 0;
-    
+std::string Exchange::hmac(const std::string& message, const std::string& secret,
+                     const std::string& algorithm, const std::string& digest) {
+    unsigned char* digest_value = nullptr;
+    unsigned int digest_len = 0;
+
     if (algorithm == "sha256") {
-        result = HMAC(EVP_sha256(), secret.c_str(), secret.length(),
-                     (unsigned char*)message.c_str(), message.length(),
-                     nullptr, &len);
-    } else if (algorithm == "sha384") {
-        result = HMAC(EVP_sha384(), secret.c_str(), secret.length(),
-                     (unsigned char*)message.c_str(), message.length(),
-                     nullptr, &len);
+        digest_value = HMAC(EVP_sha256(), secret.c_str(), secret.length(),
+                          (unsigned char*)message.c_str(), message.length(),
+                          nullptr, &digest_len);
     } else if (algorithm == "sha512") {
-        result = HMAC(EVP_sha512(), secret.c_str(), secret.length(),
-                     (unsigned char*)message.c_str(), message.length(),
-                     nullptr, &len);
+        digest_value = HMAC(EVP_sha512(), secret.c_str(), secret.length(),
+                          (unsigned char*)message.c_str(), message.length(),
+                          nullptr, &digest_len);
     } else {
-        throw ExchangeError("Unsupported hash algorithm: " + algorithm);
+        throw NotSupported("Unsupported hash algorithm: " + algorithm);
     }
-    
+
+    if (!digest_value) {
+        throw ExchangeError("HMAC failed");
+    }
+
+    std::ostringstream result;
     if (digest == "hex") {
-        std::stringstream ss;
-        ss << std::hex << std::setfill('0');
-        for(unsigned int i = 0; i < len; i++) {
-            ss << std::setw(2) << (int)result[i];
+        for (unsigned int i = 0; i < digest_len; i++) {
+            result << std::hex << std::setw(2) << std::setfill('0')
+                  << (int)digest_value[i];
         }
-        return ss.str();
     } else if (digest == "base64") {
-        // Implement base64 encoding
-        throw NotSupported("base64 digest not implemented yet");
+        // TODO: Implement base64 encoding
+        throw NotSupported("Base64 encoding not implemented yet");
+    } else {
+        throw NotSupported("Unsupported digest format: " + digest);
     }
-    
-    throw ExchangeError("Unsupported digest type: " + digest);
+
+    return result.str();
 }
 
 long long Exchange::milliseconds() {
@@ -189,7 +205,7 @@ long long Exchange::milliseconds() {
     ).count();
 }
 
-String Exchange::uuid() {
+std::string Exchange::uuid() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> dis(0, 15);
@@ -221,7 +237,7 @@ String Exchange::uuid() {
     return ss.str();
 }
 
-String Exchange::iso8601(long long timestamp) {
+std::string Exchange::iso8601(long long timestamp) {
     std::time_t time = timestamp / 1000;
     std::tm* tm = std::gmtime(&time);
     char buffer[30];
@@ -231,9 +247,9 @@ String Exchange::iso8601(long long timestamp) {
     return ss.str();
 }
 
-long long Exchange::parse8601(const String& datetime) {
+long long Exchange::parse8601(const std::string& datetime) {
     std::tm tm = {};
-    std::stringstream ss(datetime);
+    std::istringstream ss(datetime);
     ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
     auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
     return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -241,72 +257,62 @@ long long Exchange::parse8601(const String& datetime) {
     ).count();
 }
 
-Market Exchange::market(const String& symbol) {
+Market Exchange::market(const std::string& symbol) {
     if (markets.find(symbol) == markets.end()) {
-        throw ExchangeError("Market " + symbol + " does not exist");
+        throw ExchangeError("Market '" + symbol + "' does not exist");
     }
     return markets[symbol];
 }
 
 void Exchange::loadMarkets(bool reload) {
-    if (!reload && !markets.empty()) {
+    if (!markets.empty() && !reload) {
         return;
     }
-    auto response = fetchMarkets();
-    markets.clear();
-    markets_by_id.clear();
+    json response = fetchMarkets();
     for (const auto& market : response) {
         markets[market["symbol"]] = market;
         markets_by_id[market["id"]] = market;
     }
 }
 
-String Exchange::marketId(const String& symbol) {
+std::string Exchange::marketId(const std::string& symbol) {
     return market(symbol).id;
 }
 
-String Exchange::symbol(const String& marketId) {
+std::string Exchange::symbol(const std::string& marketId) {
     if (markets_by_id.find(marketId) == markets_by_id.end()) {
-        throw ExchangeError("Market ID " + marketId + " does not exist");
+        throw ExchangeError("Market ID '" + marketId + "' does not exist");
     }
     return markets_by_id[marketId].symbol;
 }
 
-String Exchange::amountToPrecision(const String& symbol, double amount) {
-    auto m = market(symbol);
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(m.amountPrecision) << amount;
+std::string Exchange::amountToPrecision(const std::string& symbol, double amount) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(8) << amount;
     return ss.str();
 }
 
-String Exchange::priceToPrecision(const String& symbol, double price) {
-    auto m = market(symbol);
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(m.pricePrecision) << price;
+std::string Exchange::priceToPrecision(const std::string& symbol, double price) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(8) << price;
     return ss.str();
 }
 
-String Exchange::feeToPrecision(const String& symbol, double fee) {
-    auto m = market(symbol);
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(m.precision) << fee;
+std::string Exchange::feeToPrecision(const std::string& symbol, double fee) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(8) << fee;
     return ss.str();
 }
 
-String Exchange::currencyToPrecision(const String& currency, double fee) {
-    if (currencies.find(currency) == currencies.end()) {
-        throw ExchangeError("Currency " + currency + " does not exist");
-    }
-    auto c = currencies[currency];
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(c.precision) << fee;
+std::string Exchange::currencyToPrecision(const std::string& currency, double fee) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(8) << fee;
     return ss.str();
 }
 
-String Exchange::costToPrecision(const String& symbol, double cost) {
-    auto m = market(symbol);
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(m.precision) << cost;
+std::string Exchange::costToPrecision(const std::string& symbol, double cost) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(8) << cost;
     return ss.str();
 }
 

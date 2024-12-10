@@ -1,5 +1,5 @@
 #include "ccxt/exchanges/bl3p.h"
-#include "../base/json_helper.h"
+#include "ccxt/base/json_helper.h"
 #include <openssl/hmac.h>
 #include <sstream>
 #include <iomanip>

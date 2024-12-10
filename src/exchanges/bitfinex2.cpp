@@ -1,5 +1,5 @@
 #include "ccxt/exchanges/bitfinex2.h"
-#include "../base/json_helper.h"
+#include "ccxt/base/json_helper.h"
 #include <openssl/hmac.h>
 #include <sstream>
 #include <iomanip>

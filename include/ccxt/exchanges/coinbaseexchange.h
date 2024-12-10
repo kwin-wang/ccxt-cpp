@@ -1,7 +1,7 @@
 #ifndef CCXT_COINBASEEXCHANGE_H
 #define CCXT_COINBASEEXCHANGE_H
 
-#include "../exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 

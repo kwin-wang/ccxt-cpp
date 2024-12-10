@@ -1,8 +1,8 @@
 #ifndef CCXT_EXCHANGE_OXFUN_H
 #define CCXT_EXCHANGE_OXFUN_H
 
-#include "../exchange.h"
-#include "../exchange_impl.h"
+#include "ccxt/base/exchange.h"
+#include "ccxt/base/exchange_impl.h"
 
 namespace ccxt {
 

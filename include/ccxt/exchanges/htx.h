@@ -1,7 +1,7 @@
 #ifndef CCXT_HTX_H
 #define CCXT_HTX_H
 
-#include "../exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 

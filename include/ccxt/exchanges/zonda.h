@@ -1,7 +1,7 @@
 #ifndef CCXT_EXCHANGE_ZONDA_H
 #define CCXT_EXCHANGE_ZONDA_H
 
-#include "../exchange_impl.h"
+#include "ccxt/base/exchange_impl.h"
 #include <nlohmann/json.hpp>
 #include <string>
 

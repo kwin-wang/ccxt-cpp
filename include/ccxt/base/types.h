@@ -41,6 +41,20 @@ struct Market {
     double limits_cost_min;
     double limits_cost_max;
     std::map<String, String> info;
+
+    Market& operator=(const json& j) {
+        if (j.contains("id")) id = j["id"].get<String>();
+        if (j.contains("symbol")) symbol = j["symbol"].get<String>();
+        if (j.contains("base")) base = j["base"].get<String>();
+        if (j.contains("quote")) quote = j["quote"].get<String>();
+        if (j.contains("type")) type = j["type"].get<String>();
+        if (j.contains("spot")) spot = j["spot"].get<String>();
+        if (j.contains("margin")) margin = j["margin"].get<String>();
+        if (j.contains("swap")) swap = j["swap"].get<String>();
+        if (j.contains("future")) future = j["future"].get<String>();
+        if (j.contains("option")) option = j["option"].get<String>();
+        return *this;
+    }
 };
 
 struct Currency {

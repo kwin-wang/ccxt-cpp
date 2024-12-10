@@ -12,6 +12,7 @@ find_package(nlohmann_json REQUIRED)
 
 # Include directories
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CURL_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
@@ -24,8 +25,11 @@ set(BASE_SOURCES
     src/base/precise.cpp
 )
 
-# Exchange source files
-file(GLOB EXCHANGE_SOURCES "src/exchanges/*.cpp")
+# Exchange source files - only include implemented exchanges
+set(EXCHANGE_SOURCES
+    src/exchanges/ace.cpp
+    src/exchanges/alpaca.cpp
+)
 
 # Add library
 add_library(ccxt
@@ -53,3 +57,8 @@ install(DIRECTORY include/ccxt
     DESTINATION include
     FILES_MATCHING PATTERN "*.h"
 )
+
+# Add test subdirectory if it exists
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
+    add_subdirectory(test)
+endif()

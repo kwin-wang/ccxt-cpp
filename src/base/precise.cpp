@@ -1,8 +1,9 @@
 #include "ccxt/base/precise.h"
-#include <regex>
 #include <sstream>
+#include <iomanip>
 #include <cmath>
 #include <algorithm>
+#include <regex>
 
 namespace ccxt {
 

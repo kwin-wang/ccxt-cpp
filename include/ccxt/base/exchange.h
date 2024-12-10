@@ -3,8 +3,10 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <optional>
 #include <nlohmann/json.hpp>
 #include "types.h"
+#include "config.h"
 
 namespace ccxt {
 
@@ -13,33 +15,75 @@ using String = std::string;
 
 class Exchange {
 public:
-    Exchange();
+    Exchange(const Config& config = Config());
     virtual ~Exchange() = default;
 
-    // Market Data API
-    virtual json fetchMarkets(const json& params = json::object());
-    virtual json fetchTicker(const String& symbol, const json& params = json::object());
-    virtual json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object());
-    virtual json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object());
-    virtual json fetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
-    virtual json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
-                          int since = 0, int limit = 0, const json& params = json::object());
-
-    // Trading API
-    virtual json fetchBalance(const json& params = json::object());
-    virtual json createOrder(const String& symbol, const String& type, const String& side,
-                           double amount, double price = 0, const json& params = json::object());
-    virtual json cancelOrder(const String& id, const String& symbol = "", const json& params = json::object());
-    virtual json fetchOrder(const String& id, const String& symbol = "", const json& params = json::object());
-    virtual json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    virtual json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    virtual json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    // Public properties
+    std::string id;
+    std::string name;
+    std::vector<std::string> countries;
+    std::string version;
+    int rateLimit;
+    bool pro;
+    bool certified;
+    std::map<std::string, std::map<std::string, std::string>> urls;
+    std::map<std::string, std::optional<bool>> has;
+    std::map<std::string, std::string> timeframes;
+    long long lastRestRequestTimestamp;
+    
+    // Public API methods
+    virtual void init();
+    virtual json describe() const;
+    virtual json fetchMarkets() const;
+    virtual json fetchTicker(const std::string& symbol) const;
+    virtual json fetchTickers(const std::vector<std::string>& symbols = {}) const;
+    virtual json fetchOrderBook(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    virtual json fetchOHLCV(const std::string& symbol, const std::string& timeframe,
+                          const std::optional<long long>& since = std::nullopt,
+                          const std::optional<int>& limit = std::nullopt) const;
+    virtual json createOrder(const std::string& symbol, const std::string& type,
+                           const std::string& side, double amount,
+                           const std::optional<double>& price = std::nullopt);
+    virtual json cancelOrder(const std::string& id, const std::string& symbol);
+    virtual json fetchOrder(const std::string& id, const std::string& symbol) const;
+    virtual json fetchOpenOrders(const std::string& symbol = "",
+                               const std::optional<long long>& since = std::nullopt,
+                               const std::optional<int>& limit = std::nullopt) const;
+    virtual json fetchMyTrades(const std::string& symbol = "",
+                             const std::optional<long long>& since = std::nullopt,
+                             const std::optional<int>& limit = std::nullopt) const;
+    virtual json fetchOrderTrades(const std::string& id, const std::string& symbol) const;
+    virtual json fetchBalance() const;
 
 protected:
-    // Common utilities
-    virtual String sign(const String& path, const String& api = "public",
-                      const String& method = "GET", const json& params = json::object(),
-                      const std::map<String, String>& headers = {}, const json& body = nullptr);
+    // Protected implementation methods
+    virtual json describeImpl() const { return json(); }
+    virtual json fetchMarketsImpl() const { return json(); }
+    virtual json fetchTickerImpl(const std::string& symbol) const { return json(); }
+    virtual json fetchTickersImpl(const std::vector<std::string>& symbols) const { return json(); }
+    virtual json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const { return json(); }
+    virtual json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
+                             const std::optional<long long>& since,
+                             const std::optional<int>& limit) const { return json(); }
+    virtual json createOrderImpl(const std::string& symbol, const std::string& type,
+                             const std::string& side, double amount,
+                             const std::optional<double>& price) { return json(); }
+    virtual json cancelOrderImpl(const std::string& id, const std::string& symbol) { return json(); }
+    virtual json fetchOrderImpl(const std::string& id, const std::string& symbol) const { return json(); }
+    virtual json fetchOpenOrdersImpl(const std::string& symbol,
+                                 const std::optional<long long>& since,
+                                 const std::optional<int>& limit) const { return json(); }
+    virtual json fetchMyTradesImpl(const std::string& symbol,
+                                const std::optional<long long>& since,
+                                const std::optional<int>& limit) const { return json(); }
+    virtual json fetchOrderTradesImpl(const std::string& id, const std::string& symbol) const { return json(); }
+    virtual json fetchBalanceImpl() const { return json(); }
+
+    // Utility methods
+    String sign(const String& path, const String& api = "public",
+              const String& method = "GET", const json& params = json::object(),
+              const std::map<String, String>& headers = {},
+              const json& body = nullptr);
     
     void checkRequiredCredentials();
     String implodeParams(const String& path, const json& params);
@@ -64,26 +108,10 @@ protected:
     String feeToPrecision(const String& symbol, double fee);
     String currencyToPrecision(const String& currency, double fee);
     String costToPrecision(const String& symbol, double cost);
-    
-    // Common properties
-    String id;
-    String name;
-    String version;
-    bool certified;
-    bool pro;
-    String baseUrl;
-    std::map<String, String> urls;
-    std::map<String, std::map<String, std::vector<String>>> api;
+
+    Config config_;
     std::map<String, Market> markets;
     std::map<String, Market> markets_by_id;
-    std::map<String, Currency> currencies;
-    String apiKey;
-    String secret;
-    
-    // Rate limiting
-    int rateLimit;
-    long long lastRestRequestTimestamp;
-    std::map<String, int> rateLimitTokens;
 };
 
 } // namespace ccxt

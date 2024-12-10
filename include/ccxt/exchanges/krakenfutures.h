@@ -1,7 +1,7 @@
 #ifndef CCXT_KRAKENFUTURES_H
 #define CCXT_KRAKENFUTURES_H
 
-#include "../exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 
