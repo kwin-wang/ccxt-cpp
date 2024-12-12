@@ -1,44 +1,76 @@
 #include "ccxt/exchanges/bit2c.h"
-#include <ctime>
+#include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <openssl/hmac.h>
+#include <boost/thread/future.hpp>
 
 namespace ccxt {
 
 Bit2c::Bit2c() {
-    this->id = "bit2c";
-    this->name = "Bit2C";
-    this->countries = {"IL"}; // Israel
-    this->rateLimit = 3000;
-    this->has = {
+    id = "bit2c";
+    name = "Bit2C";
+    countries = {"IL"}; // Israel
+    rateLimit = 3000;
+    pro = false;
+    has = {
+        {"CORS", nullptr},
+        {"spot", true},
+        {"margin", false},
+        {"swap", false},
+        {"future", false},
+        {"option", false},
+        {"addMargin", false},
+        {"cancelAllOrders", false},
         {"cancelOrder", true},
-        {"CORS", false},
+        {"closeAllPositions", false},
+        {"closePosition", false},
         {"createOrder", true},
+        {"createReduceOnlyOrder", false},
         {"fetchBalance", true},
+        {"fetchDepositAddress", true},
+        {"fetchDepositAddresses", false},
+        {"fetchDepositAddressesByNetwork", false},
         {"fetchMyTrades", true},
         {"fetchOpenOrders", true},
+        {"fetchOrder", true},
         {"fetchOrderBook", true},
+        {"fetchPosition", false},
+        {"fetchPositionMode", false},
+        {"fetchPositions", false},
         {"fetchTicker", true},
-        {"fetchTrades", true}
+        {"fetchTrades", true},
+        {"fetchTradingFee", false},
+        {"fetchTradingFees", true},
+        {"transfer", false},
+        {"ws", false}
     };
-    
-    this->urls = {
-        {"logo", "https://user-images.githubusercontent.com/1294454/27766119-3593220e-5ece-11e7-8b3a-5a041f6bcc3f.jpg"},
+
+    urls = {
+        {"logo", "https://github.com/user-attachments/assets/db0bce50-6842-4c09-a1d5-0c87d22118aa"},
         {"api", {
-            {"public", "https://bit2c.co.il"},
-            {"private", "https://bit2c.co.il"}
+            {"rest", "https://bit2c.co.il"}
         }},
         {"www", "https://www.bit2c.co.il"},
+        {"referral", "https://bit2c.co.il/Aff/63bfed10-e359-420c-ab5a-ad368dab0baf"},
         {"doc", {
             "https://www.bit2c.co.il/home/api",
             "https://github.com/OferE/bit2c"
-        }},
-        {"fees", "https://bit2c.co.il/home/fee"}
+        }}
     };
 
-    this->api = {
+    requiredCredentials = {
+        {"apiKey", true},
+        {"secret", true}
+    };
+
+    initializeApiEndpoints();
+}
+
+void Bit2c::initializeApiEndpoints() {
+    api = {
         {"public", {
-            {"GET", {
+            {"get", {
                 "Exchanges/{pair}/Ticker",
                 "Exchanges/{pair}/orderbook",
                 "Exchanges/{pair}/trades",
@@ -46,7 +78,7 @@ Bit2c::Bit2c() {
             }}
         }},
         {"private", {
-            {"POST", {
+            {"post", {
                 "Account/Balance",
                 "Account/Balance/v2",
                 "Merchant/CreateCheckout",
@@ -59,108 +91,191 @@ Bit2c::Bit2c() {
                 "Order/CancelOrder",
                 "Order/MyOrders",
                 "Payment/GetMyId",
-                "Payment/Send"
+                "Payment/Send",
+                "Order/AddOrderMarketPrice"
             }}
         }}
     };
+}
 
-    this->markets = {
-        {"BTC/NIS", {{"id", "BtcNis"}, {"symbol", "BTC/NIS"}, {"base", "BTC"}, {"quote", "NIS"}}},
-        {"ETH/NIS", {{"id", "EthNis"}, {"symbol", "ETH/NIS"}, {"base", "ETH"}, {"quote", "NIS"}}},
-        {"BCH/NIS", {{"id", "BchNis"}, {"symbol", "BCH/NIS"}, {"base", "BCH"}, {"quote", "NIS"}}},
-        {"LTC/NIS", {{"id", "LtcNis"}, {"symbol", "LTC/NIS"}, {"base", "LTC"}, {"quote", "NIS"}}},
-        {"ETC/NIS", {{"id", "EtcNis"}, {"symbol", "ETC/NIS"}, {"base", "ETC"}, {"quote", "NIS"}}}
+nlohmann::json Bit2c::fetchMarkets(const nlohmann::json& params) {
+    nlohmann::json response = request("Exchanges/pairs", "public", "GET", params);
+    nlohmann::json result = nlohmann::json::array();
+    for (const auto& market : response.items()) {
+        std::string id = market.key();
+        result.push_back({
+            {"id", id},
+            {"symbol", getCommonSymbol(id)},
+            {"base", market.value()["base"].get<std::string>()},
+            {"quote", market.value()["quote"].get<std::string>()},
+            {"baseId", market.value()["base"].get<std::string>()},
+            {"quoteId", market.value()["quote"].get<std::string>()},
+            {"active", true},
+            {"type", "spot"},
+            {"spot", true},
+            {"margin", false},
+            {"swap", false},
+            {"future", false}
+        });
+    }
+    return result;
+}
+
+nlohmann::json Bit2c::fetchTicker(const std::string& symbol, const nlohmann::json& params) {
+    loadMarkets();
+    Market market = getMarket(symbol);
+    nlohmann::json response = request("Exchanges/" + market.id + "/Ticker", "public", "GET", params);
+    return parseTicker(response, market);
+}
+
+nlohmann::json Bit2c::fetchOrderBook(const std::string& symbol, int limit, const nlohmann::json& params) {
+    loadMarkets();
+    Market market = getMarket(symbol);
+    nlohmann::json response = request("Exchanges/" + market.id + "/orderbook", "public", "GET", params);
+    return parseOrderBook(response, symbol);
+}
+
+nlohmann::json Bit2c::fetchTrades(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    loadMarkets();
+    Market market = getMarket(symbol);
+    nlohmann::json response = request("Exchanges/" + market.id + "/trades", "public", "GET", params);
+    return parseTrades(response, market, since, limit);
+}
+
+nlohmann::json Bit2c::fetchTradingFees(const nlohmann::json& params) {
+    return {
+        {"maker", 0.005},
+        {"taker", 0.005}
     };
 }
 
-nlohmann::json Bit2c::fetch_balance() {
-    this->check_required_credentials();
-    auto response = this->fetch("Account/Balance", "private", "POST");
-    return this->parse_balance(response);
+nlohmann::json Bit2c::fetchBalance(const nlohmann::json& params) {
+    loadMarkets();
+    nlohmann::json response = request("Account/Balance", "private", "POST", params);
+    return parseBalance(response);
 }
 
-nlohmann::json Bit2c::fetch_order_book(const std::string& symbol, int limit) {
-    auto market = this->market(symbol);
-    auto request = this->extend({
-        {"pair", market["id"].get<std::string>()}
-    });
-    auto response = this->fetch("Exchanges/" + market["id"].get<std::string>() + "/orderbook", "public", "GET", request);
-    return this->parse_order_book(response, symbol);
-}
-
-nlohmann::json Bit2c::fetch_ticker(const std::string& symbol) {
-    auto market = this->market(symbol);
-    auto request = this->extend({
-        {"pair", market["id"].get<std::string>()}
-    });
-    auto response = this->fetch("Exchanges/" + market["id"].get<std::string>() + "/Ticker", "public", "GET", request);
-    return this->parse_ticker(response, market);
-}
-
-nlohmann::json Bit2c::create_order(const std::string& symbol, const std::string& type,
-                                  const std::string& side, double amount, double price) {
-    this->check_required_credentials();
-    auto method = (type == "market") ? 
-        (side == "buy" ? "Order/AddOrderMarketPriceBuy" : "Order/AddOrderMarketPriceSell") :
-        "Order/AddOrder";
-
-    auto market = this->market(symbol);
-    auto request = {
+nlohmann::json Bit2c::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
+                      double amount, double price, const nlohmann::json& params) {
+    loadMarkets();
+    Market market = getMarket(symbol);
+    std::string method = "Order/AddOrder";
+    if (type == "market") {
+        method = side == "buy" ? "Order/AddOrderMarketPriceBuy" : "Order/AddOrderMarketPriceSell";
+    }
+    nlohmann::json request = {
         {"Amount", amount},
-        {"Pair", market["id"].get<std::string>()}
+        {"Pair", market.id}
     };
-
-    if (type != "market") {
+    if (type == "limit") {
         request["Price"] = price;
         request["Total"] = amount * price;
-        request["IsBid"] = (side == "buy");
     }
-
-    auto response = this->fetch(method, "private", "POST", request);
-    return this->parse_order(response);
+    nlohmann::json response = request(method, "private", "POST", extend(request, params));
+    return parseOrder(response, market);
 }
 
-nlohmann::json Bit2c::cancel_order(const std::string& id, const std::string& symbol) {
-    this->check_required_credentials();
-    auto request = {
-        {"id", std::stoi(id)}
+nlohmann::json Bit2c::cancelOrder(const std::string& id, const std::string& symbol, const nlohmann::json& params) {
+    if (symbol.empty()) {
+        throw std::runtime_error("cancelOrder requires a symbol argument");
+    }
+    loadMarkets();
+    Market market = getMarket(symbol);
+    nlohmann::json request = {
+        {"id", id},
+        {"Pair", market.id}
     };
-    return this->fetch("Order/CancelOrder", "private", "POST", request);
+    return request("Order/CancelOrder", "private", "POST", extend(request, params));
 }
 
-std::string Bit2c::sign(const std::string& path, const std::string& api,
-                       const std::string& method, const nlohmann::json& params,
-                       const std::map<std::string, std::string>& headers) {
-    auto url = this->urls["api"][api].get<std::string>() + "/" + this->implode_params(path, params);
-    auto query = this->omit(params, this->extract_params(path));
+std::string Bit2c::createSignature(const std::string& timestamp, const std::string& method,
+                           const std::string& path, const std::string& queryString) {
+    std::string signString = timestamp + method + path;
+    if (!queryString.empty()) {
+        signString += "?" + queryString;
+    }
+    return hmac(signString, secret, "sha512", "hex");
+}
 
-    if (api == "public") {
-        if (!query.empty()) {
-            url += "?" + this->urlencode(query);
+// Async Market Data API
+boost::future<nlohmann::json> Bit2c::fetchMarketsAsync(const nlohmann::json& params) {
+    return requestAsync("Exchanges/pairs", "public", "GET", params);
+}
+
+boost::future<nlohmann::json> Bit2c::fetchTickerAsync(const std::string& symbol, const nlohmann::json& params) {
+    std::string market = getBit2cSymbol(symbol);
+    std::string path = "Exchanges/" + market + "/Ticker";
+    return requestAsync(path, "public", "GET", params);
+}
+
+boost::future<nlohmann::json> Bit2c::fetchTickersAsync(const std::vector<std::string>& symbols, const nlohmann::json& params) {
+    return boost::async(boost::launch::async, [this, symbols, params]() {
+        nlohmann::json result = nlohmann::json::object();
+        for (const auto& symbol : symbols) {
+            result[symbol] = this->fetchTicker(symbol, params);
         }
-    } else {
-        this->check_required_credentials();
-        auto nonce = std->to_string(this->nonce());
-        auto query = this->extend({
-            {"nonce", nonce}
-        }, query);
-        auto body = this->urlencode(query);
-        auto signature = this->hmac(body, this->secret, "sha512", true);
-        auto headers = {
-            {"Content-Type", "application/x-www-form-urlencoded"},
-            {"key", this->apiKey},
-            {"sign", signature}
-        };
-    }
-
-    return url;
+        return result;
+    });
 }
 
-std::string Bit2c::get_currency_pair(const std::string& symbol) {
-    if (this->markets.find(symbol) != this->markets.end()) {
-        return this->markets[symbol]["id"].get<std::string>();
-    }
-    throw std::runtime_error("Symbol " + symbol + " is not supported by Bit2c");
+boost::future<nlohmann::json> Bit2c::fetchOrderBookAsync(const std::string& symbol, int limit, const nlohmann::json& params) {
+    std::string market = getBit2cSymbol(symbol);
+    std::string path = "Exchanges/" + market + "/orderbook";
+    return requestAsync(path, "public", "GET", params);
+}
+
+boost::future<nlohmann::json> Bit2c::fetchTradesAsync(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    std::string market = getBit2cSymbol(symbol);
+    std::string path = "Exchanges/" + market + "/trades";
+    return requestAsync(path, "public", "GET", params);
+}
+
+boost::future<nlohmann::json> Bit2c::fetchTradingFeesAsync(const nlohmann::json& params) {
+    return requestAsync("Account/Balance", "private", "GET", params);
+}
+
+// Async Trading API
+boost::future<nlohmann::json> Bit2c::fetchBalanceAsync(const nlohmann::json& params) {
+    return requestAsync("Account/Balance", "private", "GET", params);
+}
+
+boost::future<nlohmann::json> Bit2c::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
+                                                   double amount, double price, const nlohmann::json& params) {
+    nlohmann::json request = {
+        {"Amount", amount},
+        {"Pair", getBit2cSymbol(symbol)},
+        {"Total", amount * price},
+        {"IsBid", side == "buy"}
+    };
+    
+    std::string path = (type == "market") ? 
+        (side == "buy" ? "Order/AddOrderMarketPriceBuy" : "Order/AddOrderMarketPriceSell") :
+        "Order/AddOrder";
+        
+    return requestAsync(path, "private", "POST", request);
+}
+
+boost::future<nlohmann::json> Bit2c::cancelOrderAsync(const std::string& id, const std::string& symbol, const nlohmann::json& params) {
+    nlohmann::json request = {{"id", id}};
+    return requestAsync("Order/CancelOrder", "private", "POST", request);
+}
+
+boost::future<nlohmann::json> Bit2c::fetchOrderAsync(const std::string& id, const std::string& symbol, const nlohmann::json& params) {
+    nlohmann::json request = {{"id", id}};
+    return requestAsync("Order/GetById", "private", "GET", request);
+}
+
+boost::future<nlohmann::json> Bit2c::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    return requestAsync("Order/MyOrders", "private", "GET", params);
+}
+
+boost::future<nlohmann::json> Bit2c::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    return requestAsync("Order/OrderHistory", "private", "GET", params);
+}
+
+// Async Account API
+boost::future<nlohmann::json> Bit2c::fetchDepositAddressAsync(const std::string& code, const nlohmann::json& params) {
+    return requestAsync("Funds/AddCoinFundsRequest", "private", "POST", params);
 }
 
 } // namespace ccxt

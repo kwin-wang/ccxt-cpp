@@ -1,149 +1,311 @@
-#include "../../include/ccxt/exchanges/vertex.h"
-#include "../../include/ccxt/exchange_registry.h"
+#include "ccxt/exchanges/vertex.h"
+#include <jwt-cpp/jwt.h>
+#include <sstream>
+#include <iomanip>
 
 namespace ccxt {
 
-const std::string vertex::defaultBaseURL = "https://api.vertex.com";
-const std::string vertex::defaultVersion = "v1";
-const int vertex::defaultRateLimit = 50;
-const bool vertex::defaultPro = true;
+Vertex::Vertex() {
+    id = "vertex";
+    name = "Vertex";
+    countries = {"BVI"};  // British Virgin Islands
+    version = "v1";
+    rateLimit = 100;
+    certified = true;
+    pro = true;
+    has = {
+        {"cancelAllOrders", true},
+        {"cancelOrder", true},
+        {"createOrder", true},
+        {"fetchBalance", true},
+        {"fetchClosedOrders", true},
+        {"fetchCurrencies", true},
+        {"fetchDeposits", true},
+        {"fetchFundingRate", true},
+        {"fetchFundingRateHistory", true},
+        {"fetchIndexOHLCV", true},
+        {"fetchLeverage", true},
+        {"fetchMarkets", true},
+        {"fetchMarkOHLCV", true},
+        {"fetchMyTrades", true},
+        {"fetchOHLCV", true},
+        {"fetchOpenOrders", true},
+        {"fetchOrder", true},
+        {"fetchOrderBook", true},
+        {"fetchOrders", true},
+        {"fetchPositions", true},
+        {"fetchTicker", true},
+        {"fetchTickers", true},
+        {"fetchTrades", true},
+        {"fetchWithdrawals", true},
+        {"setLeverage", true}
+    };
 
-ExchangeRegistry::Factory vertex::factory = []() {
-    return new vertex();
-};
+    // URLs
+    urls = {
+        {"logo", "https://user-images.githubusercontent.com/1294454/158227251-3a92a220-9222-453c-9277-977c6677fe71.jpg"},
+        {"api", {
+            {"public", "https://prod.vertexprotocol.com/v1"},
+            {"private", "https://prod.vertexprotocol.com/v1"}
+        }},
+        {"www", "https://vertex.fi"},
+        {"doc", {
+            "https://docs.vertex.fi/docs/api/overview",
+            "https://vertex.fi/docs/api"
+        }},
+        {"fees", "https://vertex.fi/fees"}
+    };
 
-vertex::vertex(const Config& config) : ExchangeImpl(config) {
-    init();
+    timeframes = {
+        {"1m", "1m"},
+        {"5m", "5m"},
+        {"15m", "15m"},
+        {"30m", "30m"},
+        {"1h", "1h"},
+        {"4h", "4h"},
+        {"12h", "12h"},
+        {"1d", "1d"},
+        {"1w", "1w"},
+        {"1M", "1M"}
+    };
+
+    initializeApiEndpoints();
 }
 
-void vertex::init() {
-    ExchangeImpl::init();
-    setBaseURL(defaultBaseURL);
-    setVersion(defaultVersion);
-    setRateLimit(defaultRateLimit);
-    setPro(defaultPro);
+void Vertex::initializeApiEndpoints() {
+    api = {
+        {"public", {
+            {"get", {
+                "markets",
+                "orderbook/{symbol}",
+                "trades/{symbol}",
+                "tickers",
+                "ticker/{symbol}",
+                "candles/{symbol}",
+                "index/candles/{symbol}",
+                "mark/candles/{symbol}",
+                "funding_rate/{symbol}",
+                "funding_rate_history/{symbol}"
+            }}
+        }},
+        {"private", {
+            {"get", {
+                "balances",
+                "positions",
+                "orders",
+                "order/{orderId}",
+                "trades",
+                "leverage/{symbol}"
+            }},
+            {"post", {
+                "order",
+                "orders/cancel",
+                "leverage"
+            }},
+            {"delete", {
+                "order/{orderId}"
+            }}
+        }}
+    };
+
+    fees = {
+        {"trading", {
+            {"tierBased", true},
+            {"percentage", true},
+            {"maker", 0.0002},
+            {"taker", 0.0005}
+        }},
+        {"funding", {
+            {"tierBased", false},
+            {"percentage", true},
+            {"withdraw", {}},
+            {"deposit", {}}
+        }}
+    };
+
+    requiredCredentials = {
+        {"apiKey", true},
+        {"secret", true}
+    };
+
+    precisionMode = TICK_SIZE;
 }
 
-Json vertex::describeImpl() const {
-    return Json::object({
-        {"id", "vertex"},
-        {"name", "Vertex"},
-        {"rateLimit", defaultRateLimit},
-        {"certified", false},
-        {"has", Json::object({
-            {"spot", true},
+// Market Data Methods
+json Vertex::fetchMarkets(const json& params) {
+    auto response = fetch("/markets", "public", "GET", params);
+    json result = json::array();
+
+    for (const auto& market : response["markets"]) {
+        String id = market["symbol"].get<String>();
+        String baseId = market["baseAsset"].get<String>();
+        String quoteId = market["quoteAsset"].get<String>();
+        String base = commonCurrencyCode(baseId);
+        String quote = commonCurrencyCode(quoteId);
+        String type = market["type"].get<String>();
+        String symbol = base + "/" + quote + ":" + quote;
+        bool linear = (type == "linear");
+
+        result.push_back({
+            {"id", id},
+            {"symbol", symbol},
+            {"base", base},
+            {"quote", quote},
+            {"baseId", baseId},
+            {"quoteId", quoteId},
+            {"active", market["active"].get<bool>()},
+            {"type", type},
+            {"linear", linear},
+            {"inverse", !linear},
+            {"spot", false},
             {"swap", true},
-            {"future", true},
-            {"createOrder", true},
-            {"createOrders", true},
-            {"createReduceOnlyOrder", true},
-            {"createStopOrder", true},
-            {"createTriggerOrder", true},
-            {"fetchBalance", true},
-            {"fetchCurrencies", true},
-            {"fetchFundingRate", true},
-            {"fetchFundingRates", true},
-            {"fetchMarkets", true},
-            {"fetchMyTrades", true},
-            {"fetchOHLCV", true},
-            {"fetchOpenInterest", true},
-            {"fetchOpenOrders", true},
-            {"fetchOrder", true},
-            {"fetchOrderBook", true},
-            {"fetchOrders", true},
-            {"fetchTicker", true},
-            {"fetchTrades", true},
-        })}
+            {"future", false},
+            {"option", false},
+            {"contract", true},
+            {"contractSize", market["contractSize"].get<double>()},
+            {"precision", {
+                {"amount", market["amountPrecision"].get<int>()},
+                {"price", market["pricePrecision"].get<int>()}
+            }},
+            {"limits", {
+                {"leverage", {
+                    {"min", market["minLeverage"].get<double>()},
+                    {"max", market["maxLeverage"].get<double>()}
+                }},
+                {"amount", {
+                    {"min", market["minOrderSize"].get<double>()},
+                    {"max", market["maxOrderSize"].get<double>()}
+                }},
+                {"price", {
+                    {"min", market["minPrice"].get<double>()},
+                    {"max", market["maxPrice"].get<double>()}
+                }},
+                {"cost", {
+                    {"min", market["minNotional"].get<double>()},
+                    {"max", nullptr}
+                }}
+            }},
+            {"info", market}
+        });
+    }
+
+    return result;
+}
+
+json Vertex::fetchTicker(const String& symbol, const json& params) {
+    auto market = loadMarket(symbol);
+    json requestParams = params;
+    requestParams["symbol"] = market["id"];
+
+    auto response = fetch("/ticker/" + market["id"].get<String>(), "public", "GET", requestParams);
+    return parseTicker(response, market);
+}
+
+json Vertex::fetchTickers(const std::vector<String>& symbols, const json& params) {
+    auto response = fetch("/tickers", "public", "GET", params);
+    json result = json::object();
+
+    for (const auto& ticker : response["tickers"]) {
+        String marketId = ticker["symbol"].get<String>();
+        auto market = loadMarketById(marketId);
+        String symbol = market["symbol"].get<String>();
+        result[symbol] = parseTicker(ticker, market);
+    }
+
+    return filterByArray(result, "symbol", symbols);
+}
+
+json Vertex::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    auto market = loadMarket(symbol);
+    json requestParams = params;
+    if (limit > 0) {
+        requestParams["depth"] = limit;
+    }
+
+    auto response = fetch("/orderbook/" + market["id"].get<String>(), "public", "GET", requestParams);
+    long long timestamp = response["timestamp"].get<long long>();
+
+    return {
+        {"symbol", symbol},
+        {"bids", response["bids"]},
+        {"asks", response["asks"]},
+        {"timestamp", timestamp},
+        {"datetime", iso8601(timestamp)},
+        {"nonce", nullptr}
+    };
+}
+
+json Vertex::fetchOHLCV(const String& symbol, const String& timeframe,
+                       int since, int limit, const json& params) {
+    auto market = loadMarket(symbol);
+    json requestParams = params;
+    requestParams["symbol"] = market["id"];
+    requestParams["interval"] = timeframes[timeframe];
+
+    if (since > 0) {
+        requestParams["startTime"] = since;
+    }
+    if (limit > 0) {
+        requestParams["limit"] = limit;
+    }
+
+    auto response = fetch("/candles/" + market["id"].get<String>(), "public", "GET", requestParams);
+    return parseOHLCVs(response["candles"], market, timeframe, since, limit);
+}
+
+json Vertex::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+    auto market = loadMarket(symbol);
+    json requestParams = params;
+    
+    if (since > 0) {
+        requestParams["startTime"] = since;
+    }
+    if (limit > 0) {
+        requestParams["limit"] = limit;
+    }
+
+    auto response = fetch("/trades/" + market["id"].get<String>(), "public", "GET", requestParams);
+    return parseTrades(response["trades"], market, since, limit);
+}
+
+// Helper methods for parsing market data
+json Vertex::parseTicker(const json& ticker, const Market& market) {
+    long long timestamp = ticker["timestamp"].get<long long>();
+    String symbol = market.symbol;
+
+    return {
+        {"symbol", symbol},
+        {"timestamp", timestamp},
+        {"datetime", iso8601(timestamp)},
+        {"high", ticker["high24h"].get<double>()},
+        {"low", ticker["low24h"].get<double>()},
+        {"bid", ticker["bestBid"].get<double>()},
+        {"bidVolume", ticker["bestBidSize"].get<double>()},
+        {"ask", ticker["bestAsk"].get<double>()},
+        {"askVolume", ticker["bestAskSize"].get<double>()},
+        {"vwap", ticker["vwap"].get<double>()},
+        {"open", ticker["open24h"].get<double>()},
+        {"close", ticker["lastPrice"].get<double>()},
+        {"last", ticker["lastPrice"].get<double>()},
+        {"previousClose", nullptr},
+        {"change", nullptr},
+        {"percentage", ticker["priceChange24h"].get<double>()},
+        {"average", nullptr},
+        {"baseVolume", ticker["volume24h"].get<double>()},
+        {"quoteVolume", ticker["quoteVolume24h"].get<double>()},
+        {"info", ticker}
+    };
+}
+
+json Vertex::parseOHLCV(const json& ohlcv, const Market& market) {
+    return json::array({
+        ohlcv["timestamp"].get<long long>(),
+        ohlcv["open"].get<double>(),
+        ohlcv["high"].get<double>(),
+        ohlcv["low"].get<double>(),
+        ohlcv["close"].get<double>(),
+        ohlcv["volume"].get<double>()
     });
-}
-
-Json vertex::fetchMarketsImpl() const {
-    // Implementation for fetching markets
-    return Json();
-}
-
-Json vertex::fetchCurrenciesImpl() const {
-    // Implementation for fetching currencies
-    return Json();
-}
-
-Json vertex::fetchTickerImpl(const std::string& symbol) const {
-    // Implementation for fetching a ticker
-    return Json();
-}
-
-Json vertex::fetchTickersImpl(const std::vector<std::string>& symbols) const {
-    // Implementation for fetching tickers
-    return Json();
-}
-
-Json vertex::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
-    // Implementation for fetching order book
-    return Json();
-}
-
-Json vertex::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since, const std::optional<int>& limit) const {
-    // Implementation for fetching OHLCV
-    return Json();
-}
-
-Json vertex::createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price) {
-    // Implementation for creating an order
-    return Json();
-}
-
-Json vertex::cancelOrderImpl(const std::string& id, const std::string& symbol) {
-    // Implementation for canceling an order
-    return Json();
-}
-
-Json vertex::fetchOrderImpl(const std::string& id, const std::string& symbol) const {
-    // Implementation for fetching an order
-    return Json();
-}
-
-Json vertex::fetchOpenOrdersImpl(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
-    // Implementation for fetching open orders
-    return Json();
-}
-
-Json vertex::fetchClosedOrdersImpl(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
-    // Implementation for fetching closed orders
-    return Json();
-}
-
-Json vertex::fetchMyTradesImpl(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
-    // Implementation for fetching my trades
-    return Json();
-}
-
-Json vertex::fetchBalanceImpl() const {
-    // Implementation for fetching balance
-    return Json();
-}
-
-Json vertex::fetchDepositAddressImpl(const std::string& code, const std::optional<std::string>& network) const {
-    // Implementation for fetching deposit address
-    return Json();
-}
-
-Json vertex::fetchDepositsImpl(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
-    // Implementation for fetching deposits
-    return Json();
-}
-
-Json vertex::fetchWithdrawalsImpl(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
-    // Implementation for fetching withdrawals
-    return Json();
-}
-
-std::string vertex::sign(const std::string& path, const std::string& api, const std::string& method, const Json& params, const Json& headers, const Json& body) const {
-    // Implementation for signing requests
-    return std::string();
-}
-
-void vertex::handleErrors(const std::string& code, const std::string& reason, const std::string& url, const std::string& method, const Json& headers, const Json& body, const Json& response, const std::string& requestHeaders, const std::string& requestBody) const {
-    // Implementation for handling errors
 }
 
 } // namespace ccxt

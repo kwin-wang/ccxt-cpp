@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_DEFX_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class defx : public ExchangeImpl {
+class defx : public Exchange {
 public:
     defx(const Config& config = Config());
     ~defx() = default;
@@ -48,7 +48,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

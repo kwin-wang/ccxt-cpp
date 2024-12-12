@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <future>
 
 namespace ccxt {
 
@@ -158,6 +159,43 @@ Order HTX::createOrder(const std::string& symbol, const std::string& type,
 
     auto response = this->privatePostOrderOrdersPlace(this->extend(request, params));
     return this->parseOrder(response);
+}
+
+// Async implementations
+std::future<OrderBook> HTX::fetchOrderBookAsync(const std::string& symbol, int limit, const Params& params) {
+    return std::async(std::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+std::future<std::string> HTX::getSignatureAsync(const std::string& path, const std::string& method,
+                                              const std::string& hostname, const Params& params,
+                                              const std::string& timestamp) const {
+    return std::async(std::launch::async, [this, path, method, hostname, params, timestamp]() {
+        return this->getSignature(path, method, hostname, params, timestamp);
+    });
+}
+
+std::future<json> HTX::signRequestAsync(const std::string& path, const std::string& api,
+                                      const std::string& method, const Params& params,
+                                      const json& headers, const std::string& body) {
+    return std::async(std::launch::async, [this, path, api, method, params, headers, body]() {
+        return this->signRequest(path, api, method, params, headers, body);
+    });
+}
+
+std::future<Balance> HTX::fetchBalanceAsync(const Params& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+std::future<Order> HTX::createOrderAsync(const std::string& symbol, const std::string& type,
+                                       const std::string& side, double amount, double price,
+                                       const Params& params) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
 }
 
 } // namespace ccxt

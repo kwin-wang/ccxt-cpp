@@ -3,306 +3,450 @@
 #include <sstream>
 #include <iomanip>
 #include <openssl/hmac.h>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 namespace ccxt {
 
-Bitmart::Bitmart() {
-    id = "bitmart";
-    name = "BitMart";
-    version = "v2";
-    rateLimit = 250;
-
-    // Initialize API endpoints
-    baseUrl = "https://api-cloud.bitmart.com";
-    
-    urls = {
-        {"logo", "https://user-images.githubusercontent.com/1294454/129991357-8f47464b-d0f4-41d6-8a82-34122f0d1398.jpg"},
-        {"api", {
-            {"public", "https://api-cloud.bitmart.com"},
-            {"private", "https://api-cloud.bitmart.com"}
-        }},
-        {"www", "https://www.bitmart.com"},
-        {"doc", {
-            "https://developer-pro.bitmart.com",
-            "https://github.com/bitmartexchange/bitmart-official-api-docs"
-        }},
-        {"fees", "https://www.bitmart.com/fee/en"}
-    };
-
-    timeframes = {
-        {"1m", "1"},
-        {"3m", "3"},
-        {"5m", "5"},
-        {"15m", "15"},
-        {"30m", "30"},
-        {"45m", "45"},
-        {"1h", "60"},
-        {"2h", "120"},
-        {"3h", "180"},
-        {"4h", "240"},
-        {"1d", "1D"},
-        {"1w", "1W"},
-        {"1M", "1M"}
-    };
-
-    options = {
-        {"adjustForTimeDifference", true},
-        {"recvWindow", "5000"}
-    };
-
-    errorCodes = {
-        {50000, "System error"},
-        {50001, "Parameter error"},
-        {50002, "Signature error"},
-        {50004, "API key not found"},
-        {50005, "API key expired"},
-        {50006, "IP not allowed"},
-        {50007, "Invalid timestamp"},
-        {50008, "Invalid signature version"},
-        {50009, "Request too frequent"},
-        {50010, "Account suspended"},
-        {50011, "Order count over limit"},
-        {50012, "Order amount over limit"},
-        {50013, "Order price over limit"},
-        {50014, "Insufficient balance"},
-        {50015, "Order does not exist"},
-        {50016, "Order already cancelled"},
-        {50017, "Order already filled"},
-        {50018, "Order partially filled"},
-        {50019, "Order amount too small"},
-        {50020, "Order price too low"},
-        {50021, "Order price too high"},
-        {50022, "Invalid order type"},
-        {50023, "Invalid side"},
-        {50024, "Invalid symbol"}
-    };
-
-    initializeApiEndpoints();
-}
-
-void Bitmart::initializeApiEndpoints() {
-    api = {
-        {"public", {
-            {"GET", {
-                "spot/v1/currencies",
-                "spot/v1/symbols",
-                "spot/v1/symbols/details",
-                "spot/v1/ticker",
-                "spot/v1/steps",
-                "spot/v1/symbols/kline",
-                "spot/v1/symbols/book",
-                "spot/v1/symbols/trades",
-                "spot/v2/ticker"
-            }}
-        }},
-        {"private", {
-            {"GET", {
-                "spot/v1/wallet",
-                "spot/v1/orders",
-                "spot/v2/orders",
-                "spot/v1/trades",
-                "spot/v2/trades",
-                "spot/v1/orders/detail"
-            }},
-            {"POST", {
-                "spot/v1/submit_order",
-                "spot/v2/submit_order",
-                "spot/v1/batch_orders",
-                "spot/v2/batch_orders",
-                "spot/v1/cancel_order",
-                "spot/v2/cancel_order",
-                "spot/v1/cancel_orders"
-            }}
-        }}
-    };
-}
-
-json Bitmart::fetchMarkets(const json& params) {
-    json response = fetch("/spot/v1/symbols/details", "public", "GET", params);
-    json result = json::array();
-    
-    for (const auto& market : response["data"]["symbols"]) {
-        String id = this->safeString(market, "symbol");
-        std::vector<String> parts = this->split(id, "_");
-        String baseId = parts[0];
-        String quoteId = parts[1];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
-        
-        result.push_back({
-            {"id", id},
-            {"symbol", symbol},
-            {"base", base},
-            {"quote", quote},
-            {"baseId", baseId},
-            {"quoteId", quoteId},
-            {"active", true},
-            {"type", "spot"},
+Bitmart::Bitmart(const Config& config) : Exchange(config) {
+    this->describe({
+        {"id", "bitmart"},
+        {"name", "BitMart"},
+        {"countries", Json::array({"US", "CN", "HK", "KR"})},
+        {"rateLimit", 33.34},  // 150 per 5 seconds = 30 per second
+        {"version", "v2"},
+        {"certified", true},
+        {"pro", true},
+        {"has", {
+            {"CORS", nullptr},
             {"spot", true},
+            {"margin", true},
+            {"swap", true},
             {"future", false},
-            {"swap", false},
             {"option", false},
-            {"contract", false},
-            {"precision", {
-                {"amount", market["price_precision"].get<int>()},
-                {"price", market["price_precision"].get<int>()}
+            {"borrowCrossMargin", false},
+            {"borrowIsolatedMargin", true},
+            {"cancelAllOrders", true},
+            {"cancelOrder", true},
+            {"cancelOrders", true},
+            {"createOrder", true},
+            {"createOrders", true},
+            {"fetchBalance", true},
+            {"fetchBorrowInterest", true},
+            {"fetchCurrencies", true},
+            {"fetchDeposit", true},
+            {"fetchDepositAddress", true},
+            {"fetchDeposits", true},
+            {"fetchFundingRate", true},
+            {"fetchIsolatedBorrowRate", true},
+            {"fetchIsolatedBorrowRates", true},
+            {"fetchMarkets", true},
+            {"fetchMyTrades", true},
+            {"fetchOHLCV", true},
+            {"fetchOpenOrders", true},
+            {"fetchOrder", true},
+            {"fetchOrderBook", true},
+            {"fetchTicker", true},
+            {"fetchTickers", true},
+            {"fetchTime", true},
+            {"fetchTrades", true},
+            {"fetchWithdrawals", true},
+            {"withdraw", true}
+        }},
+        {"timeframes", {
+            {"1m", "1"},
+            {"3m", "3"},
+            {"5m", "5"},
+            {"15m", "15"},
+            {"30m", "30"},
+            {"1h", "60"},
+            {"2h", "120"},
+            {"4h", "240"},
+            {"6h", "360"},
+            {"12h", "720"},
+            {"1d", "1D"},
+            {"1w", "1W"}
+        }},
+        {"hostname", "bitmart.com"},
+        {"urls", {
+            {"logo", "https://github.com/user-attachments/assets/0623e9c4-f50e-48c9-82bd-65c3908c3a14"},
+            {"api", {
+                {"spot", "https://api-cloud.bitmart.com"},
+                {"swap", "https://api-cloud-v2.bitmart.com"}
             }},
-            {"limits", {
-                {"amount", {
-                    {"min", this->safeFloat(market, "min_buy_amount")},
-                    {"max", this->safeFloat(market, "max_buy_amount")}
-                }},
-                {"price", {
-                    {"min", this->safeFloat(market, "min_buy_price")},
-                    {"max", this->safeFloat(market, "max_buy_price")}
-                }},
-                {"cost", {
-                    {"min", this->safeFloat(market, "min_buy_amount") * this->safeFloat(market, "min_buy_price")},
-                    {"max", nullptr}
+            {"www", "https://www.bitmart.com/"},
+            {"doc", "https://developer-pro.bitmart.com/"}
+        }},
+        {"api", {
+            {"public", {
+                {"get", {
+                    {"system/time", 3},
+                    {"system/service", 3},
+                    {"spot/v1/currencies", 7.5},
+                    {"spot/v1/symbols", 7.5},
+                    {"spot/v1/symbols/details", 5},
+                    {"spot/quotation/v3/tickers", 6},
+                    {"spot/quotation/v3/ticker", 4},
+                    {"spot/quotation/v3/lite-klines", 5},
+                    {"spot/quotation/v3/klines", 7},
+                    {"spot/quotation/v3/books", 4},
+                    {"spot/quotation/v3/trades", 4}
                 }}
             }},
-            {"info", market}
-        });
+            {"private", {
+                {"get", {
+                    {"spot/v1/wallet", 5},
+                    {"spot/v2/orders", 5},
+                    {"spot/v1/trades", 5}
+                }},
+                {"post", {
+                    {"spot/v1/submit_order", 1},
+                    {"spot/v2/cancel_order", 1},
+                    {"spot/v1/batch_orders", 1}
+                }}
+            }}
+        }}
+    });
+}
+
+// Market Data Implementation
+Json Bitmart::fetchMarketsImpl() const {
+    return this->fetch("/spot/v1/symbols");
+}
+
+Json Bitmart::fetchTickerImpl(const std::string& symbol) const {
+    auto market = this->market(symbol);
+    return this->fetch("/spot/quotation/v3/ticker?symbol=" + market["id"].get<std::string>());
+}
+
+Json Bitmart::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (limit) {
+        request["limit"] = *limit;
     }
-    
-    return result;
+    return this->fetch("/spot/quotation/v3/books?" + this->urlencode(request));
 }
 
-json Bitmart::fetchBalance(const json& params) {
-    this->loadMarkets();
-    json response = fetch("/spot/v1/wallet", "private", "GET", params);
-    return parseBalance(response);
-}
-
-json Bitmart::parseBalance(const json& response) {
-    json result = {"info", response};
-    json balances = response["data"]["wallet"];
-    
-    for (const auto& balance : balances) {
-        String currencyId = balance["id"];
-        String code = this->commonCurrencyCode(currencyId);
-        
-        result[code] = {
-            {"free", this->safeFloat(balance, "available")},
-            {"used", this->safeFloat(balance, "frozen")},
-            {"total", this->safeFloat(balance, "available") + this->safeFloat(balance, "frozen")}
-        };
+Json Bitmart::fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since,
+                           const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (limit) {
+        request["limit"] = *limit;
     }
-    
-    return result;
+    return this->fetch("/spot/quotation/v3/trades?" + this->urlencode(request));
 }
 
-json Bitmart::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
-                         double price, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    
-    json request = {
-        {"symbol", market.id},
-        {"side", side.upper()},
-        {"type", type.upper()},
+Json Bitmart::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
+                          const std::optional<long long>& since,
+                          const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"step", this->timeframes[timeframe]}
+    });
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetch("/spot/quotation/v3/klines?" + this->urlencode(request));
+}
+
+// Trading Implementation
+Json Bitmart::createOrderImpl(const std::string& symbol, const std::string& type,
+                          const std::string& side, double amount,
+                          const std::optional<double>& price) {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"side", side},
+        {"type", type},
         {"size", this->amountToPrecision(symbol, amount)}
-    };
-    
-    if (type == "limit") {
-        request["price"] = this->priceToPrecision(symbol, price);
+    });
+    if (price) {
+        request["price"] = this->priceToPrecision(symbol, *price);
     }
-    
-    json response = fetch("/spot/v2/submit_order", "private", "POST",
-                         this->extend(request, params));
-    return this->parseOrder(response["data"], market);
+    return this->fetch("/spot/v1/submit_order", "private", "POST", request);
 }
 
-String Bitmart::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
-                     const json& body) {
-    String url = this->urls["api"][api] + "/" + this->version + path;
-    String timestamp = std::to_string(this->milliseconds());
+Json Bitmart::cancelOrderImpl(const std::string& id, const std::string& symbol) {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"order_id", id},
+        {"symbol", market["id"]}
+    });
+    return this->fetch("/spot/v2/cancel_order", "private", "POST", request);
+}
+
+Json Bitmart::fetchOrderImpl(const std::string& id, const std::string& symbol) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"order_id", id},
+        {"symbol", market["id"]}
+    });
+    return this->fetch("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+Json Bitmart::fetchOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                          const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetch("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+Json Bitmart::fetchOpenOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                               const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"status", "active"}
+    });
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetch("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+Json Bitmart::fetchClosedOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                                const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"status", "done"}
+    });
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetch("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+// Account Implementation
+Json Bitmart::fetchBalanceImpl() const {
+    return this->fetch("/spot/v1/wallet", "private");
+}
+
+Json Bitmart::fetchMyTradesImpl(const std::string& symbol, const std::optional<long long>& since,
+                             const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetch("/spot/v1/trades?" + this->urlencode(request), "private");
+}
+
+// Async Implementation
+boost::future<Json> Bitmart::fetchAsync(const std::string& path, const std::string& api,
+                                    const std::string& method, const Json& params,
+                                    const std::map<std::string, std::string>& headers) const {
+    return Exchange::fetchAsync(path, api, method, params, headers);
+}
+
+boost::future<Json> Bitmart::fetchMarketsAsync() const {
+    return this->fetchAsync("/spot/v1/symbols");
+}
+
+boost::future<Json> Bitmart::fetchTickerAsync(const std::string& symbol) const {
+    auto market = this->market(symbol);
+    return this->fetchAsync("/spot/quotation/v3/ticker?symbol=" + market["id"].get<std::string>());
+}
+
+boost::future<Json> Bitmart::fetchOrderBookAsync(const std::string& symbol,
+                                             const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetchAsync("/spot/quotation/v3/books?" + this->urlencode(request));
+}
+
+boost::future<Json> Bitmart::fetchTradesAsync(const std::string& symbol,
+                                          const std::optional<long long>& since,
+                                          const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetchAsync("/spot/quotation/v3/trades?" + this->urlencode(request));
+}
+
+boost::future<Json> Bitmart::fetchOHLCVAsync(const std::string& symbol,
+                                         const std::string& timeframe,
+                                         const std::optional<long long>& since,
+                                         const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"step", this->timeframes[timeframe]}
+    });
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetchAsync("/spot/quotation/v3/klines?" + this->urlencode(request));
+}
+
+boost::future<Json> Bitmart::createOrderAsync(const std::string& symbol,
+                                         const std::string& type,
+                                         const std::string& side,
+                                         double amount,
+                                         const std::optional<double>& price) {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"side", side},
+        {"type", type},
+        {"size", this->amountToPrecision(symbol, amount)}
+    });
+    if (price) {
+        request["price"] = this->priceToPrecision(symbol, *price);
+    }
+    return this->fetchAsync("/spot/v1/submit_order", "private", "POST", request);
+}
+
+boost::future<Json> Bitmart::cancelOrderAsync(const std::string& id,
+                                         const std::string& symbol) {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"order_id", id},
+        {"symbol", market["id"]}
+    });
+    return this->fetchAsync("/spot/v2/cancel_order", "private", "POST", request);
+}
+
+boost::future<Json> Bitmart::fetchOrderAsync(const std::string& id,
+                                        const std::string& symbol) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"order_id", id},
+        {"symbol", market["id"]}
+    });
+    return this->fetchAsync("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> Bitmart::fetchOrdersAsync(const std::string& symbol,
+                                         const std::optional<long long>& since,
+                                         const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetchAsync("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> Bitmart::fetchOpenOrdersAsync(const std::string& symbol,
+                                             const std::optional<long long>& since,
+                                             const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"status", "active"}
+    });
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetchAsync("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> Bitmart::fetchClosedOrdersAsync(const std::string& symbol,
+                                               const std::optional<long long>& since,
+                                               const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"status", "done"}
+    });
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetchAsync("/spot/v2/orders?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> Bitmart::fetchBalanceAsync() const {
+    return this->fetchAsync("/spot/v1/wallet", "private");
+}
+
+boost::future<Json> Bitmart::fetchMyTradesAsync(const std::string& symbol,
+                                           const std::optional<long long>& since,
+                                           const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (since) {
+        request["start_time"] = *since;
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    return this->fetchAsync("/spot/v1/trades?" + this->urlencode(request), "private");
+}
+
+// Helper methods
+std::string Bitmart::sign(const std::string& path, const std::string& api,
+                       const std::string& method, const Json& params,
+                       std::map<std::string, std::string>& headers,
+                       const Json& body) {
+    auto url = this->urls["api"][api] + path;
+    auto timestamp = std::to_string(this->milliseconds());
     
-    if (api == "public") {
-        if (!params.empty()) {
-            url += "?" + this->urlencode(params);
-        }
-    } else {
-        this->checkRequiredCredentials();
+    if (api == "private") {
+        headers["X-BM-KEY"] = this->apiKey;
+        headers["X-BM-TIMESTAMP"] = timestamp;
         
-        if (method == "GET") {
-            if (!params.empty()) {
-                url += "?" + this->urlencode(params);
-            }
+        std::string payload;
+        if (method == "POST") {
+            payload = body.dump();
+            headers["Content-Type"] = "application/json";
         } else {
-            body = this->json(params);
+            payload = this->urlencode(params);
         }
         
-        String signature = this->createSignature(timestamp, method, path,
-                                               body.empty() ? "" : body.dump());
-        
-        const_cast<std::map<String, String>&>(headers)["X-BM-KEY"] = this->apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-BM-SIGN"] = signature;
-        const_cast<std::map<String, String>&>(headers)["X-BM-TIMESTAMP"] = timestamp;
-        
-        if (!body.empty()) {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
-        }
+        auto auth = timestamp + "#" + this->apiKey + "#" + payload;
+        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        headers["X-BM-SIGN"] = signature;
     }
     
     return url;
-}
-
-String Bitmart::createSignature(const String& timestamp, const String& method,
-                               const String& path, const String& body) {
-    String message = timestamp + "#" + this->apiKey + "#" + method + "#" +
-                    path + "#" + body;
-    return this->hmac(message, this->encode(this->secret),
-                     "sha256", "hex");
-}
-
-json Bitmart::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "order_id");
-    String timestamp = this->safeString(order, "create_time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
-    
-    return {
-        {"id", id},
-        {"clientOrderId", nullptr},
-        {"timestamp", this->safeInteger(order, "create_time")},
-        {"datetime", this->iso8601(timestamp)},
-        {"lastTradeTimestamp", nullptr},
-        {"status", status},
-        {"symbol", symbol},
-        {"type", type},
-        {"side", side},
-        {"price", this->safeFloat(order, "price")},
-        {"amount", this->safeFloat(order, "size")},
-        {"filled", this->safeFloat(order, "filled_size")},
-        {"remaining", this->safeFloat(order, "size") - this->safeFloat(order, "filled_size")},
-        {"cost", this->safeFloat(order, "filled_size") * this->safeFloat(order, "price")},
-        {"trades", nullptr},
-        {"fee", {
-            {"currency", market.quote},
-            {"cost", this->safeFloat(order, "fee")},
-            {"rate", nullptr}
-        }},
-        {"info", order}
-    };
-}
-
-json Bitmart::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
-        {"1", "open"},
-        {"2", "filled"},
-        {"3", "canceled"},
-        {"4", "canceled"},
-        {"5", "partially_filled"}
-    };
-    
-    return statuses.contains(status) ? statuses.at(status) : status;
 }
 
 } // namespace ccxt

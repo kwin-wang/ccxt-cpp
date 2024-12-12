@@ -9,17 +9,39 @@ namespace ccxt {
 WazirX::WazirX() {
     id = "wazirx";
     name = "WazirX";
+    countries = {"IN"}; // India
     version = "v2";
-    rateLimit = 100;
+    rateLimit = 1000;
+    certified = true;
+    pro = false;
+    has = {
+        {"cancelOrder", true},
+        {"createOrder", true},
+        {"fetchBalance", true},
+        {"fetchClosedOrders", true},
+        {"fetchCurrencies", true},
+        {"fetchDeposits", true},
+        {"fetchMarkets", true},
+        {"fetchMyTrades", true},
+        {"fetchOHLCV", true},
+        {"fetchOpenOrders", true},
+        {"fetchOrder", true},
+        {"fetchOrderBook", true},
+        {"fetchOrders", true},
+        {"fetchStatus", true},
+        {"fetchTicker", true},
+        {"fetchTickers", true},
+        {"fetchTime", true},
+        {"fetchTrades", true},
+        {"fetchWithdrawals", true}
+    };
 
-    // Initialize API endpoints
-    baseUrl = "https://api.wazirx.com";
-    
+    // URLs
     urls = {
         {"logo", "https://user-images.githubusercontent.com/1294454/148647666-c109c20b-f8ac-472f-91c3-5f658cb90f49.jpeg"},
         {"api", {
-            {"public", "https://api.wazirx.com/sapi/v1"},
-            {"private", "https://api.wazirx.com/sapi/v1"}
+            {"public", "https://api.wazirx.com/api/v2"},
+            {"private", "https://api.wazirx.com/api/v2"}
         }},
         {"www", "https://wazirx.com"},
         {"doc", {
@@ -40,32 +62,8 @@ WazirX::WazirX() {
         {"6h", "6h"},
         {"12h", "12h"},
         {"1d", "1d"},
+        {"3d", "3d"},
         {"1w", "1w"}
-    };
-
-    options = {
-        {"adjustForTimeDifference", true},
-        {"recvWindow", "5000"}
-    };
-
-    errorCodes = {
-        {-1000, "System error"},
-        {-1001, "Internal error"},
-        {-1002, "Unauthorized"},
-        {-1003, "Too many requests"},
-        {-1004, "Invalid API key"},
-        {-1005, "Invalid signature"},
-        {-1006, "Invalid timestamp"},
-        {-1007, "Invalid parameters"},
-        {-1008, "Order not found"},
-        {-1009, "Balance not enough"},
-        {-1010, "Order amount too small"},
-        {-1011, "Order price out of range"},
-        {-1012, "Order has been filled"},
-        {-1013, "Order has been cancelled"},
-        {-1014, "Order is cancelling"},
-        {-1015, "Order type not supported"},
-        {-1016, "Invalid order side"}
     };
 
     initializeApiEndpoints();
@@ -74,55 +72,67 @@ WazirX::WazirX() {
 void WazirX::initializeApiEndpoints() {
     api = {
         {"public", {
-            {"GET", {
-                "ping",
-                "time",
-                "systemStatus",
-                "exchangeInfo",
-                "depth",
-                "trades",
+            {"get", {
+                "tickers",
+                "ticker/{symbol}",
+                "depth/{symbol}",
+                "trades/{symbol}",
                 "klines",
-                "ticker/24hr",
-                "ticker/price",
-                "ticker/bookTicker"
+                "system/status",
+                "time",
+                "markets"
             }}
         }},
         {"private", {
-            {"GET", {
-                "account",
-                "allOrders",
-                "openOrders",
-                "myTrades",
+            {"get", {
                 "funds",
-                "deposits",
-                "withdrawals",
-                "depositAddress"
-            }},
-            {"POST", {
                 "order",
-                "order/test"
+                "order/history",
+                "order/trade_history"
             }},
-            {"DELETE", {
+            {"post", {
                 "order",
-                "openOrders"
+                "order/cancel"
             }}
         }}
     };
+
+    fees = {
+        {"trading", {
+            {"tierBased", false},
+            {"percentage", true},
+            {"taker", 0.002},
+            {"maker", 0.002}
+        }},
+        {"funding", {
+            {"tierBased", false},
+            {"percentage", false},
+            {"withdraw", {}},
+            {"deposit", {}}
+        }}
+    };
+
+    requiredCredentials = {
+        {"apiKey", true},
+        {"secret", true}
+    };
+
+    precisionMode = TICK_SIZE;
 }
 
+// Market Data Methods
 json WazirX::fetchMarkets(const json& params) {
-    json response = fetch("/exchangeInfo", "public", "GET", params);
+    auto response = fetch("/markets", "public", "GET", params);
     json result = json::array();
-    
-    for (const auto& market : response["symbols"]) {
-        String id = this->safeString(market, "symbol");
-        String baseId = this->safeString(market, "baseAsset");
-        String quoteId = this->safeString(market, "quoteAsset");
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
+
+    for (const auto& market : response["markets"]) {
+        String id = market["symbol"].get<String>();
+        String baseId = market["baseAsset"].get<String>();
+        String quoteId = market["quoteAsset"].get<String>();
+        String base = commonCurrencyCode(baseId);
+        String quote = commonCurrencyCode(quoteId);
         String symbol = base + "/" + quote;
-        bool active = market["status"] == "trading";
-        
+
         result.push_back({
             {"id", id},
             {"symbol", symbol},
@@ -130,36 +140,148 @@ json WazirX::fetchMarkets(const json& params) {
             {"quote", quote},
             {"baseId", baseId},
             {"quoteId", quoteId},
-            {"active", active},
+            {"active", market["status"].get<String>() == "trading"},
             {"type", "spot"},
             {"spot", true},
+            {"margin", false},
             {"future", false},
             {"swap", false},
             {"option", false},
             {"contract", false},
             {"precision", {
                 {"amount", market["baseAssetPrecision"].get<int>()},
-                {"price", market["quotePrecision"].get<int>()}
+                {"price", market["quoteAssetPrecision"].get<int>()}
             }},
             {"limits", {
                 {"amount", {
-                    {"min", this->safeFloat(market, "minQty")},
-                    {"max", this->safeFloat(market, "maxQty")}
+                    {"min", market["minTradeSize"].get<double>()},
+                    {"max", market["maxTradeSize"].get<double>()}
                 }},
                 {"price", {
-                    {"min", this->safeFloat(market, "minPrice")},
-                    {"max", this->safeFloat(market, "maxPrice")}
+                    {"min", market["tickSize"].get<double>()},
+                    {"max", nullptr}
                 }},
                 {"cost", {
-                    {"min", this->safeFloat(market, "minNotional")},
+                    {"min", market["minNotional"].get<double>()},
                     {"max", nullptr}
                 }}
             }},
             {"info", market}
         });
     }
-    
+
     return result;
+}
+
+json WazirX::fetchTicker(const String& symbol, const json& params) {
+    auto market = loadMarket(symbol);
+    auto response = fetch("/ticker/" + market["id"].get<String>(), "public", "GET", params);
+    return parseTicker(response, market);
+}
+
+json WazirX::fetchTickers(const std::vector<String>& symbols, const json& params) {
+    auto response = fetch("/tickers", "public", "GET", params);
+    json result = json::object();
+
+    for (const auto& [marketId, ticker] : response.items()) {
+        if (ticker.is_object()) {
+            auto market = loadMarketById(marketId);
+            result[market["symbol"].get<String>()] = parseTicker(ticker, market);
+        }
+    }
+
+    return filterByArray(result, "symbol", symbols);
+}
+
+json WazirX::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    auto market = loadMarket(symbol);
+    json requestParams = params;
+    if (limit > 0) {
+        requestParams["limit"] = limit;
+    }
+
+    auto response = fetch("/depth/" + market["id"].get<String>(), "public", "GET", requestParams);
+    long long timestamp = response["timestamp"].get<long long>();
+
+    return {
+        {"symbol", symbol},
+        {"bids", response["bids"]},
+        {"asks", response["asks"]},
+        {"timestamp", timestamp},
+        {"datetime", iso8601(timestamp)},
+        {"nonce", nullptr}
+    };
+}
+
+json WazirX::fetchOHLCV(const String& symbol, const String& timeframe,
+                       int since, int limit, const json& params) {
+    auto market = loadMarket(symbol);
+    json requestParams = {
+        {"symbol", market["id"]},
+        {"interval", timeframes[timeframe]}
+    };
+
+    if (since > 0) {
+        requestParams["startTime"] = since;
+    }
+    if (limit > 0) {
+        requestParams["limit"] = limit;
+    }
+    requestParams.update(params);
+
+    auto response = fetch("/klines", "public", "GET", requestParams);
+    return parseOHLCVs(response, market, timeframe, since, limit);
+}
+
+json WazirX::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+    auto market = loadMarket(symbol);
+    json requestParams = params;
+    if (limit > 0) {
+        requestParams["limit"] = limit;
+    }
+
+    auto response = fetch("/trades/" + market["id"].get<String>(), "public", "GET", requestParams);
+    return parseTrades(response, market, since, limit);
+}
+
+// Helper methods for parsing market data
+json WazirX::parseTicker(const json& ticker, const Market& market) {
+    long long timestamp = ticker["at"].get<long long>() * 1000;
+    String symbol = market.symbol;
+
+    return {
+        {"symbol", symbol},
+        {"timestamp", timestamp},
+        {"datetime", iso8601(timestamp)},
+        {"high", ticker["high"].get<double>()},
+        {"low", ticker["low"].get<double>()},
+        {"bid", ticker["buy"].get<double>()},
+        {"bidVolume", nullptr},
+        {"ask", ticker["sell"].get<double>()},
+        {"askVolume", nullptr},
+        {"vwap", nullptr},
+        {"open", ticker["open"].get<double>()},
+        {"close", ticker["last"].get<double>()},
+        {"last", ticker["last"].get<double>()},
+        {"previousClose", nullptr},
+        {"change", nullptr},
+        {"percentage", nullptr},
+        {"average", nullptr},
+        {"baseVolume", ticker["volume"].get<double>()},
+        {"quoteVolume", ticker["quoteVolume"].get<double>()},
+        {"info", ticker}
+    };
+}
+
+json WazirX::parseOHLCV(const json& ohlcv, const Market& market) {
+    return json::array({
+        ohlcv[0].get<long long>(), // timestamp
+        ohlcv[1].get<double>(),    // open
+        ohlcv[2].get<double>(),    // high
+        ohlcv[3].get<double>(),    // low
+        ohlcv[4].get<double>(),    // close
+        ohlcv[5].get<double>()     // volume
+    });
 }
 
 json WazirX::fetchBalance(const json& params) {

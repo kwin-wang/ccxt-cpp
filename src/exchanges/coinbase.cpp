@@ -3,6 +3,9 @@
 #include <sstream>
 #include <iomanip>
 #include <base64.h>
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <boost/bind/bind.hpp>
 
 namespace ccxt {
 
@@ -210,6 +213,89 @@ std::map<String, String> Coinbase::getAuthHeaders(const String& method,
         {"CB-ACCESS-TIMESTAMP", timestamp},
         {"CB-ACCESS-PASSPHRASE", password}
     };
+}
+
+// Async Market Data API Implementation
+boost::future<json> Coinbase::fetchMarketsAsync(const json& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchMarkets(params);
+    });
+}
+
+boost::future<json> Coinbase::fetchTickerAsync(const String& symbol, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchTickersAsync(const std::vector<String>& symbols, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbols, params]() {
+        return this->fetchTickers(symbols, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchOrderBookAsync(const String& symbol, int limit, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+                                           int since, int limit, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
+    });
+}
+
+// Async Trading API Implementation
+boost::future<json> Coinbase::fetchBalanceAsync(const json& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+boost::future<json> Coinbase::createOrderAsync(const String& symbol, const String& type,
+                                           const String& side, double amount,
+                                           double price, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+boost::future<json> Coinbase::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchOrderAsync(const String& id, const String& symbol, const json& params) const {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> Coinbase::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
 }
 
 } // namespace ccxt

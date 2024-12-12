@@ -4,6 +4,9 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 namespace ccxt {
 
@@ -375,6 +378,162 @@ json bitcoincom::withdraw(const std::string& code, double amount,
         request[param.first] = param.second;
     }
     return private_post("/wallet/crypto/withdraw", request);
+}
+
+// Async Market Data Methods
+boost::future<json> bitcoincom::fetch_markets_async(const json& params) {
+    return boost::async([this, params]() {
+        return this->fetch_markets();
+    });
+}
+
+boost::future<json> bitcoincom::fetch_currencies_async(const json& params) {
+    return boost::async([this, params]() {
+        return this->fetch_currencies();
+    });
+}
+
+boost::future<json> bitcoincom::fetch_ticker_async(const std::string& symbol, const json& params) {
+    return boost::async([this, symbol]() {
+        return this->fetch_ticker(symbol);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_tickers_async(const std::vector<std::string>& symbols, const json& params) {
+    return boost::async([this, symbols]() {
+        return this->fetch_tickers(symbols);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_order_book_async(const std::string& symbol, int limit, const json& params) {
+    return boost::async([this, symbol, limit]() {
+        return this->fetch_order_book(symbol, limit);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_trades_async(const std::string& symbol, int limit, const json& params) {
+    return boost::async([this, symbol, limit]() {
+        return this->fetch_trades(symbol, limit);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_ohlcv_async(const std::string& symbol, const std::string& timeframe,
+                                               long since, int limit, const json& params) {
+    return boost::async([this, symbol, timeframe, since, limit]() {
+        return this->fetch_ohlcv(symbol, timeframe, since, limit);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_trading_fees_async(const std::string& symbol, const json& params) {
+    return boost::async([this, symbol]() {
+        return this->fetch_trading_fees(symbol);
+    });
+}
+
+// Async Trading Methods
+boost::future<json> bitcoincom::create_order_async(const std::string& symbol, const std::string& type,
+                                               const std::string& side, double amount, double price,
+                                               const json& params) {
+    return boost::async([this, symbol, type, side, amount, price]() {
+        return this->create_order(symbol, type, side, amount, price);
+    });
+}
+
+boost::future<json> bitcoincom::cancel_order_async(const std::string& id, const std::string& symbol,
+                                               const json& params) {
+    return boost::async([this, id, symbol]() {
+        return this->cancel_order(id, symbol);
+    });
+}
+
+boost::future<json> bitcoincom::cancel_all_orders_async(const std::string& symbol, const json& params) {
+    return boost::async([this, symbol]() {
+        return this->cancel_all_orders(symbol);
+    });
+}
+
+boost::future<json> bitcoincom::edit_order_async(const std::string& id, const std::string& symbol,
+                                             const std::string& type, const std::string& side,
+                                             double amount, double price, const json& params) {
+    return boost::async([this, id, symbol, type, side, amount, price]() {
+        return this->edit_order(id, symbol, type, side, amount, price);
+    });
+}
+
+// Async Account/Balance Methods
+boost::future<json> bitcoincom::fetch_balance_async(const json& params) {
+    return boost::async([this]() {
+        return this->fetch_balance();
+    });
+}
+
+boost::future<json> bitcoincom::fetch_open_orders_async(const std::string& symbol, const json& params) {
+    return boost::async([this, symbol]() {
+        return this->fetch_open_orders(symbol);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_closed_orders_async(const std::string& symbol, long since,
+                                                      int limit, const json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_closed_orders(symbol, since, limit);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_order_async(const std::string& id, const std::string& symbol,
+                                              const json& params) {
+    return boost::async([this, id, symbol]() {
+        return this->fetch_order(id, symbol);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_orders_async(const std::string& symbol, long since,
+                                               int limit, const json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_orders(symbol, since, limit);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_my_trades_async(const std::string& symbol, long since,
+                                                  int limit, const json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_my_trades(symbol, since, limit);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_trading_fee_async(const std::string& symbol, const json& params) {
+    return boost::async([this, symbol]() {
+        return this->fetch_trading_fee(symbol);
+    });
+}
+
+// Async Account Management Methods
+boost::future<json> bitcoincom::fetch_deposit_address_async(const std::string& code, const json& params) {
+    return boost::async([this, code]() {
+        return this->fetch_deposit_address(code);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_deposits_async(const std::string& code, long since,
+                                                 int limit, const json& params) {
+    return boost::async([this, code, since, limit]() {
+        return this->fetch_deposits(code, since, limit);
+    });
+}
+
+boost::future<json> bitcoincom::fetch_withdrawals_async(const std::string& code, long since,
+                                                    int limit, const json& params) {
+    return boost::async([this, code, since, limit]() {
+        return this->fetch_withdrawals(code, since, limit);
+    });
+}
+
+boost::future<json> bitcoincom::withdraw_async(const std::string& code, double amount,
+                                           const std::string& address, const std::string& tag,
+                                           const json& params) {
+    return boost::async([this, code, amount, address, tag]() {
+        return this->withdraw(code, amount, address, tag);
+    });
 }
 
 // HTTP request helper methods

@@ -2,8 +2,10 @@
 
 namespace ccxt {
 
-BitBayAsync::BitBayAsync(const boost::asio::io_context& context)
-    : ZondaAsync(context)
-    , BitBay() {}
+BitBayAsync::BitBayAsync(const Config& config) : ZondaAsync(config) {
+    // BitBay is an alias for Zonda, so we only need to override the exchange info
+    this->id = "bitbay";
+    this->name = "BitBay";
+}
 
 } // namespace ccxt

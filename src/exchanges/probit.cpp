@@ -1,25 +1,77 @@
-#include "probit.h"
+#include "ccxt/exchanges/probit.h"
 #include <chrono>
-#include <sstream>
 #include <iomanip>
-#include <openssl/hmac.h>
+#include <sstream>
 
 namespace ccxt {
 
-Probit::Probit() {
+const std::string probit::defaultBaseURL = "https://api.probit.com";
+const std::string probit::defaultVersion = "v1";
+const int probit::defaultRateLimit = 50; // 20 requests per second
+
+probit::probit(const Config& config) : Exchange(config) {
+    init();
+}
+
+void probit::init() {
+    
+    
     id = "probit";
     name = "ProBit";
-    version = "v1";
-    rateLimit = 50;
-
-    // Initialize API endpoints
-    baseUrl = "https://api.probit.com";
+    countries = {"US", "KR"};
+    version = defaultVersion;
+    rateLimit = defaultRateLimit;
+    certified = false;
+    pro = false;
     
+    has = {
+        {"CORS", true},
+        {"spot", true},
+        {"margin", false},
+        {"swap", false},
+        {"future", false},
+        {"option", false},
+        {"cancelAllOrders", true},
+        {"cancelOrder", true},
+        {"createOrder", true},
+        {"fetchBalance", true},
+        {"fetchClosedOrders", true},
+        {"fetchCurrencies", true},
+        {"fetchDepositAddress", true},
+        {"fetchDeposits", true},
+        {"fetchMarkets", true},
+        {"fetchMyTrades", true},
+        {"fetchOHLCV", true},
+        {"fetchOpenOrders", true},
+        {"fetchOrder", true},
+        {"fetchOrderBook", true},
+        {"fetchOrders", true},
+        {"fetchTicker", true},
+        {"fetchTickers", true},
+        {"fetchTrades", true},
+        {"fetchWithdrawals", true}
+    };
+
+    timeframes = {
+        {"1m", "1m"},
+        {"3m", "3m"},
+        {"5m", "5m"},
+        {"15m", "15m"},
+        {"30m", "30m"},
+        {"1h", "1h"},
+        {"4h", "4h"},
+        {"12h", "12h"},
+        {"1d", "1d"},
+        {"1w", "1w"},
+        {"1M", "1M"}
+    };
+
+    hostname = "api.probit.com";
     urls = {
         {"logo", "https://user-images.githubusercontent.com/51840849/79268032-c4379480-7ea2-11ea-80b3-dd96bb29fd0d.jpg"},
         {"api", {
-            {"public", "https://api.probit.com/api/exchange"},
-            {"private", "https://api.probit.com/api/exchange"}
+            {"public", "https://api.probit.com"},
+            {"private", "https://api.probit.com"}
         }},
         {"www", "https://www.probit.com"},
         {"doc", {
@@ -29,257 +81,271 @@ Probit::Probit() {
         {"fees", "https://support.probit.com/hc/en-us/articles/360020968611-Trading-Fees"}
     };
 
-    timeframes = {
-        {"1m", "1min"},
-        {"3m", "3min"},
-        {"5m", "5min"},
-        {"10m", "10min"},
-        {"15m", "15min"},
-        {"30m", "30min"},
-        {"1h", "1hour"},
-        {"4h", "4hour"},
-        {"6h", "6hour"},
-        {"12h", "12hour"},
-        {"1d", "1day"},
-        {"1w", "1week"},
-        {"1M", "1month"}
-    };
-
-    options = {
-        {"adjustForTimeDifference", true},
-        {"recvWindow", "5000"}
-    };
-
-    errorCodes = {
-        {400, "Bad Request"},
-        {401, "Unauthorized"},
-        {403, "Forbidden"},
-        {404, "Not Found"},
-        {429, "Too Many Requests"},
-        {500, "Internal Server Error"},
-        {503, "Service Unavailable"}
-    };
-
-    initializeApiEndpoints();
-}
-
-void Probit::initializeApiEndpoints() {
     api = {
         {"public", {
-            {"GET", {
+            {"get", {
                 "market",
                 "currency",
                 "ticker",
                 "order_book",
                 "trade",
-                "candle",
-                "time"
+                "candle"
             }}
         }},
         {"private", {
-            {"GET", {
+            {"get", {
                 "balance",
                 "order",
                 "order_history",
                 "trade_history",
                 "deposit_address",
                 "deposit_history",
-                "withdrawal_history",
-                "new_order"
+                "withdrawal_history"
             }},
-            {"POST", {
+            {"post", {
                 "new_order",
                 "cancel_order",
-                "withdrawal"
+                "cancel_all_orders"
             }}
         }}
     };
+
+    fees = {
+        {"trading", {
+            {"tierBased", false},
+            {"percentage", true},
+            {"taker", 0.002},
+            {"maker", 0.002}
+        }}
+    };
+
+    requiredCredentials = {
+        {"apiKey", true},
+        {"secret", true}
+    };
+
+    precisionMode = DECIMAL_PLACES;
 }
 
-json Probit::fetchMarkets(const json& params) {
-    json response = fetch("/market", "public", "GET", params);
-    json result = json::array();
+Json probit::describeImpl() const {
+    return ExchangeImpl::describeImpl();
+}
+
+Json probit::fetchMarketsImpl() const {
+    auto response = request("/market", "public", "GET");
+    auto markets = Json::array();
     
     for (const auto& market : response["data"]) {
-        String id = this->safeString(market, "id");
-        std::vector<String> parts = this->split(id, "-");
-        String baseId = parts[0];
-        String quoteId = parts[1];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
-        bool active = market["status"] == "active";
+        auto id = safeString(market, "id");
+        auto baseId = safeString(market, "base_currency_id");
+        auto quoteId = safeString(market, "quote_currency_id");
+        auto base = safeCurrencyCode(baseId);
+        auto quote = safeCurrencyCode(quoteId);
+        auto symbol = base + "/" + quote;
         
-        result.push_back({
+        markets.push_back({
             {"id", id},
             {"symbol", symbol},
             {"base", base},
             {"quote", quote},
             {"baseId", baseId},
             {"quoteId", quoteId},
-            {"active", active},
+            {"active", true},
             {"type", "spot"},
             {"spot", true},
-            {"future", false},
-            {"swap", false},
-            {"option", false},
-            {"contract", false},
             {"precision", {
-                {"amount", market["amount_precision"].get<int>()},
-                {"price", market["price_precision"].get<int>()}
+                {"amount", safeInteger(market, "amount_precision")},
+                {"price", safeInteger(market, "price_precision")}
             }},
             {"limits", {
                 {"amount", {
-                    {"min", this->safeFloat(market, "min_amount")},
-                    {"max", this->safeFloat(market, "max_amount")}
+                    {"min", safeNumber(market, "min_amount")},
+                    {"max", safeNumber(market, "max_amount")}
                 }},
                 {"price", {
-                    {"min", this->safeFloat(market, "min_price")},
-                    {"max", this->safeFloat(market, "max_price")}
+                    {"min", safeNumber(market, "min_price")},
+                    {"max", safeNumber(market, "max_price")}
                 }},
                 {"cost", {
-                    {"min", this->safeFloat(market, "min_value")},
-                    {"max", nullptr}
+                    {"min", safeNumber(market, "min_value")},
+                    {"max", safeNumber(market, "max_value")}
                 }}
             }},
             {"info", market}
         });
     }
     
-    return result;
+    return markets;
 }
 
-json Probit::fetchBalance(const json& params) {
-    this->loadMarkets();
-    json response = fetch("/balance", "private", "GET", params);
-    return parseBalance(response);
-}
-
-json Probit::parseBalance(const json& response) {
-    json result = {"info", response};
-    json balances = response["data"];
+Json probit::fetchCurrenciesImpl() const {
+    auto response = request("/currency", "public", "GET");
+    auto result = Json::object();
     
-    for (const auto& balance : balances) {
-        String currencyId = balance["currency_id"];
-        String code = this->commonCurrencyCode(currencyId);
+    for (const auto& currency : response["data"]) {
+        auto id = safeString(currency, "id");
+        auto code = safeCurrencyCode(id);
         
         result[code] = {
-            {"free", this->safeFloat(balance, "available")},
-            {"used", this->safeFloat(balance, "locked")},
-            {"total", this->safeFloat(balance, "total")}
+            {"id", id},
+            {"code", code},
+            {"name", safeString(currency, "name")},
+            {"active", safeValue(currency, "deposit_status") == "active" &&
+                      safeValue(currency, "withdrawal_status") == "active"},
+            {"deposit", safeValue(currency, "deposit_status") == "active"},
+            {"withdraw", safeValue(currency, "withdrawal_status") == "active"},
+            {"precision", safeInteger(currency, "precision")},
+            {"fee", safeNumber(currency, "withdrawal_fee")},
+            {"limits", {
+                {"amount", {
+                    {"min", safeNumber(currency, "min_amount")},
+                    {"max", safeNumber(currency, "max_amount")}
+                }},
+                {"withdraw", {
+                    {"min", safeNumber(currency, "min_withdrawal_amount")},
+                    {"max", safeNumber(currency, "max_withdrawal_amount")}
+                }}
+            }},
+            {"info", currency}
         };
     }
     
     return result;
 }
 
-json Probit::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
-                        double price, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
+Json probit::fetchTickerImpl(const std::string& symbol) const {
+    auto market = loadMarket(symbol);
+    auto request = Json::object({
+        {"market_ids", market["id"]}
+    });
     
-    json request = {
-        {"market_id", market.id},
-        {"type", type.upper()},
-        {"side", side.upper()},
-        {"quantity", this->amountToPrecision(symbol, amount)}
-    };
-    
-    if (type == "limit") {
-        request["price"] = this->priceToPrecision(symbol, price);
+    auto response = request("/ticker", "public", "GET", request);
+    auto ticker = response["data"][0];
+    return parseTicker(ticker, market);
+}
+
+Json probit::fetchTickersImpl(const std::vector<std::string>& symbols) const {
+    auto request = Json::object();
+    if (!symbols.empty()) {
+        std::vector<std::string> marketIds;
+        for (const auto& symbol : symbols) {
+            auto market = loadMarket(symbol);
+            marketIds.push_back(market["id"].get<std::string>());
+        }
+        request["market_ids"] = join(marketIds, ",");
     }
     
-    json response = fetch("/new_order", "private", "POST",
-                         this->extend(request, params));
-    return this->parseOrder(response["data"], market);
-}
-
-String Probit::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
-                    const json& body) {
-    String url = this->urls["api"][api] + path;
-    String timestamp = std::to_string(this->milliseconds());
-    
-    if (api == "public") {
-        if (!params.empty()) {
-            url += "?" + this->urlencode(params);
-        }
-    } else {
-        this->checkRequiredCredentials();
-        
-        json request = this->extend({
-            "timestamp": timestamp
-        }, params);
-        
-        String signature = this->createSignature(timestamp, method, path,
-                                               request.dump());
-        
-        const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bearer " + this->apiKey;
-        const_cast<std::map<String, String>&>(headers)["Signature"] = signature;
-        const_cast<std::map<String, String>&>(headers)["Timestamp"] = timestamp;
-        
-        if (method == "GET") {
-            url += "?" + this->urlencode(request);
-        } else {
-            body = request;
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
-        }
+    auto response = request("/ticker", "public", "GET", request);
+    auto tickers = Json::array();
+    for (const auto& ticker : response["data"]) {
+        auto marketId = safeString(ticker, "market_id");
+        auto market = safeValue(markets, marketId);
+        if (market.is_null()) continue;
+        tickers.push_back(parseTicker(ticker, market));
     }
     
-    return url;
+    return filterByArray(tickers, "symbol", symbols);
 }
 
-String Probit::createSignature(const String& timestamp, const String& method,
-                              const String& path, const String& body) {
-    String message = timestamp + method + path + body;
-    return this->hmac(message, this->encode(this->secret),
-                     "sha512", "hex");
-}
-
-json Probit::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+Json probit::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
+    auto market = loadMarket(symbol);
+    auto request = Json::object({
+        {"market_id", market["id"]}
+    });
+    
+    if (limit) {
+        request["depth"] = *limit;
+    }
+    
+    auto response = request("/order_book", "public", "GET", request);
+    auto orderbook = response["data"];
+    auto timestamp = safeInteger(orderbook, "timestamp");
     
     return {
-        {"id", id},
-        {"clientOrderId", this->safeString(order, "client_order_id")},
-        {"timestamp", this->safeInteger(order, "time")},
-        {"datetime", this->iso8601(timestamp)},
-        {"lastTradeTimestamp", nullptr},
-        {"status", status},
         {"symbol", symbol},
-        {"type", type},
-        {"side", side},
-        {"price", this->safeFloat(order, "price")},
-        {"amount", this->safeFloat(order, "quantity")},
-        {"filled", this->safeFloat(order, "filled_quantity")},
-        {"remaining", this->safeFloat(order, "open_quantity")},
-        {"cost", this->safeFloat(order, "filled_cost")},
-        {"trades", nullptr},
-        {"fee", {
-            {"currency", market.quote},
-            {"cost", this->safeFloat(order, "fee")},
-            {"rate", this->safeFloat(order, "fee_rate")}
-        }},
-        {"info", order}
+        {"bids", parseBidAsks(orderbook["bids"])},
+        {"asks", parseBidAsks(orderbook["asks"])},
+        {"timestamp", timestamp},
+        {"datetime", iso8601(timestamp)},
+        {"nonce", nullptr}
     };
 }
 
-json Probit::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
-        {"open", "open"},
-        {"filled", "closed"},
-        {"cancelled", "canceled"},
-        {"partially_filled", "open"}
-    };
+Json probit::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
+                           const std::optional<long long>& since,
+                           const std::optional<int>& limit) const {
+    auto market = loadMarket(symbol);
+    auto request = Json::object({
+        {"market_id", market["id"]},
+        {"interval", timeframes[timeframe]}
+    });
     
-    return statuses.contains(status) ? statuses.at(status) : status;
+    if (since) {
+        request["start_time"] = iso8601(*since);
+    }
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    
+    auto response = request("/candle", "public", "GET", request);
+    return parseOHLCVs(response["data"]);
+}
+
+Json probit::fetchTradesImpl(const std::string& symbol, const std::optional<int>& limit,
+                            const std::optional<long long>& since) const {
+    auto market = loadMarket(symbol);
+    auto request = Json::object({
+        {"market_id", market["id"]}
+    });
+    
+    if (limit) {
+        request["limit"] = *limit;
+    }
+    if (since) {
+        request["start_time"] = iso8601(*since);
+    }
+    
+    auto response = request("/trade", "public", "GET", request);
+    return parseTrades(response["data"], market);
+}
+
+Json probit::parseTicker(const Json& ticker, const Json& market) const {
+    auto timestamp = safeInteger(ticker, "time");
+    auto symbol = market["symbol"];
+    
+    return {
+        {"symbol", symbol},
+        {"timestamp", timestamp},
+        {"datetime", iso8601(timestamp)},
+        {"high", safeNumber(ticker, "high")},
+        {"low", safeNumber(ticker, "low")},
+        {"bid", safeNumber(ticker, "bid")},
+        {"bidVolume", nullptr},
+        {"ask", safeNumber(ticker, "ask")},
+        {"askVolume", nullptr},
+        {"vwap", nullptr},
+        {"open", safeNumber(ticker, "open")},
+        {"close", safeNumber(ticker, "close")},
+        {"last", safeNumber(ticker, "last")},
+        {"previousClose", nullptr},
+        {"change", nullptr},
+        {"percentage", nullptr},
+        {"average", nullptr},
+        {"baseVolume", safeNumber(ticker, "volume")},
+        {"quoteVolume", nullptr},
+        {"info", ticker}
+    };
+}
+
+Json probit::parseOHLCV(const Json& ohlcv) const {
+    return {
+        safeTimestamp(ohlcv, "time"),
+        safeNumber(ohlcv, "open"),
+        safeNumber(ohlcv, "high"),
+        safeNumber(ohlcv, "low"),
+        safeNumber(ohlcv, "close"),
+        safeNumber(ohlcv, "volume")
+    };
 }
 
 } // namespace ccxt

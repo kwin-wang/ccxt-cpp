@@ -14,6 +14,7 @@
 #include <vector>
 #include <optional>
 #include <stdexcept>
+#include <future>
 
 namespace ccxt {
 
@@ -26,80 +27,165 @@ void Exchange::init() {
 }
 
 json Exchange::describe() const {
-    return describeImpl();
+    return json::object();
 }
 
-json Exchange::fetchMarkets() const {
-    return fetchMarketsImpl();
+// Synchronous REST API methods
+json Exchange::fetchMarkets(const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchTicker(const std::string& symbol) const {
-    return fetchTickerImpl(symbol);
+json Exchange::fetchTicker(const String& symbol, const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchTickers(const std::vector<std::string>& symbols) const {
-    return fetchTickersImpl(symbols);
+json Exchange::fetchTickers(const std::vector<String>& symbols, const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchOrderBook(const std::string& symbol, const std::optional<int>& limit) const {
-    return fetchOrderBookImpl(symbol, limit);
+json Exchange::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchOHLCV(const std::string& symbol, const std::string& timeframe,
-                         const std::optional<long long>& since,
-                         const std::optional<int>& limit) const {
-    return fetchOHLCVImpl(symbol, timeframe, since, limit);
+json Exchange::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+    return json::object();
 }
 
-json Exchange::createOrder(const std::string& symbol, const std::string& type,
-                         const std::string& side, double amount,
-                         const std::optional<double>& price) {
-    return createOrderImpl(symbol, type, side, amount, price);
+json Exchange::fetchOHLCV(const String& symbol, const String& timeframe,
+                         int since, int limit, const json& params) {
+    return json::object();
 }
 
-json Exchange::cancelOrder(const std::string& id, const std::string& symbol) {
-    return cancelOrderImpl(id, symbol);
+json Exchange::fetchBalance(const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchOrder(const std::string& id, const std::string& symbol) const {
-    return fetchOrderImpl(id, symbol);
+json Exchange::createOrder(const String& symbol, const String& type, const String& side,
+                         double amount, double price, const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchOpenOrders(const std::string& symbol,
-                             const std::optional<long long>& since,
-                             const std::optional<int>& limit) const {
-    return fetchOpenOrdersImpl(symbol, since, limit);
+json Exchange::cancelOrder(const String& id, const String& symbol, const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchMyTrades(const std::string& symbol,
-                           const std::optional<long long>& since,
-                           const std::optional<int>& limit) const {
-    return fetchMyTradesImpl(symbol, since, limit);
+json Exchange::fetchOrder(const String& id, const String& symbol, const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchOrderTrades(const std::string& id, const std::string& symbol) const {
-    return fetchOrderTradesImpl(id, symbol);
+json Exchange::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+    return json::object();
 }
 
-json Exchange::fetchBalance() const {
-    return fetchBalanceImpl();
+json Exchange::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+    return json::object();
 }
 
-std::string Exchange::sign(const std::string& path, const std::string& api,
-                     const std::string& method, const json& params,
-                     const std::map<std::string, std::string>& headers,
-                     const json& body) {
-    // TODO: Implement actual signing logic
-    return path;
+json Exchange::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+    return json::object();
 }
 
-void Exchange::checkRequiredCredentials() {
-    if (config_.apiKey.empty()) {
-        throw AuthenticationError("apiKey required");
-    }
-    if (config_.secret.empty()) {
-        throw AuthenticationError("secret required");
-    }
+// Asynchronous REST API methods
+std::future<json> Exchange::fetchMarketsAsync(const json& params) {
+    return std::async(std::launch::deferred, [this, params]() { 
+        return this->fetchMarkets(params); 
+    });
+}
+
+std::future<json> Exchange::fetchTickerAsync(const String& symbol, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+std::future<json> Exchange::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+    return std::async(std::launch::deferred, [this, symbols, params]() {
+        return this->fetchTickers(symbols, params);
+    });
+}
+
+std::future<json> Exchange::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+std::future<json> Exchange::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Exchange::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+                                         int since, int limit, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
+    });
+}
+
+std::future<json> Exchange::fetchBalanceAsync(const json& params) {
+    return std::async(std::launch::deferred, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+std::future<json> Exchange::createOrderAsync(const String& symbol, const String& type, const String& side,
+                                         double amount, double price, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+std::future<json> Exchange::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+    return std::async(std::launch::deferred, [this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+std::future<json> Exchange::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+    return std::async(std::launch::deferred, [this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+std::future<json> Exchange::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
+        return this->fetchOrders(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Exchange::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Exchange::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
+}
+
+// HTTP methods
+json Exchange::fetch(const String& url, const String& method,
+                    const std::map<String, String>& headers,
+                    const String& body) {
+    return json::object();
+}
+
+std::future<json> Exchange::fetchAsync(const String& url, const String& method,
+                                   const std::map<String, String>& headers,
+                                   const String& body) {
+    return std::async(std::launch::deferred, [this, url, method, headers, body]() {
+        return this->fetch(url, method, headers, body);
+    });
+}
+
+// Utility methods
+String Exchange::sign(const String& path, const String& api,
+                     const String& method, const std::map<String, String>& params,
+                     const std::map<String, String>& headers) {
+    return "";
 }
 
 std::string Exchange::implodeParams(const std::string& path, const json& params) {

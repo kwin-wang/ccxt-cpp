@@ -2,11 +2,12 @@
 #define CCXT_EXCHANGE_BL3P_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+#include <boost/asio.hpp>
+#include <boost/future.hpp>
 
 namespace ccxt {
 
-class bl3p : public ExchangeImpl {
+class bl3p : public Exchange {
 public:
     bl3p(const Config& config = Config());
     ~bl3p() = default;
@@ -15,23 +16,37 @@ public:
         return new bl3p(config);
     }
 
-protected:
-    void init() override;
-    Json describeImpl() const override;
-
     // Market Data
     Json fetchTickerImpl(const std::string& symbol) const override;
     Json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
     Json fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
     Json fetchTradingFeesImpl() const override;
 
+    // Async Market Data
+    boost::future<Json> fetchTickerAsync(const std::string& symbol) const;
+    boost::future<Json> fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchTradingFeesAsync() const;
+
     // Trading
     Json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt) override;
     Json cancelOrderImpl(const std::string& id, const std::string& symbol) override;
     Json createDepositAddressImpl(const std::string& code, const std::optional<std::string>& network = std::nullopt) override;
 
+    // Async Trading
+    boost::future<Json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt);
+    boost::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol);
+    boost::future<Json> createDepositAddressAsync(const std::string& code, const std::optional<std::string>& network = std::nullopt);
+
     // Account
     Json fetchBalanceImpl() const override;
+
+    // Async Account
+    boost::future<Json> fetchBalanceAsync() const;
+
+protected:
+    void init() override;
+    Json describeImpl() const override;
 
 private:
     static Exchange* createInstance(const Config& config) {
@@ -43,7 +58,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

@@ -125,102 +125,336 @@ blofin::blofin(const Config& config) : exchange(config) {
 }
 
 json blofin::fetch_markets(const json& params) {
-    auto response = this->publicGetApiV1PublicInstruments(params);
-    return this->parse_markets(response);
+    json response = this->publicGetInstruments(params);
+    return this->parse_markets(response["data"]);
 }
 
 json blofin::fetch_currencies(const json& params) {
-    auto response = this->publicGetApiV1PublicCurrencies(params);
-    return this->parse_currencies(response);
+    json response = this->publicGetCurrencies(params);
+    return this->parse_currencies(response["data"]);
 }
 
 json blofin::fetch_ticker(const std::string& symbol, const json& params) {
     this->load_markets();
-    auto market = this->market(symbol);
-    auto request = {
+    json market = this->market(symbol);
+    json request = {
         {"instId", market["id"]}
     };
-    auto response = this->publicGetApiV1PublicTicker(this->extend(request, params));
-    return this->parse_ticker(response, market);
+    json response = this->publicGetTicker(this->extend(request, params));
+    return this->parse_ticker(response["data"], market);
 }
 
 json blofin::fetch_order_book(const std::string& symbol, int limit, const json& params) {
     this->load_markets();
-    auto market = this->market(symbol);
-    auto request = {
+    json market = this->market(symbol);
+    json request = {
         {"instId", market["id"]}
     };
-    if (limit)
+    if (limit > 0) {
         request["sz"] = limit;
-    auto response = this->publicGetApiV1PublicDepth(this->extend(request, params));
-    return this->parse_order_book(response, symbol);
+    }
+    json response = this->publicGetDepth(this->extend(request, params));
+    json orderbook = this->parse_order_book(response["data"], symbol);
+    orderbook["nonce"] = this->safe_integer(response["data"], "ts");
+    return orderbook;
+}
+
+json blofin::fetch_trades(const std::string& symbol, int since, int limit, const json& params) {
+    this->load_markets();
+    json market = this->market(symbol);
+    json request = {
+        {"instId", market["id"]}
+    };
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->publicGetTrades(this->extend(request, params));
+    return this->parse_trades(response["data"], market, since, limit);
+}
+
+json blofin::fetch_ohlcv(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
+    this->load_markets();
+    json market = this->market(symbol);
+    json request = {
+        {"instId", market["id"]},
+        {"bar", this->timeframes[timeframe]}
+    };
+    if (since > 0) {
+        request["after"] = since;
+    }
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->publicGetCandles(this->extend(request, params));
+    return this->parse_ohlcvs(response["data"], market, timeframe, since, limit);
 }
 
 json blofin::create_order(const std::string& symbol, const std::string& type,
                          const std::string& side, double amount, double price, const json& params) {
     this->load_markets();
-    auto market = this->market(symbol);
-    auto request = {
+    json market = this->market(symbol);
+    std::string order_type = type.substr(0, 1).upper() + type.substr(1);  // Capitalize first letter
+    
+    json request = {
         {"instId", market["id"]},
-        {"tdMode", "cross"},  // cross/isolated
-        {"side", side},
-        {"ordType", type},
+        {"tdMode", "cross"},  // Default to cross margin
+        {"side", side.upper()},
+        {"ordType", order_type},
         {"sz", this->amount_to_precision(symbol, amount)}
     };
-    if (type == "limit")
+    
+    if (type == "limit") {
+        if (price <= 0) {
+            throw ArgumentsRequired("createOrder() requires a price argument for limit orders");
+        }
         request["px"] = this->price_to_precision(symbol, price);
-    auto response = this->privatePostApiV1TradeOrder(this->extend(request, params));
-    return this->parse_order(response, market);
+    }
+    
+    json response = this->privatePostOrder(this->extend(request, params));
+    return this->parse_order(response["data"], market);
 }
 
 json blofin::cancel_order(const std::string& id, const std::string& symbol, const json& params) {
-    if (symbol.empty())
-        throw std::runtime_error("symbol is required for cancel_order");
+    if (symbol.empty()) {
+        throw ArgumentsRequired("cancelOrder() requires a symbol argument");
+    }
     this->load_markets();
-    auto market = this->market(symbol);
-    auto request = {
+    json market = this->market(symbol);
+    json request = {
         {"instId", market["id"]},
         {"ordId", id}
     };
-    auto response = this->privateDeleteApiV1TradeOrderOrderId(this->extend(request, params));
-    return this->parse_order(response, market);
+    json response = this->privateDeleteOrder(this->extend(request, params));
+    return this->parse_order(response["data"], market);
+}
+
+json blofin::cancel_all_orders(const std::string& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("cancelAllOrders() requires a symbol argument");
+    }
+    this->load_markets();
+    json market = this->market(symbol);
+    json request = {
+        {"instId", market["id"]}
+    };
+    json response = this->privateDeleteOrders(this->extend(request, params));
+    return response;
+}
+
+json blofin::edit_order(const std::string& id, const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount, double price, const json& params) {
+    this->load_markets();
+    json market = this->market(symbol);
+    json request = {
+        {"instId", market["id"]},
+        {"ordId", id}
+    };
+    
+    if (amount > 0) {
+        request["newSz"] = this->amount_to_precision(symbol, amount);
+    }
+    if (price > 0) {
+        request["newPx"] = this->price_to_precision(symbol, price);
+    }
+    
+    json response = this->privatePutOrder(this->extend(request, params));
+    return this->parse_order(response["data"], market);
 }
 
 json blofin::fetch_balance(const json& params) {
     this->load_markets();
-    auto response = this->privateGetApiV1AccountBalance(params);
-    return this->parse_balance(response);
+    json response = this->privateGetBalance(params);
+    return this->parse_balance(response["data"]);
+}
+
+json blofin::fetch_open_orders(const std::string& symbol, int since, int limit, const json& params) {
+    this->load_markets();
+    json request;
+    json market;
+    if (!symbol.empty()) {
+        market = this->market(symbol);
+        request["instId"] = market["id"];
+    }
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->privateGetOrders(this->extend(request, params));
+    return this->parse_orders(response["data"], market, since, limit);
+}
+
+json blofin::fetch_closed_orders(const std::string& symbol, int since, int limit, const json& params) {
+    json request = {
+        {"state", "filled"}
+    };
+    return fetch_open_orders(symbol, since, limit, this->extend(request, params));
+}
+
+json blofin::fetch_my_trades(const std::string& symbol, int since, int limit, const json& params) {
+    this->load_markets();
+    json request;
+    json market;
+    if (!symbol.empty()) {
+        market = this->market(symbol);
+        request["instId"] = market["id"];
+    }
+    if (since > 0) {
+        request["start"] = since;
+    }
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->privateGetFills(this->extend(request, params));
+    return this->parse_trades(response["data"], market, since, limit);
+}
+
+json blofin::fetch_order(const std::string& id, const std::string& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("fetchOrder() requires a symbol argument");
+    }
+    this->load_markets();
+    json market = this->market(symbol);
+    json request = {
+        {"instId", market["id"]},
+        {"ordId", id}
+    };
+    json response = this->privateGetOrder(this->extend(request, params));
+    return this->parse_order(response["data"], market);
+}
+
+json blofin::fetch_deposit_address(const std::string& code, const json& params) {
+    this->load_markets();
+    json currency = this->currency(code);
+    json request = {
+        {"ccy", currency["id"]}
+    };
+    json response = this->privateGetDepositAddress(this->extend(request, params));
+    return this->parse_deposit_address(response["data"], currency);
+}
+
+json blofin::fetch_deposits(const std::string& code, int since, int limit, const json& params) {
+    this->load_markets();
+    json request;
+    json currency;
+    if (!code.empty()) {
+        currency = this->currency(code);
+        request["ccy"] = currency["id"];
+    }
+    if (since > 0) {
+        request["after"] = since;
+    }
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->privateGetDeposits(this->extend(request, params));
+    return this->parse_transactions(response["data"], currency, since, limit, {"type", "deposit"});
+}
+
+json blofin::fetch_withdrawals(const std::string& code, int since, int limit, const json& params) {
+    this->load_markets();
+    json request;
+    json currency;
+    if (!code.empty()) {
+        currency = this->currency(code);
+        request["ccy"] = currency["id"];
+    }
+    if (since > 0) {
+        request["after"] = since;
+    }
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->privateGetWithdrawals(this->extend(request, params));
+    return this->parse_transactions(response["data"], currency, since, limit, {"type", "withdrawal"});
 }
 
 json blofin::fetch_positions(const std::string& symbol, const json& params) {
     this->load_markets();
-    auto request = json::object();
+    json request;
+    json market;
     if (!symbol.empty()) {
-        auto market = this->market(symbol);
+        market = this->market(symbol);
         request["instId"] = market["id"];
     }
-    auto response = this->privateGetApiV1AccountPositions(this->extend(request, params));
-    return this->parse_positions(response);
+    json response = this->privateGetPositions(this->extend(request, params));
+    return this->parse_positions(response["data"], market);
+}
+
+json blofin::fetch_position(const std::string& symbol, const json& params) {
+    json response = fetch_positions(symbol, params);
+    return this->safe_value(response, 0);
 }
 
 json blofin::set_leverage(const std::string& symbol, int leverage, const json& params) {
     this->load_markets();
-    auto market = this->market(symbol);
-    auto request = {
+    if (leverage < 1 || leverage > 125) {
+        throw new ExchangeError("Leverage should be between 1 and 125");
+    }
+    json market = this->market(symbol);
+    json request = {
         {"instId", market["id"]},
         {"lever", leverage}
     };
-    return this->privatePostApiV1AccountSetLeverage(this->extend(request, params));
+    return this->privatePostSetLeverage(this->extend(request, params));
+}
+
+json blofin::set_margin_mode(const std::string& symbol, const std::string& marginMode, const json& params) {
+    this->load_markets();
+    std::string mode = marginMode.upper();
+    if (mode != "CROSS" && mode != "ISOLATED") {
+        throw new ExchangeError("Margin mode must be either 'cross' or 'isolated'");
+    }
+    json market = this->market(symbol);
+    json request = {
+        {"instId", market["id"]},
+        {"marginMode", mode}
+    };
+    return this->privatePostSetMarginMode(this->extend(request, params));
 }
 
 json blofin::fetch_funding_rate(const std::string& symbol, const json& params) {
     this->load_markets();
-    auto market = this->market(symbol);
-    auto request = {
+    json market = this->market(symbol);
+    json request = {
         {"instId", market["id"]}
     };
-    auto response = this->publicGetApiV1PublicFundingRate(this->extend(request, params));
-    return this->parse_funding_rate(response);
+    json response = this->publicGetFundingRate(this->extend(request, params));
+    return this->parse_funding_rate(response["data"], market);
+}
+
+json blofin::fetch_funding_rate_history(const std::string& symbol, int since, int limit, const json& params) {
+    this->load_markets();
+    json request;
+    json market;
+    if (!symbol.empty()) {
+        market = this->market(symbol);
+        request["instId"] = market["id"];
+    }
+    if (since > 0) {
+        request["start"] = since;
+    }
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->publicGetFundingRateHistory(this->extend(request, params));
+    return this->parse_funding_rate_history(response["data"], market, since, limit);
+}
+
+json blofin::fetch_funding_history(const std::string& symbol, int since, int limit, const json& params) {
+    this->load_markets();
+    json request;
+    json market;
+    if (!symbol.empty()) {
+        market = this->market(symbol);
+        request["instId"] = market["id"];
+    }
+    if (since > 0) {
+        request["start"] = since;
+    }
+    if (limit > 0) {
+        request["limit"] = limit;
+    }
+    json response = this->privateGetFundingHistory(this->extend(request, params));
+    return this->parse_funding_history(response["data"], market, since, limit);
 }
 
 void blofin::sign(Request& request, const std::string& path,

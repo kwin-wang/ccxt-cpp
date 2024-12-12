@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_OCEANEX_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class oceanex : public ExchangeImpl {
+class oceanex : public Exchange {
 public:
     oceanex(const Config& config = Config());
     ~oceanex() = default;
@@ -51,7 +51,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_ELLIPX_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class ellipx : public ExchangeImpl {
+class ellipx : public Exchange {
 public:
     ellipx(const Config& config = Config());
     ~ellipx() = default;
@@ -49,7 +49,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

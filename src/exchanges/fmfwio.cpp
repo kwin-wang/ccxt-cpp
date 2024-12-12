@@ -326,4 +326,152 @@ std::string Fmfwio::get_signature(const std::string& path, const std::string& me
     return this->hmac(auth, this->secret, "sha256", "hex");
 }
 
+nlohmann::json Fmfwio::parse_order(const nlohmann::json& order, const nlohmann::json& market) {
+    auto timestamp = this->safe_timestamp(order, "created_at");
+    auto updated = this->safe_timestamp(order, "updated_at");
+    auto marketId = this->safe_string(order, "symbol");
+    auto symbol = this->safe_symbol(marketId, market);
+    auto amount = this->safe_number(order, "quantity");
+    auto filled = this->safe_number(order, "cumulative_quantity");
+    auto status = this->parse_order_status(this->safe_string(order, "status"));
+    auto side = this->safe_string(order, "side");
+    auto type = this->safe_string(order, "type");
+    auto price = this->safe_number(order, "price");
+    
+    return {
+        {"id", this->safe_string(order, "client_order_id")},
+        {"clientOrderId", this->safe_string(order, "client_order_id")},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"lastTradeTimestamp", updated},
+        {"status", status},
+        {"symbol", symbol},
+        {"type", type},
+        {"timeInForce", this->safe_string(order, "time_in_force")},
+        {"postOnly", this->safe_value(order, "post_only")},
+        {"side", side},
+        {"price", price},
+        {"stopPrice", this->safe_number(order, "stop_price")},
+        {"amount", amount},
+        {"filled", filled},
+        {"remaining", amount - filled},
+        {"cost", filled * price},
+        {"trades", nullptr},
+        {"fee", nullptr},
+        {"info", order}
+    };
+}
+
+std::string Fmfwio::parse_order_status(const std::string& status) {
+    const std::map<std::string, std::string> statuses = {
+        {"new", "open"},
+        {"suspended", "open"},
+        {"partiallyFilled", "open"},
+        {"filled", "closed"},
+        {"canceled", "canceled"},
+        {"expired", "expired"}
+    };
+    return this->safe_string(statuses, status, status);
+}
+
+nlohmann::json Fmfwio::parse_trade(const nlohmann::json& trade, const nlohmann::json& market) {
+    auto timestamp = this->safe_timestamp(trade, "timestamp");
+    auto id = this->safe_string(trade, "id");
+    auto orderId = this->safe_string(trade, "order_id");
+    auto marketId = this->safe_string(trade, "symbol");
+    auto symbol = this->safe_symbol(marketId, market);
+    auto side = this->safe_string(trade, "side");
+    auto price = this->safe_number(trade, "price");
+    auto amount = this->safe_number(trade, "quantity");
+    auto cost = price * amount;
+    
+    auto fee = nullptr;
+    if (trade.contains("fee")) {
+        auto feeCost = this->safe_number(trade["fee"], "cost");
+        auto feeCurrency = this->safe_string(trade["fee"], "currency");
+        fee = {
+            {"cost", feeCost},
+            {"currency", this->safe_currency_code(feeCurrency)}
+        };
+    }
+    
+    return {
+        {"info", trade},
+        {"id", id},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"symbol", symbol},
+        {"order", orderId},
+        {"type", "limit"},
+        {"side", side},
+        {"takerOrMaker", this->safe_string(trade, "liquidity")},
+        {"price", price},
+        {"amount", amount},
+        {"cost", cost},
+        {"fee", fee}
+    };
+}
+
+nlohmann::json Fmfwio::fetch_my_trades(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    this->load_markets();
+    auto market = this->market(symbol);
+    auto request = {
+        {"symbol", market["id"]}
+    };
+    
+    if (since != 0) {
+        request["from"] = since;
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    
+    auto response = this->private_get_spot_order_trade_list(this->extend(request, params));
+    return this->parse_trades(response["result"], market, since, limit);
+}
+
+nlohmann::json Fmfwio::fetch_open_orders(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    this->load_markets();
+    auto market = this->market(symbol);
+    auto request = {
+        {"symbol", market["id"]}
+    };
+    
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    
+    auto response = this->private_get_spot_order_list_open(this->extend(request, params));
+    return this->parse_orders(response["result"], market, since, limit);
+}
+
+nlohmann::json Fmfwio::fetch_closed_orders(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    this->load_markets();
+    auto market = this->market(symbol);
+    auto request = {
+        {"symbol", market["id"]}
+    };
+    
+    if (since != 0) {
+        request["from"] = since;
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    
+    auto response = this->private_get_spot_order_list_closed(this->extend(request, params));
+    return this->parse_orders(response["result"], market, since, limit);
+}
+
+nlohmann::json Fmfwio::fetch_order(const std::string& id, const std::string& symbol, const nlohmann::json& params) {
+    this->load_markets();
+    auto market = this->market(symbol);
+    auto request = {
+        {"client_order_id", id}
+    };
+    
+    auto response = this->private_get_spot_order_client_order_id(this->extend(request, params));
+    return this->parse_order(response["result"], market);
+}
+
 } // namespace ccxt

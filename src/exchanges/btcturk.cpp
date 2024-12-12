@@ -134,8 +134,9 @@ json Btcturk::fetchMarkets(const json& params) {
 
 json Btcturk::fetchBalance(const json& params) {
     this->loadMarkets();
-    json response = fetch("/v1/users/balances", "private", "GET", params);
-    return parseBalance(response["data"]);
+    json response = this->privateGetV1UsersBalances(params);
+    json balances = this->safeValue(response, "data");
+    return this->parseBalance(balances);
 }
 
 json Btcturk::parseBalance(const json& response) {
@@ -160,22 +161,20 @@ json Btcturk::createOrder(const String& symbol, const String& type,
                          double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String uppercaseType = type.toUpperCase();
-    
+    String orderType = type.substr(0, 1).toUpperCase() + type.substr(1);
+    String orderMethod = side.substr(0, 1).toUpperCase() + side.substr(1);
     json request = {
         {"pairSymbol", market["id"]},
-        {"orderType", uppercaseType},
-        {"orderMethod", side.toUpperCase()},
+        {"orderType", orderType},
+        {"orderMethod", orderMethod},
         {"quantity", this->amountToPrecision(symbol, amount)}
     };
-    
-    if (uppercaseType == "LIMIT") {
+    if (type == "limit") {
         request["price"] = this->priceToPrecision(symbol, price);
     }
-    
-    json response = fetch("/v1/order", "private", "POST",
-                         this->extend(request, params));
-    return this->parseOrder(response["data"], market);
+    json response = this->privatePostV1Order(this->extend(request, params));
+    json data = this->safeValue(response, "data");
+    return this->parseOrder(data, market);
 }
 
 String Btcturk::sign(const String& path, const String& api,
@@ -269,6 +268,211 @@ String Btcturk::parseOrderStatus(const String& status) {
     };
     
     return this->safeString(statuses, status, status);
+}
+
+json Btcturk::fetchTicker(const String& symbol, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"pairSymbol", market["id"]}
+    };
+    json response = this->publicGetV2Ticker(this->extend(request, params));
+    json ticker = this->safeValue(response, "data");
+    return this->parseTicker(ticker, market);
+}
+
+json Btcturk::fetchTickers(const std::vector<String>& symbols, const json& params) {
+    this->loadMarkets();
+    json response = this->publicGetV2Ticker(params);
+    json data = this->safeValue(response, "data");
+    json result = json::object();
+    for (const auto& ticker : data) {
+        json market = this->safeMarket(ticker["pair"]);
+        String symbol = market["symbol"];
+        if (symbols.empty() || std::find(symbols.begin(), symbols.end(), symbol) != symbols.end()) {
+            result[symbol] = this->parseTicker(ticker, market);
+        }
+    }
+    return result;
+}
+
+json Btcturk::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"pairSymbol", market["id"]}
+    };
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    json response = this->publicGetV2Orderbook(this->extend(request, params));
+    json orderbook = this->safeValue(response, "data");
+    double timestamp = this->safeTimestamp(response, "timestamp");
+    return this->parseOrderBook(orderbook, symbol, timestamp);
+}
+
+json Btcturk::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"pairSymbol", market["id"]}
+    };
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    json response = this->publicGetV2Trades(this->extend(request, params));
+    json trades = this->safeValue(response, "data");
+    return this->parseTrades(trades, market, since, limit);
+}
+
+json Btcturk::fetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"pairSymbol", market["id"]},
+        {"resolution", this->timeframes[timeframe]}
+    };
+    if (since != 0) {
+        request["from"] = this->iso8601(since);
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    json response = this->publicGetV2Ohlc(this->extend(request, params));
+    json ohlcv = this->safeValue(response, "data");
+    return this->parseOHLCVs(ohlcv, market, timeframe, since, limit);
+}
+
+json Btcturk::parseTicker(const json& ticker, const Market& market) {
+    double timestamp = this->safeTimestamp(ticker, "timestamp");
+    String symbol = this->safeString(market, "symbol");
+    return {
+        {"symbol", symbol},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"high", this->safeFloat(ticker, "high")},
+        {"low", this->safeFloat(ticker, "low")},
+        {"bid", this->safeFloat(ticker, "bid")},
+        {"bidVolume", this->safeFloat(ticker, "bidSize")},
+        {"ask", this->safeFloat(ticker, "ask")},
+        {"askVolume", this->safeFloat(ticker, "askSize")},
+        {"vwap", this->safeFloat(ticker, "average")},
+        {"open", this->safeFloat(ticker, "open")},
+        {"close", this->safeFloat(ticker, "last")},
+        {"last", this->safeFloat(ticker, "last")},
+        {"previousClose", this->safeFloat(ticker, "previousClose")},
+        {"change", this->safeFloat(ticker, "daily")},
+        {"percentage", this->safeFloat(ticker, "dailyPercent")},
+        {"baseVolume", this->safeFloat(ticker, "volume")},
+        {"quoteVolume", this->safeFloat(ticker, "quoteVolume")},
+        {"info", ticker}
+    };
+}
+
+json Btcturk::parseTrade(const json& trade, const Market& market) {
+    String id = this->safeString(trade, "id");
+    double timestamp = this->safeTimestamp(trade, "timestamp");
+    double price = this->safeFloat(trade, "price");
+    double amount = this->safeFloat(trade, "amount");
+    String side = this->safeString(trade, "side");
+    return {
+        {"id", id},
+        {"info", trade},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"symbol", market["symbol"]},
+        {"type", "limit"},
+        {"side", side},
+        {"order", this->safeString(trade, "orderId")},
+        {"takerOrMaker", this->safeString(trade, "takerOrMaker")},
+        {"price", price},
+        {"amount", amount},
+        {"cost", price * amount},
+        {"fee", this->parseTradeFee(trade)}
+    };
+}
+
+json Btcturk::parseOHLCV(const json& ohlcv, const Market& market, const String& timeframe) {
+    return {
+        this->safeTimestamp(ohlcv, "time"),
+        this->safeFloat(ohlcv, "open"),
+        this->safeFloat(ohlcv, "high"),
+        this->safeFloat(ohlcv, "low"),
+        this->safeFloat(ohlcv, "close"),
+        this->safeFloat(ohlcv, "volume")
+    };
+}
+
+json Btcturk::cancelOrder(const String& id, const String& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ExchangeError("symbol is required for cancelOrder");
+    }
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"id", id},
+        {"pairSymbol", market["id"]}
+    };
+    return this->privatePostV1CancelOrder(this->extend(request, params));
+}
+
+json Btcturk::fetchOrder(const String& id, const String& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ExchangeError("symbol is required for fetchOrder");
+    }
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"id", id},
+        {"pairSymbol", market["id"]}
+    };
+    json response = this->privateGetV1Order(this->extend(request, params));
+    json data = this->safeValue(response, "data");
+    return this->parseOrder(data, market);
+}
+
+json Btcturk::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+    if (symbol.empty()) {
+        throw ExchangeError("symbol is required for fetchOrders");
+    }
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"pairSymbol", market["id"]}
+    };
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["startTime"] = this->iso8601(since);
+    }
+    json response = this->privateGetV1AllOrders(this->extend(request, params));
+    json data = this->safeValue(response, "data");
+    return this->parseOrders(data, market, since, limit);
+}
+
+json Btcturk::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+    if (symbol.empty()) {
+        throw ExchangeError("symbol is required for fetchOpenOrders");
+    }
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"pairSymbol", market["id"]}
+    };
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    json response = this->privateGetV1OpenOrders(this->extend(request, params));
+    json data = this->safeValue(response, "data");
+    return this->parseOrders(data, market, since, limit);
+}
+
+json Btcturk::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+    json request = this->extend({
+        {"status": "closed"}
+    }, params);
+    return this->fetchOrders(symbol, since, limit, request);
 }
 
 } // namespace ccxt

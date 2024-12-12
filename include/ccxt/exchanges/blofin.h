@@ -1,7 +1,7 @@
 #ifndef CCXT_BLOFIN_H
 #define CCXT_BLOFIN_H
 
-#include "../base/exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 

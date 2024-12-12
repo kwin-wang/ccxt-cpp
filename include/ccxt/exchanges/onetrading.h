@@ -1,7 +1,7 @@
 #ifndef CCXT_ONETRADING_H
 #define CCXT_ONETRADING_H
 
-#include "../base/exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 
@@ -19,6 +19,15 @@ public:
     json fetch_ohlcv(const std::string& symbol, const std::string& timeframe = "1m", int since = 0, int limit = 0, const json& params = json()) override;
     json fetch_trading_fees(const std::string& symbol = "", const json& params = json()) override;
 
+    // Async Market Data
+    json fetch_markets_async(const json& params = json());
+    json fetch_currencies_async(const json& params = json());
+    json fetch_ticker_async(const std::string& symbol, const json& params = json());
+    json fetch_order_book_async(const std::string& symbol, int limit = 0, const json& params = json());
+    json fetch_trades_async(const std::string& symbol, int since = 0, int limit = 0, const json& params = json());
+    json fetch_ohlcv_async(const std::string& symbol, const std::string& timeframe = "1m", int since = 0, int limit = 0, const json& params = json());
+    json fetch_trading_fees_async(const std::string& symbol = "", const json& params = json());
+
     // Trading
     json create_order(const std::string& symbol, const std::string& type, const std::string& side,
                      double amount, double price = 0, const json& params = json()) override;
@@ -26,6 +35,14 @@ public:
     json cancel_all_orders(const std::string& symbol = "", const json& params = json()) override;
     json edit_order(const std::string& id, const std::string& symbol, const std::string& type, const std::string& side,
                    double amount, double price = 0, const json& params = json()) override;
+
+    // Async Trading
+    json create_order_async(const std::string& symbol, const std::string& type, const std::string& side,
+                          double amount, double price = 0, const json& params = json());
+    json cancel_order_async(const std::string& id, const std::string& symbol = "", const json& params = json());
+    json cancel_all_orders_async(const std::string& symbol = "", const json& params = json());
+    json edit_order_async(const std::string& id, const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount, double price = 0, const json& params = json());
 
     // Account
     json fetch_balance(const json& params = json()) override;
@@ -38,11 +55,29 @@ public:
     json fetch_withdrawals(const std::string& code = "", int since = 0, int limit = 0, const json& params = json()) override;
     json withdraw(const std::string& code, double amount, const std::string& address, const std::string& tag = "", const json& params = json()) override;
 
+    // Async Account
+    json fetch_balance_async(const json& params = json());
+    json fetch_open_orders_async(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json());
+    json fetch_closed_orders_async(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json());
+    json fetch_my_trades_async(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json());
+    json fetch_order_async(const std::string& id, const std::string& symbol = "", const json& params = json());
+    json fetch_deposit_address_async(const std::string& code, const json& params = json());
+    json fetch_deposits_async(const std::string& code = "", int since = 0, int limit = 0, const json& params = json());
+    json fetch_withdrawals_async(const std::string& code = "", int since = 0, int limit = 0, const json& params = json());
+    json withdraw_async(const std::string& code, double amount, const std::string& address,
+                       const std::string& tag = "", const json& params = json());
+
     // OneTrading specific methods
     json fetch_funding_history(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json());
     json fetch_positions(const std::string& symbol = "", const json& params = json());
     json set_leverage(const std::string& symbol, int leverage, const json& params = json());
     json set_margin_mode(const std::string& symbol, const std::string& marginMode, const json& params = json());
+
+    // Async OneTrading specific methods
+    json fetch_funding_history_async(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json());
+    json fetch_positions_async(const std::string& symbol = "", const json& params = json());
+    json set_leverage_async(const std::string& symbol, int leverage, const json& params = json());
+    json set_margin_mode_async(const std::string& symbol, const std::string& marginMode, const json& params = json());
 
 protected:
     void sign(Request& request, const std::string& path, const std::string& api = "public",

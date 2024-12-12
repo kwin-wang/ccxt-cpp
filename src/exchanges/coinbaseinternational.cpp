@@ -289,4 +289,129 @@ std::string coinbaseinternational::get_signature(const std::string& timestamp, c
     return this->hmac(what, this->decode(this->secret), "sha256", "hex");
 }
 
+// Async Market Data Methods
+boost::future<json> coinbaseinternational::fetch_markets_async(const json& params) {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetch_markets(params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_currencies_async(const json& params) {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetch_currencies(params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_ticker_async(const std::string& symbol, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->fetch_ticker(symbol, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_order_book_async(const std::string& symbol, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, limit, params]() {
+        return this->fetch_order_book(symbol, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_trades_async(const std::string& symbol, int since, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_trades(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_ohlcv_async(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetch_ohlcv(symbol, timeframe, since, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_trading_fees_async(const std::string& symbol, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->fetch_trading_fees(symbol, params);
+    });
+}
+
+// Async Trading Methods
+boost::future<json> coinbaseinternational::create_order_async(const std::string& symbol, const std::string& type, const std::string& side,
+                                                            double amount, double price, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->create_order(symbol, type, side, amount, price, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::cancel_order_async(const std::string& id, const std::string& symbol, const json& params) {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->cancel_order(id, symbol, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::cancel_all_orders_async(const std::string& symbol, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->cancel_all_orders(symbol, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::edit_order_async(const std::string& id, const std::string& symbol, const std::string& type, const std::string& side,
+                                                          double amount, double price, const json& params) {
+    return boost::async(boost::launch::async, [this, id, symbol, type, side, amount, price, params]() {
+        return this->edit_order(id, symbol, type, side, amount, price, params);
+    });
+}
+
+// Async Account Methods
+boost::future<json> coinbaseinternational::fetch_balance_async(const json& params) {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetch_balance(params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_open_orders_async(const std::string& symbol, int since, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_open_orders(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_closed_orders_async(const std::string& symbol, int since, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_closed_orders(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_my_trades_async(const std::string& symbol, int since, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_my_trades(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_order_async(const std::string& id, const std::string& symbol, const json& params) {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->fetch_order(id, symbol, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_deposit_address_async(const std::string& code, const json& params) {
+    return boost::async(boost::launch::async, [this, code, params]() {
+        return this->fetch_deposit_address(code, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_deposits_async(const std::string& code, int since, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, code, since, limit, params]() {
+        return this->fetch_deposits(code, since, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::fetch_withdrawals_async(const std::string& code, int since, int limit, const json& params) {
+    return boost::async(boost::launch::async, [this, code, since, limit, params]() {
+        return this->fetch_withdrawals(code, since, limit, params);
+    });
+}
+
+boost::future<json> coinbaseinternational::withdraw_async(const std::string& code, double amount, const std::string& address, const std::string& tag, const json& params) {
+    return boost::async(boost::launch::async, [this, code, amount, address, tag, params]() {
+        return this->withdraw(code, amount, address, tag, params);
+    });
+}
+
 } // namespace ccxt

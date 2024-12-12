@@ -172,49 +172,93 @@ json Bitso::fetchMarkets(const json& params) {
 }
 
 json Bitso::fetchBalance(const json& params) {
-    this->loadMarkets();
-    json response = fetch("/v3/balance", "private", "GET", params);
-    return parseBalance(response);
+    auto response = this->request("/v3/balance", "private", "GET", params);
+    return this->parseBalance(response);
 }
 
 json Bitso::parseBalance(const json& response) {
-    json result = {{"info", response}};
-    json balances = this->safeValue(response, "payload", json::array());
-    
+    auto result = {
+        "info": response,
+        "timestamp": undefined,
+        "datetime": undefined
+    };
+    auto balances = response["payload"]["balances"];
     for (const auto& balance : balances) {
-        String currencyId = this->safeString(balance, "currency");
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
-            {"free", this->safeFloat(balance, "available")},
-            {"used", this->safeFloat(balance, "locked")},
-            {"total", this->safeFloat(balance, "total")}
-        };
+        auto currencyId = this->safeString(balance, "currency");
+        auto code = this->safeCurrencyCode(currencyId);
+        auto account = this->account();
+        account["free"] = this->safeFloat(balance, "available");
+        account["used"] = this->safeFloat(balance, "locked");
+        account["total"] = this->safeFloat(balance, "total");
         result[code] = account;
     }
-    
-    return result;
+    return this->parseBalance(result);
 }
 
-json Bitso::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
-                       double price, const json& params) {
+json Bitso::createOrder(const String& symbol, const String& type, const String& side,
+                       double amount, double price, const json& params) {
     this->loadMarkets();
-    Market market = this->market(symbol);
-    
-    json request = {
-        {"book", market["id"]},
-        {"side", side},
-        {"type", type},
-        {"major", this->amountToPrecision(symbol, amount)}
+    auto market = this->market(symbol);
+    auto request = {
+        "book": market["id"],
+        "side": side,
+        "type": type,
+        "major": this->amountToPrecision(symbol, amount)
     };
-    
     if (type == "limit") {
         request["price"] = this->priceToPrecision(symbol, price);
     }
-    
-    json response = fetch("/v3/orders", "private", "POST",
-                         this->extend(request, params));
+    auto response = this->request("/v3/orders", "private", "POST", this->extend(request, params));
     return this->parseOrder(response["payload"], market);
+}
+
+json Bitso::cancelOrder(const String& id, const String& symbol, const json& params) {
+    auto request = {
+        "oid": id
+    };
+    auto response = this->request("/v3/orders/" + id, "private", "DELETE", this->extend(request, params));
+    return this->parseOrder(response["payload"]);
+}
+
+json Bitso::fetchOrder(const String& id, const String& symbol, const json& params) {
+    this->loadMarkets();
+    auto request = {
+        "oid": id
+    };
+    auto response = this->request("/v3/orders/" + id, "private", "GET", this->extend(request, params));
+    return this->parseOrder(response["payload"]);
+}
+
+json Bitso::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+    this->loadMarkets();
+    auto market = undefined;
+    auto request = {};
+    if (symbol != "") {
+        market = this->market(symbol);
+        request["book"] = market["id"];
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["marker"] = since;
+    }
+    auto response = this->request("/v3/orders", "private", "GET", this->extend(request, params));
+    return this->parseOrders(response["payload"], market, since, limit);
+}
+
+json Bitso::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+    auto request = this->extend({
+        "status": "open"
+    }, params);
+    return this->fetchOrders(symbol, since, limit, request);
+}
+
+json Bitso::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+    auto request = this->extend({
+        "status": "completed"
+    }, params);
+    return this->fetchOrders(symbol, since, limit, request);
 }
 
 String Bitso::sign(const String& path, const String& api,
@@ -313,6 +357,206 @@ String Bitso::parseOrderStatus(const String& status) {
     };
     
     return this->safeString(statuses, status, status);
+}
+
+json Bitso::fetchTicker(const String& symbol, const json& params) {
+    auto market = this->market(symbol);
+    auto request = this->extend({
+        "book": market["id"]
+    }, params);
+    auto response = this->request("/v3/ticker", "public", "GET", request);
+    auto ticker = response["payload"];
+    return this->parseTicker(ticker, market);
+}
+
+json Bitso::parseTicker(const json& ticker, const Market& market) {
+    auto timestamp = this->safeInteger(ticker, "created_at");
+    auto symbol = this->safeString(market, "symbol");
+    return {
+        "symbol": symbol,
+        "timestamp": timestamp,
+        "datetime": this->iso8601(timestamp),
+        "high": this->safeFloat(ticker, "high"),
+        "low": this->safeFloat(ticker, "low"),
+        "bid": this->safeFloat(ticker, "bid"),
+        "bidVolume": undefined,
+        "ask": this->safeFloat(ticker, "ask"),
+        "askVolume": undefined,
+        "vwap": this->safeFloat(ticker, "vwap"),
+        "open": undefined,
+        "close": this->safeFloat(ticker, "last"),
+        "last": this->safeFloat(ticker, "last"),
+        "previousClose": undefined,
+        "change": undefined,
+        "percentage": undefined,
+        "average": undefined,
+        "baseVolume": this->safeFloat(ticker, "volume"),
+        "quoteVolume": undefined,
+        "info": ticker
+    };
+}
+
+json Bitso::fetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+    this->loadMarkets();
+    auto market = this->market(symbol);
+    auto request = {
+        "book": market["id"],
+        "time_bucket": this->timeframes[timeframe]
+    };
+    if (since != 0) {
+        request["start"] = since;
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    auto response = this->request("/v3/ohlc", "public", "GET", this->extend(request, params));
+    return this->parseOHLCVs(response["payload"], market, timeframe, since, limit);
+}
+
+json Bitso::parseOHLCV(const json& ohlcv, const Market& market) {
+    return {
+        this->safeTimestamp(ohlcv, "bucket_start_time"),
+        this->safeFloat(ohlcv, "open"),
+        this->safeFloat(ohlcv, "high"),
+        this->safeFloat(ohlcv, "low"),
+        this->safeFloat(ohlcv, "close"),
+        this->safeFloat(ohlcv, "volume")
+    };
+}
+
+json Bitso::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+    this->loadMarkets();
+    auto market = this->market(symbol);
+    auto request = {
+        "book": market["id"]
+    };
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    auto response = this->request("/v3/trades", "public", "GET", this->extend(request, params));
+    return this->parseTrades(response["payload"], market, since, limit);
+}
+
+json Bitso::parseTrade(const json& trade, const Market& market) {
+    auto timestamp = this->safeTimestamp(trade, "created_at");
+    auto side = this->safeString(trade, "maker_side");
+    if (side == "buy") {
+        side = "sell";
+    } else if (side == "sell") {
+        side = "buy";
+    }
+    auto price = this->safeFloat(trade, "price");
+    auto amount = this->safeFloat(trade, "amount");
+    auto cost = undefined;
+    if (price != undefined && amount != undefined) {
+        cost = price * amount;
+    }
+    return {
+        "info": trade,
+        "id": this->safeString(trade, "tid"),
+        "timestamp": timestamp,
+        "datetime": this->iso8601(timestamp),
+        "symbol": market["symbol"],
+        "order": undefined,
+        "type": undefined,
+        "side": side,
+        "takerOrMaker": undefined,
+        "price": price,
+        "amount": amount,
+        "cost": cost,
+        "fee": undefined
+    };
+}
+
+json Bitso::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+    this->loadMarkets();
+    auto market = undefined;
+    auto request = {};
+    if (symbol != "") {
+        market = this->market(symbol);
+        request["book"] = market["id"];
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["marker"] = since;
+    }
+    auto response = this->request("/v3/user_trades", "private", "GET", this->extend(request, params));
+    return this->parseTrades(response["payload"], market, since, limit);
+}
+
+json Bitso::fetchDeposits(const String& code, int since, int limit, const json& params) {
+    this->loadMarkets();
+    auto currency = undefined;
+    auto request = {};
+    if (code != "") {
+        currency = this->currency(code);
+        request["currency"] = currency["id"];
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["marker"] = since;
+    }
+    auto response = this->request("/v3/fundings", "private", "GET", this->extend(request, params));
+    return this->parseTransactions(response["payload"], currency, since, limit, {"deposit"});
+}
+
+json Bitso::fetchWithdrawals(const String& code, int since, int limit, const json& params) {
+    this->loadMarkets();
+    auto currency = undefined;
+    auto request = {};
+    if (code != "") {
+        currency = this->currency(code);
+        request["currency"] = currency["id"];
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["marker"] = since;
+    }
+    auto response = this->request("/v3/withdrawals", "private", "GET", this->extend(request, params));
+    return this->parseTransactions(response["payload"], currency, since, limit, {"withdrawal"});
+}
+
+json Bitso::fetchDepositAddress(const String& code, const json& params) {
+    this->loadMarkets();
+    auto currency = this->currency(code);
+    auto request = {
+        "fund_currency": currency["id"]
+    };
+    auto response = this->request("/v3/funding_destination", "private", "GET", this->extend(request, params));
+    auto address = this->safeString(response["payload"], "account_identifier");
+    auto tag = this->safeString(response["payload"], "payment_id");
+    return {
+        "currency": code,
+        "address": address,
+        "tag": tag,
+        "info": response
+    };
+}
+
+json Bitso::withdraw(const String& code, double amount, const String& address,
+                    const String& tag, const json& params) {
+    this->checkAddress(address);
+    this->loadMarkets();
+    auto currency = this->currency(code);
+    auto request = {
+        "currency": currency["id"],
+        "amount": this->currencyToPrecision(code, amount),
+        "address": address
+    };
+    if (tag != "") {
+        request["payment_id"] = tag;
+    }
+    auto response = this->request("/v3/withdrawals", "private", "POST", this->extend(request, params));
+    return {
+        "info": response,
+        "id": this->safeString(response["payload"], "wid")
+    };
 }
 
 } // namespace ccxt

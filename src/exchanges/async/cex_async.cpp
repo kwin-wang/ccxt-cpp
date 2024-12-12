@@ -1,163 +1,186 @@
 #include "ccxt/exchanges/async/cex_async.h"
-#include "ccxt/async_base/async_utils.h"
+#include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <nlohmann/json.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/asio/strand.hpp>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 namespace ccxt {
 
 CexAsync::CexAsync(const boost::asio::io_context& context)
-    : AsyncExchange(context)
-    , Cex()
-    , context_(const_cast<boost::asio::io_context&>(context)) {}
+    : ExchangeAsync(context), cex() {}
 
-// Market Data
-boost::future<std::vector<Market>> CexAsync::fetch_markets_async() {
-    return async_request<std::vector<Market>>(context_, [this]() { return fetch_markets(); });
+boost::future<json> CexAsync::fetchAsync(const String& path, const String& api,
+                                       const String& method, const json& params,
+                                       const std::map<String, String>& headers) {
+    return ExchangeAsync::fetchAsync(path, api, method, params, headers);
 }
 
-boost::future<std::vector<Currency>> CexAsync::fetch_currencies_async() {
-    return async_request<std::vector<Currency>>(context_, [this]() { return fetch_currencies(); });
+// Market Data API
+boost::future<json> CexAsync::fetchMarketsAsync(const json& params) {
+    return fetchAsync("/currency_profile", "public", "GET", params, {});
 }
 
-boost::future<OrderBook> CexAsync::fetch_order_book_async(const std::string& symbol, int limit) {
-    return async_request<OrderBook>(context_, [this, symbol, limit]() { return fetch_order_book(symbol, limit); });
+boost::future<json> CexAsync::fetchTickerAsync(const String& symbol, const json& params) {
+    String endpoint = "/ticker/" + this->marketId(symbol);
+    return fetchAsync(endpoint, "public", "GET", params, {});
 }
 
-boost::future<std::map<std::string, Ticker>> CexAsync::fetch_tickers_async() {
-    return async_request<std::map<std::string, Ticker>>(context_, [this]() { return fetch_tickers(); });
+boost::future<json> CexAsync::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+    if (symbols.empty()) {
+        throw ArgumentsRequired("fetchTickers requires symbols argument");
+    }
+    String symbolsStr;
+    for (size_t i = 0; i < symbols.size(); ++i) {
+        symbolsStr += this->marketId(symbols[i]);
+        if (i < symbols.size() - 1) {
+            symbolsStr += ",";
+        }
+    }
+    String endpoint = "/tickers/" + symbolsStr;
+    return fetchAsync(endpoint, "public", "GET", params, {});
 }
 
-boost::future<Ticker> CexAsync::fetch_ticker_async(const std::string& symbol) {
-    return async_request<Ticker>(context_, [this, symbol]() { return fetch_ticker(symbol); });
+boost::future<json> CexAsync::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    String endpoint = "/order_book/" + this->marketId(symbol);
+    json request = params;
+    if (limit != 0) {
+        request["depth"] = limit;
+    }
+    return fetchAsync(endpoint, "public", "GET", request, {});
 }
 
-boost::future<std::vector<Trade>> CexAsync::fetch_trades_async(const std::string& symbol, long since, int limit) {
-    return async_request<std::vector<Trade>>(context_, [this, symbol, since, limit]() { return fetch_trades(symbol, since, limit); });
+boost::future<json> CexAsync::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    String endpoint = "/trade_history/" + this->marketId(symbol);
+    json request = params;
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["since"] = since;
+    }
+    return fetchAsync(endpoint, "public", "GET", request, {});
 }
 
-boost::future<std::vector<OHLCV>> CexAsync::fetch_ohlcv_async(const std::string& symbol,
-                                                             const std::string& timeframe,
-                                                             long since,
-                                                             int limit) {
-    return async_request<std::vector<OHLCV>>(context_, [this, symbol, timeframe, since, limit]() {
-        return fetch_ohlcv(symbol, timeframe, since, limit);
-    });
+boost::future<json> CexAsync::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+                                            int since, int limit, const json& params) {
+    String endpoint = "/ohlcv/hd/" + this->marketId(symbol);
+    json request = this->extend({
+        {"timeframe": timeframe}
+    }, params);
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["since"] = since;
+    }
+    return fetchAsync(endpoint, "public", "GET", request, {});
 }
 
-boost::future<long> CexAsync::fetch_time_async() {
-    return async_request<long>(context_, [this]() { return fetch_time(); });
+// Trading API
+boost::future<json> CexAsync::fetchBalanceAsync(const json& params) {
+    return fetchAsync("/balance/", "private", "POST", params, {});
 }
 
-// Trading
-boost::future<Order> CexAsync::create_order_async(const std::string& symbol,
-                                                const std::string& type,
-                                                const std::string& side,
-                                                double amount,
-                                                double price,
-                                                const std::map<std::string, std::string>& params) {
-    return async_request<Order>(context_, [this, symbol, type, side, amount, price, params]() {
-        return create_order(symbol, type, side, amount, price, params);
-    });
+boost::future<json> CexAsync::createOrderAsync(const String& symbol, const String& type,
+                                             const String& side, double amount,
+                                             double price, const json& params) {
+    this->loadMarkets();
+    String endpoint = "/place_order/" + this->marketId(symbol);
+    json request = {
+        {"type", type},
+        {"side", side},
+        {"amount", this->amountToPrecision(symbol, amount)}
+    };
+    
+    if (type == "limit") {
+        if (price == 0) {
+            throw ExchangeError("createOrder requires price for limit orders");
+        }
+        request["price"] = this->priceToPrecision(symbol, price);
+    }
+    
+    return fetchAsync(endpoint, "private", "POST", this->extend(request, params), {});
 }
 
-boost::future<Order> CexAsync::create_stop_order_async(const std::string& symbol,
-                                                     const std::string& type,
-                                                     const std::string& side,
-                                                     double amount,
-                                                     double price,
-                                                     const std::map<std::string, std::string>& params) {
-    return async_request<Order>(context_, [this, symbol, type, side, amount, price, params]() {
-        return create_stop_order(symbol, type, side, amount, price, params);
-    });
+boost::future<json> CexAsync::cancelOrderAsync(const String& id, const String& symbol,
+                                             const json& params) {
+    json request = {
+        {"id", id}
+    };
+    if (!symbol.empty()) {
+        request["symbol"] = this->marketId(symbol);
+    }
+    return fetchAsync("/cancel_order", "private", "POST", this->extend(request, params), {});
 }
 
-boost::future<Order> CexAsync::create_trigger_order_async(const std::string& symbol,
-                                                        const std::string& type,
-                                                        const std::string& side,
-                                                        double amount,
-                                                        double price,
-                                                        const std::map<std::string, std::string>& params) {
-    return async_request<Order>(context_, [this, symbol, type, side, amount, price, params]() {
-        return create_trigger_order(symbol, type, side, amount, price, params);
-    });
+boost::future<json> CexAsync::fetchOrderAsync(const String& id, const String& symbol,
+                                            const json& params) {
+    json request = {
+        {"id", id}
+    };
+    if (!symbol.empty()) {
+        request["symbol"] = this->marketId(symbol);
+    }
+    return fetchAsync("/get_order", "private", "POST", this->extend(request, params), {});
 }
 
-boost::future<Order> CexAsync::cancel_order_async(const std::string& id,
-                                                const std::string& symbol,
-                                                const std::map<std::string, std::string>& params) {
-    return async_request<Order>(context_, [this, id, symbol, params]() { return cancel_order(id, symbol, params); });
+boost::future<json> CexAsync::fetchOpenOrdersAsync(const String& symbol, int since,
+                                                 int limit, const json& params) {
+    json request = params;
+    String endpoint = symbol.empty() ? "/open_orders" : "/open_orders/" + this->marketId(symbol);
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["since"] = since;
+    }
+    return fetchAsync(endpoint, "private", "POST", request, {});
 }
 
-boost::future<std::vector<Order>> CexAsync::cancel_all_orders_async(const std::string& symbol,
-                                                                  const std::map<std::string, std::string>& params) {
-    return async_request<std::vector<Order>>(context_, [this, symbol, params]() { return cancel_all_orders(symbol, params); });
+boost::future<json> CexAsync::fetchClosedOrdersAsync(const String& symbol, int since,
+                                                   int limit, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("fetchClosedOrders requires a symbol argument");
+    }
+    String endpoint = "/archived_orders/" + this->marketId(symbol);
+    json request = params;
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["since"] = since;
+    }
+    return fetchAsync(endpoint, "private", "POST", request, {});
 }
 
-boost::future<Order> CexAsync::fetch_order_async(const std::string& id, const std::string& symbol) {
-    return async_request<Order>(context_, [this, id, symbol]() { return fetch_order(id, symbol); });
+boost::future<json> CexAsync::fetchDepositAddressAsync(const String& code,
+                                                     const json& params) {
+    this->loadMarkets();
+    Currency currency = this->currency(code);
+    json request = {
+        {"currency", currency["id"]}
+    };
+    return fetchAsync("/get_address", "private", "POST", this->extend(request, params), {});
 }
 
-boost::future<Order> CexAsync::fetch_open_order_async(const std::string& id, const std::string& symbol) {
-    return async_request<Order>(context_, [this, id, symbol]() { return fetch_open_order(id, symbol); });
-}
-
-boost::future<std::vector<Order>> CexAsync::fetch_open_orders_async(const std::string& symbol) {
-    return async_request<std::vector<Order>>(context_, [this, symbol]() { return fetch_open_orders(symbol); });
-}
-
-boost::future<std::vector<Order>> CexAsync::fetch_closed_orders_async(const std::string& symbol, long since, int limit) {
-    return async_request<std::vector<Order>>(context_, [this, symbol, since, limit]() { return fetch_closed_orders(symbol, since, limit); });
-}
-
-boost::future<Order> CexAsync::fetch_closed_order_async(const std::string& id, const std::string& symbol) {
-    return async_request<Order>(context_, [this, id, symbol]() { return fetch_closed_order(id, symbol); });
-}
-
-// Account
-boost::future<std::vector<Account>> CexAsync::fetch_accounts_async() {
-    return async_request<std::vector<Account>>(context_, [this]() { return fetch_accounts(); });
-}
-
-boost::future<Balance> CexAsync::fetch_balance_async() {
-    return async_request<Balance>(context_, [this]() { return fetch_balance(); });
-}
-
-boost::future<std::vector<LedgerEntry>> CexAsync::fetch_ledger_async(const std::string& code,
-                                                                    long since,
-                                                                    int limit,
-                                                                    const std::map<std::string, std::string>& params) {
-    return async_request<std::vector<LedgerEntry>>(context_, [this, code, since, limit, params]() {
-        return fetch_ledger(code, since, limit, params);
-    });
-}
-
-// Funding
-boost::future<DepositAddress> CexAsync::fetch_deposit_address_async(const std::string& code,
-                                                                  const std::map<std::string, std::string>& params) {
-    return async_request<DepositAddress>(context_, [this, code, params]() { return fetch_deposit_address(code, params); });
-}
-
-boost::future<std::vector<Transaction>> CexAsync::fetch_deposits_withdrawals_async(const std::string& code,
-                                                                                 long since,
-                                                                                 int limit,
-                                                                                 const std::map<std::string, std::string>& params) {
-    return async_request<std::vector<Transaction>>(context_, [this, code, since, limit, params]() {
-        return fetch_deposits_withdrawals(code, since, limit, params);
-    });
-}
-
-boost::future<std::map<std::string, TradingFee>> CexAsync::fetch_trading_fees_async() {
-    return async_request<std::map<std::string, TradingFee>>(context_, [this]() { return fetch_trading_fees(); });
-}
-
-boost::future<TransferEntry> CexAsync::transfer_async(const std::string& code,
-                                                    double amount,
-                                                    const std::string& fromAccount,
-                                                    const std::string& toAccount,
-                                                    const std::map<std::string, std::string>& params) {
-    return async_request<TransferEntry>(context_, [this, code, amount, fromAccount, toAccount, params]() {
-        return transfer(code, amount, fromAccount, toAccount, params);
-    });
+boost::future<json> CexAsync::fetchTransactionsAsync(const String& code, int since,
+                                                   int limit, const json& params) {
+    this->loadMarkets();
+    json request = params;
+    if (!code.empty()) {
+        Currency currency = this->currency(code);
+        request["currency"] = currency["id"];
+    }
+    if (since != 0) {
+        request["since"] = since;
+    }
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    return fetchAsync("/archived_orders/get_crypto_transactions", "private", "POST", request, {});
 }
 
 } // namespace ccxt

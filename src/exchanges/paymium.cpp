@@ -8,16 +8,13 @@ const std::string paymium::defaultVersion = "v1";
 const int paymium::defaultRateLimit = 2000;
 const bool paymium::defaultPro = true;
 
-ExchangeRegistry::Factory paymium::factory = []() {
-    return new paymium();
-};
 
-paymium::paymium(const Config& config) : ExchangeImpl(config) {
+paymium::paymium(const Config& config) : Exchange(config) {
     init();
 }
 
 void paymium::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

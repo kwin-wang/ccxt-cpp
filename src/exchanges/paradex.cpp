@@ -8,16 +8,14 @@ const std::string paradex::defaultVersion = "v1";
 const int paradex::defaultRateLimit = 50;
 const bool paradex::defaultPro = true;
 
-ExchangeRegistry::Factory paradex::factory = []() {
-    return new paradex();
-};
 
-paradex::paradex(const Config& config) : ExchangeImpl(config) {
+
+paradex::paradex(const Config& config) : Exchange(config) {
     init();
 }
 
 void paradex::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

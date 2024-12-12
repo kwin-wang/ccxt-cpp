@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_COINSPOT_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class coinspot : public ExchangeImpl {
+class coinspot : public Exchange {
 public:
     coinspot(const Config& config = Config());
     ~coinspot() = default;
@@ -24,6 +24,7 @@ protected:
     Json fetchTickerImpl(const std::string& symbol) const override;
     Json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const override;
     Json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
 
     // Trading
     Json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt) override;
@@ -42,12 +43,16 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;
     Json parseTrade(const Json& trade, const Json& market = Json()) const;
     Json parseOrder(const Json& order, const Json& market = Json()) const;
+    Json parseOrderBook(const Json& orderBook, const Json& market = Json(), const std::optional<int>& limit = std::nullopt,
+                       const std::string& buyKey = "buyorders", const std::string& sellKey = "sellorders",
+                       const std::string& priceKey = "rate", const std::string& amountKey = "amount") const;
+    Json parseBalance(const Json& response) const;
 
     // Authentication helpers
     std::string sign(const std::string& path, const std::string& api = "public", const std::string& method = "GET",

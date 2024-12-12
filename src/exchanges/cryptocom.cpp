@@ -630,4 +630,177 @@ LedgerEntry CryptoCom::parseLedgerEntry(const json& item, const json& currency) 
     };
 }
 
+std::vector<Order> CryptoCom::fetchOpenOrders(const std::string& symbol, int since, int limit, const Params& params) {
+    this->loadMarkets();
+    Json request = Json::object();
+    Json market;
+
+    if (!symbol.empty()) {
+        market = this->market(symbol);
+        request["instrument_name"] = market["id"];
+    }
+
+    if (since != 0) {
+        request["start_ts"] = since;
+    }
+
+    if (limit > 0) {
+        request["page_size"] = limit;
+    }
+
+    Json response = this->privatePostGetOpenOrders(this->extend(request, params));
+    return this->parseOrders(response["result"]["order_list"], market, since, limit);
+}
+
+std::vector<Trade> CryptoCom::fetchMyTrades(const std::string& symbol, int since, int limit, const Params& params) {
+    this->loadMarkets();
+    Json request = Json::object();
+    Json market;
+
+    if (!symbol.empty()) {
+        market = this->market(symbol);
+        request["instrument_name"] = market["id"];
+    }
+
+    if (since != 0) {
+        request["start_ts"] = since;
+    }
+
+    if (limit > 0) {
+        request["page_size"] = limit;
+    }
+
+    Json response = this->privatePostGetTrades(this->extend(request, params));
+    return this->parseTrades(response["result"]["trade_list"], market, since, limit);
+}
+
+std::vector<Position> CryptoCom::fetchPositions(const std::vector<std::string>& symbols, const Params& params) {
+    this->loadMarkets();
+    Json request = Json::object();
+    
+    if (!symbols.empty()) {
+        std::vector<std::string> marketIds;
+        for (const auto& symbol : symbols) {
+            Json market = this->market(symbol);
+            marketIds.push_back(market["id"].get<std::string>());
+        }
+        request["instrument_name"] = marketIds;
+    }
+
+    Json response = this->privatePostGetPositions(this->extend(request, params));
+    return this->parsePositions(response["result"]["data"], nullptr);
+}
+
+Position CryptoCom::fetchPosition(const std::string& symbol, const Params& params) {
+    std::vector<Position> positions = this->fetchPositions({symbol}, params);
+    for (const auto& position : positions) {
+        if (position.symbol == symbol) {
+            return position;
+        }
+    }
+    throw ExchangeError("Position not found");
+}
+
+std::vector<Transaction> CryptoCom::fetchDeposits(const std::string& code, int since, int limit, const Params& params) {
+    this->loadMarkets();
+    Json request = Json::object();
+    Json currency;
+
+    if (!code.empty()) {
+        currency = this->currency(code);
+        request["currency"] = currency["id"];
+    }
+
+    if (since != 0) {
+        request["start_ts"] = since;
+    }
+
+    if (limit > 0) {
+        request["page_size"] = limit;
+    }
+
+    Json response = this->privatePostGetDepositHistory(this->extend(request, params));
+    return this->parseTransactions(response["result"]["data"], currency, "deposit");
+}
+
+std::vector<Transaction> CryptoCom::fetchWithdrawals(const std::string& code, int since, int limit, const Params& params) {
+    this->loadMarkets();
+    Json request = Json::object();
+    Json currency;
+
+    if (!code.empty()) {
+        currency = this->currency(code);
+        request["currency"] = currency["id"];
+    }
+
+    if (since != 0) {
+        request["start_ts"] = since;
+    }
+
+    if (limit > 0) {
+        request["page_size"] = limit;
+    }
+
+    Json response = this->privatePostGetWithdrawalHistory(this->extend(request, params));
+    return this->parseTransactions(response["result"]["data"], currency, "withdrawal");
+}
+
+std::vector<LedgerEntry> CryptoCom::fetchLedger(const std::string& code, int since, int limit, const Params& params) {
+    this->loadMarkets();
+    Json request = Json::object();
+    Json currency;
+
+    if (!code.empty()) {
+        currency = this->currency(code);
+        request["currency"] = currency["id"];
+    }
+
+    if (since != 0) {
+        request["start_ts"] = since;
+    }
+
+    if (limit > 0) {
+        request["page_size"] = limit;
+    }
+
+    Json response = this->privatePostGetTransactions(this->extend(request, params));
+    return this->parseLedger(response["result"]["data"], currency, since, limit);
+}
+
+std::vector<Account> CryptoCom::fetchAccounts(const Params& params) {
+    Json response = this->privatePostGetAccounts(params);
+    return this->parseAccounts(response["result"]["accounts"]);
+}
+
+TradingFees CryptoCom::fetchTradingFees(const Params& params) {
+    this->loadMarkets();
+    Json response = this->privatePostGetFeeRate(params);
+    return this->parseTradingFees(response["result"]);
+}
+
+void CryptoCom::handleErrors(const Json& response) {
+    if (response.contains("code") && response["code"].get<int>() != 0) {
+        std::string message = response.value("message", "Unknown error");
+        std::string errorCode = std::to_string(response["code"].get<int>());
+        
+        if (errorCode == "10001") {
+            throw InvalidOrder(message);
+        } else if (errorCode == "10002") {
+            throw OrderNotFound(message);
+        } else if (errorCode == "10003") {
+            throw InsufficientFunds(message);
+        } else if (errorCode == "10004") {
+            throw AuthenticationError(message);
+        } else if (errorCode == "10005") {
+            throw PermissionDenied(message);
+        } else if (errorCode == "10006") {
+            throw BadRequest(message);
+        } else if (errorCode == "10007") {
+            throw RateLimitExceeded(message);
+        } else {
+            throw ExchangeError(message);
+        }
+    }
+}
+
 } // namespace ccxt

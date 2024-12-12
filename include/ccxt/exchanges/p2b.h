@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_P2B_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class p2b : public ExchangeImpl {
+class p2b : public Exchange {
 public:
     p2b(const Config& config = Config());
     ~p2b() = default;
@@ -51,7 +51,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

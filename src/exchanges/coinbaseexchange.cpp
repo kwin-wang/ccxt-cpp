@@ -216,4 +216,111 @@ std::string CoinbaseExchange::getTimestamp() const {
     return std::to_string(seconds);
 }
 
+// Market Data Methods - Asynchronous
+boost::future<OrderBook> CoinbaseExchange::fetchOrderBookAsync(const std::string& symbol, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+boost::future<std::vector<Trade>> CoinbaseExchange::fetchTradesAsync(const std::string& symbol, int since, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+boost::future<Ticker> CoinbaseExchange::fetchTickerAsync(const std::string& symbol, const Params& params) const {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+boost::future<std::map<std::string, Ticker>> CoinbaseExchange::fetchTickersAsync(const std::vector<std::string>& symbols, const Params& params) const {
+    return boost::async(boost::launch::async, [this, symbols, params]() {
+        return this->fetchTickers(symbols, params);
+    });
+}
+
+// Trading Methods - Asynchronous
+boost::future<Order> CoinbaseExchange::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
+                                                    double amount, double price, const Params& params) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+boost::future<Order> CoinbaseExchange::cancelOrderAsync(const std::string& id, const std::string& symbol, const Params& params) {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+boost::future<std::vector<Order>> CoinbaseExchange::fetchOrdersAsync(const std::string& symbol, int since, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<std::vector<Order>> CoinbaseExchange::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<std::vector<Order>> CoinbaseExchange::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<Order> CoinbaseExchange::fetchOrderAsync(const std::string& id, const std::string& symbol, const Params& params) const {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+// Account Methods - Asynchronous
+boost::future<Balance> CoinbaseExchange::fetchBalanceAsync(const Params& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+boost::future<std::vector<Account>> CoinbaseExchange::fetchAccountsAsync(const Params& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchAccounts(params);
+    });
+}
+
+boost::future<TradingFees> CoinbaseExchange::fetchTradingFeesAsync(const Params& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchTradingFees(params);
+    });
+}
+
+// Funding Methods - Asynchronous
+boost::future<std::vector<Transaction>> CoinbaseExchange::fetchDepositsAsync(const std::string& code, int since, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, code, since, limit, params]() {
+        return this->fetchDeposits(code, since, limit, params);
+    });
+}
+
+boost::future<std::vector<Transaction>> CoinbaseExchange::fetchWithdrawalsAsync(const std::string& code, int since, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, code, since, limit, params]() {
+        return this->fetchWithdrawals(code, since, limit, params);
+    });
+}
+
+boost::future<DepositAddress> CoinbaseExchange::fetchDepositAddressAsync(const std::string& code, const Params& params) const {
+    return boost::async(boost::launch::async, [this, code, params]() {
+        return this->fetchDepositAddress(code, params);
+    });
+}
+
+boost::future<std::vector<LedgerEntry>> CoinbaseExchange::fetchLedgerAsync(const std::string& code, int since, int limit, const Params& params) const {
+    return boost::async(boost::launch::async, [this, code, since, limit, params]() {
+        return this->fetchLedger(code, since, limit, params);
+    });
+}
+
 } // namespace ccxt

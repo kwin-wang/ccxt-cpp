@@ -3,6 +3,9 @@
 #include <sstream>
 #include <iomanip>
 #include <openssl/hmac.h>
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 namespace ccxt {
 
@@ -343,6 +346,132 @@ json Bitfinex::parseOrder(const json& order, const Market& market) {
         {"fee", nullptr},
         {"info", order}
     };
+}
+
+// Market Data API - Async Methods
+boost::future<json> Bitfinex::fetchMarketsAsync(const json& params) {
+    return boost::async([this, params]() {
+        return this->fetchMarkets(params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchTickerAsync(const String& symbol, const json& params) {
+    return boost::async([this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+    return boost::async([this, symbols, params]() {
+        return this->fetchTickers(symbols, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    return boost::async([this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return boost::async([this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+                                           int since, int limit, const json& params) {
+    return boost::async([this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
+    });
+}
+
+// Trading API - Async Methods
+boost::future<json> Bitfinex::fetchBalanceAsync(const json& params) {
+    return boost::async([this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+boost::future<json> Bitfinex::createOrderAsync(const String& symbol, const String& type,
+                                           const String& side, double amount,
+                                           double price, const json& params) {
+    return boost::async([this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+boost::future<json> Bitfinex::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+    return boost::async([this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+    return boost::async([this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return boost::async([this, symbol, since, limit, params]() {
+        return this->fetchOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return boost::async([this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return boost::async([this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
+}
+
+// Bitfinex specific methods - Async
+boost::future<json> Bitfinex::fetchPositionsAsync(const String& symbol, const json& params) {
+    return boost::async([this, symbol, params]() {
+        return this->fetchPositions(symbol, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return boost::async([this, symbol, since, limit, params]() {
+        return this->fetchMyTrades(symbol, since, limit, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchLedgerAsync(const String& code, int since, int limit, const json& params) {
+    return boost::async([this, code, since, limit, params]() {
+        return this->fetchLedger(code, since, limit, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchFundingRatesAsync(const std::vector<String>& symbols, const json& params) {
+    return boost::async([this, symbols, params]() {
+        return this->fetchFundingRates(symbols, params);
+    });
+}
+
+boost::future<json> Bitfinex::setLeverageAsync(const String& symbol, double leverage, const json& params) {
+    return boost::async([this, symbol, leverage, params]() {
+        return this->setLeverage(symbol, leverage, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchDepositsAsync(const String& code, int since, int limit, const json& params) {
+    return boost::async([this, code, since, limit, params]() {
+        return this->fetchDeposits(code, since, limit, params);
+    });
+}
+
+boost::future<json> Bitfinex::fetchWithdrawalsAsync(const String& code, int since, int limit, const json& params) {
+    return boost::async([this, code, since, limit, params]() {
+        return this->fetchWithdrawals(code, since, limit, params);
+    });
 }
 
 } // namespace ccxt

@@ -1,34 +1,37 @@
-#include "bitbank.h"
-#include <chrono>
-#include <sstream>
-#include <iomanip>
+#include "ccxt/exchanges/bitbank.h"
 #include <openssl/hmac.h>
+#include <iomanip>
+#include <sstream>
+#include <boost/thread/future.hpp>
 
 namespace ccxt {
 
-Bitbank::Bitbank() {
+Bitbank::Bitbank() : Exchange() {
     id = "bitbank";
     name = "bitbank";
+    countries = {"JP"};
     version = "1";
     rateLimit = 1000;
-    certified = true;
-    pro = false;
-
-    // Initialize API endpoints
-    baseUrl = "https://public.bitbank.cc";
-    
-    urls = {
-        {"logo", "https://user-images.githubusercontent.com/1294454/37808081-b87f2d9c-2e59-11e8-894d-c1900b7584fe.jpg"},
-        {"api", {
-            {"public", "https://public.bitbank.cc"},
-            {"private", "https://api.bitbank.cc/v1"}
-        }},
-        {"www", "https://bitbank.cc/"},
-        {"doc", {
-            "https://docs.bitbank.cc/",
-            "https://github.com/bitbankinc/bitbank-api-docs"
-        }},
-        {"fees", "https://bitbank.cc/docs/fees/"}
+    has = {
+        {"CORS", false},
+        {"spot", true},
+        {"margin", false},
+        {"swap", false},
+        {"future", false},
+        {"option", false},
+        {"fetchMarkets", true},
+        {"fetchTicker", true},
+        {"fetchOrderBook", true},
+        {"fetchTrades", true},
+        {"fetchOHLCV", true},
+        {"fetchBalance", true},
+        {"createOrder", true},
+        {"cancelOrder", true},
+        {"fetchOrder", true},
+        {"fetchOpenOrders", true},
+        {"fetchMyTrades", true},
+        {"fetchDepositAddress", true},
+        {"withdraw", true},
     };
 
     timeframes = {
@@ -41,55 +44,28 @@ Bitbank::Bitbank() {
         {"8h", "8hour"},
         {"12h", "12hour"},
         {"1d", "1day"},
-        {"1w", "1week"}
+        {"1w", "1week"},
     };
 
-    options = {
-        {"adjustForTimeDifference", true},
-        {"fetchOrdersMethod", "private_get_user_orders"}
+    urls = {
+        {"logo", "https://user-images.githubusercontent.com/1294454/37808081-b87f2d9c-2e59-11e8-894d-c1900b7584fe.jpg"},
+        {"api", {
+            {"public", "https://public.bitbank.cc"},
+            {"private", "https://api.bitbank.cc/v1"},
+        }},
+        {"www", "https://bitbank.cc/"},
+        {"doc", "https://docs.bitbank.cc/"},
     };
 
-    errorCodes = {
-        {10000, "URL does not exist"},
-        {10001, "A system error occurred. Please contact support"},
-        {10002, "Invalid JSON format"},
-        {10003, "A system error occurred. Please contact support"},
-        {10005, "A timeout error occurred. Please wait for a while and try again"},
-        {20001, "API authentication failed"},
-        {20002, "Illegal API key"},
-        {20003, "API key does not exist"},
-        {20004, "API Nonce does not exist"},
-        {20005, "API signature does not exist"},
-        {20011, "Two-step verification failed"},
-        {20014, "SMS authentication failed"},
-        {30001, "Missing order quantity"},
-        {30006, "Price is too low"},
-        {30007, "Price is too high"},
-        {30009, "Market order amount is too large"},
-        {30012, "Insufficient balance"},
-        {40001, "Invalid order ID"},
-        {40006, "Order ID does not exist"},
-        {40007, "Order is not cancellable"},
-        {40009, "Order amount is too large"},
-        {50001, "Unauthorized IP address"},
-        {50002, "Bad API request"},
-        {60001, "Market is closed"},
-        {60002, "Market is busy"},
-        {70001, "System error. Please contact support"}
-    };
-
-    initializeApiEndpoints();
-}
-
-void Bitbank::initializeApiEndpoints() {
     api = {
         {"public", {
             {"GET", {
                 "{pair}/ticker",
                 "{pair}/depth",
                 "{pair}/transactions",
-                "{pair}/candlestick/{candletype}/{yyyymmdd}"
-            }}
+                "{pair}/transactions/{yyyymmdd}",
+                "{pair}/candlestick/{candletype}/{yyyymmdd}",
+            }},
         }},
         {"private", {
             {"GET", {
@@ -98,35 +74,55 @@ void Bitbank::initializeApiEndpoints() {
                 "user/spot/active_orders",
                 "user/spot/trade_history",
                 "user/withdrawal_account",
-                "user/deposit_history",
-                "user/withdrawal_history"
+                "user/crypto_withdrawal",
             }},
             {"POST", {
                 "user/spot/order",
                 "user/spot/cancel_order",
-                "user/spot/cancel_orders",
-                "user/spot/orders",
-                "user/request_withdrawal"
-            }}
-        }}
+                "user/crypto_withdrawal",
+            }},
+        }},
+    };
+
+    options = {
+        {"marketsByType", {
+            {"spot", {
+                "btc_jpy", "xrp_jpy", "ltc_jpy", "eth_jpy", "mona_jpy",
+                "bcc_jpy", "xlm_jpy", "qtum_jpy", "bat_jpy", "omg_jpy",
+                "xym_jpy", "link_jpy", "mkr_jpy", "boba_jpy", "enj_jpy",
+                "matic_jpy", "dot_jpy", "doge_jpy", "astr_jpy", "ada_jpy",
+                "avax_jpy", "axs_jpy", "flr_jpy", "sand_jpy",
+            }},
+        }},
+    };
+
+    initializeApiEndpoints();
+}
+
+void Bitbank::initializeApiEndpoints() {
+    // Initialize API endpoints
+    apiEndpoints = {
+        {"public", "https://public.bitbank.cc"},
+        {"private", "https://api.bitbank.cc/v1"},
     };
 }
 
 json Bitbank::fetchMarkets(const json& params) {
-    json response = fetch("/spot/pairs", "public", "GET", params);
-    json data = this->safeValue(response, "data", json::array());
-    json result = json::array();
-    
-    for (const auto& market : data) {
-        String id = this->safeString(market, "name");
-        String baseId = this->safeString(market, "base_asset");
-        String quoteId = this->safeString(market, "quote_asset");
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        
+    auto response = this->publicGetPairs(params);
+    auto markets = response["data"]["pairs"];
+    auto result = json::array();
+
+    for (const auto& market : markets) {
+        auto id = market["name"].get<String>();
+        auto baseId = market["base_asset"].get<String>();
+        auto quoteId = market["quote_asset"].get<String>();
+        auto base = this->safeCurrencyCode(baseId);
+        auto quote = this->safeCurrencyCode(quoteId);
+        auto symbol = base + "/" + quote;
+
         result.push_back({
             {"id", id},
-            {"symbol", base + "/" + quote},
+            {"symbol", symbol},
             {"base", base},
             {"quote", quote},
             {"baseId", baseId},
@@ -134,117 +130,94 @@ json Bitbank::fetchMarkets(const json& params) {
             {"active", true},
             {"type", "spot"},
             {"spot", true},
-            {"future", false},
-            {"option", false},
-            {"margin", true},
-            {"contract", false},
             {"precision", {
-                {"amount", this->safeInteger(market, "amount_digits")},
-                {"price", this->safeInteger(market, "price_digits")}
+                {"amount", market["amount_digits"].get<int>()},
+                {"price", market["price_digits"].get<int>()},
             }},
             {"limits", {
                 {"amount", {
-                    {"min", this->safeFloat(market, "min_order_amount")},
-                    {"max", this->safeFloat(market, "max_order_amount")}
+                    {"min", this->safeNumber(market, "min_amount")},
+                    {"max", this->safeNumber(market, "max_amount")},
                 }},
                 {"price", {
-                    {"min", this->safeFloat(market, "min_order_price")},
-                    {"max", this->safeFloat(market, "max_order_price")}
+                    {"min", this->safeNumber(market, "min_price")},
+                    {"max", this->safeNumber(market, "max_price")},
                 }},
                 {"cost", {
-                    {"min", nullptr},
-                    {"max", nullptr}
-                }}
+                    {"min", this->safeNumber(market, "min_order_value")},
+                    {"max", this->safeNumber(market, "max_order_value")},
+                }},
             }},
-            {"info", market}
+            {"info", market},
         });
     }
-    
+
     return result;
 }
 
-json Bitbank::fetchBalance(const json& params) {
+json Bitbank::fetchTicker(const String& symbol, const json& params) {
     this->loadMarkets();
-    json response = fetch("/user/assets", "private", "GET", params);
-    return parseBalance(response);
-}
+    auto market = this->market(symbol);
+    auto request = {{"pair", market["id"]}};
+    auto response = this->publicGetPairTicker(this->extend(request, params));
+    auto ticker = response["data"];
+    auto timestamp = this->safeTimestamp(ticker, "timestamp");
 
-json Bitbank::parseBalance(const json& response) {
-    json data = this->safeValue(response, "data", json::array());
-    json result = {{"info", response}};
-    
-    for (const auto& balance : data) {
-        String currencyId = this->safeString(balance, "asset");
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
-            {"free", this->safeFloat(balance, "free_amount")},
-            {"used", this->safeFloat(balance, "locked_amount")},
-            {"total", this->safeFloat(balance, "onhand_amount")}
-        };
-        result[code] = account;
-    }
-    
-    return result;
-}
-
-json Bitbank::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
-                         double price, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    
-    json request = {
-        {"pair", market["id"]},
-        {"amount", this->amountToPrecision(symbol, amount)},
-        {"side", side},
-        {"type", type}
+    return {
+        {"symbol", symbol},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"high", this->safeString(ticker, "high")},
+        {"low", this->safeString(ticker, "low")},
+        {"bid", this->safeString(ticker, "buy")},
+        {"bidVolume", undefined},
+        {"ask", this->safeString(ticker, "sell")},
+        {"askVolume", undefined},
+        {"vwap", undefined},
+        {"open", undefined},
+        {"close", this->safeString(ticker, "last")},
+        {"last", this->safeString(ticker, "last")},
+        {"previousClose", undefined},
+        {"change", undefined},
+        {"percentage", undefined},
+        {"average", undefined},
+        {"baseVolume", this->safeString(ticker, "vol")},
+        {"quoteVolume", undefined},
+        {"info", ticker},
     };
-    
-    if (type == "limit") {
-        request["price"] = this->priceToPrecision(symbol, price);
-    }
-    
-    json response = fetch("/user/spot/order", "private", "POST",
-                         this->extend(request, params));
-    return this->parseOrder(response["data"], market);
 }
 
 String Bitbank::sign(const String& path, const String& api,
                     const String& method, const json& params,
                     const std::map<String, String>& headers,
                     const json& body) {
-    String url = this->urls["api"][api];
-    String query = this->omit(params, this->extractParams(path));
+    auto query = this->omit(params, this->extractParams(path));
+    auto url = this->urls["api"][api];
     
     if (api == "public") {
-        url += this->implodeParams(path, params);
         if (!query.empty()) {
             url += "?" + this->urlencode(query);
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
-        String auth = nonce + url + path;
+        auto nonce = this->nonce().toString();
+        auto queryString = this->urlencode(query);
         
-        if (method == "POST") {
-            body = this->json(this->extend(params, query));
-            auth += body;
-        } else {
+        if (method == "GET") {
             if (!query.empty()) {
-                url += "?" + this->urlencode(query);
+                url += "?" + queryString;
             }
+        } else {
+            body = queryString;
         }
         
-        String signature = this->hmac(auth, this->encode(this->secret),
-                                    "sha256", "hex");
+        auto auth = nonce + url + (body.empty() ? "" : body);
+        auto signature = this->hmac(this->encode(auth), this->encode(this->secret),
+                                  "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["ACCESS-KEY"] = this->apiKey;
-        const_cast<std::map<String, String>&>(headers)["ACCESS-NONCE"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["ACCESS-SIGNATURE"] = signature;
-        
-        if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
-        }
+        headers["API-KEY"] = this->apiKey;
+        headers["API-TIMESTAMP"] = nonce;
+        headers["API-SIGN"] = signature;
     }
     
     return url;
@@ -254,52 +227,120 @@ String Bitbank::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
-json Bitbank::parseOrder(const json& order, const Market& market) {
-    String timestamp = this->safeString(order, "ordered_at");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+String Bitbank::createSignature(const String& nonce, const String& method,
+                              const String& path, const String& body) {
+    auto message = nonce + method + path + body;
+    unsigned char* digest = HMAC(EVP_sha256(), this->secret.c_str(), this->secret.length(),
+                                reinterpret_cast<const unsigned char*>(message.c_str()),
+                                message.length(), nullptr, nullptr);
     
-    if (!market.empty()) {
-        symbol = market["symbol"];
+    std::stringstream ss;
+    for(int i = 0; i < 32; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)digest[i];
     }
-    
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
-    
-    return {
-        {"id", this->safeString(order, "order_id")},
-        {"clientOrderId", nullptr},
-        {"datetime", this->iso8601(timestamp)},
-        {"timestamp", this->parse8601(timestamp)},
-        {"lastTradeTimestamp", nullptr},
-        {"type", type},
-        {"timeInForce", nullptr},
-        {"postOnly", nullptr},
-        {"status", status},
-        {"symbol", symbol},
-        {"side", side},
-        {"price", this->safeFloat(order, "price")},
-        {"stopPrice", nullptr},
-        {"cost", this->safeFloat(order, "executed_amount")},
-        {"amount", this->safeFloat(order, "start_amount")},
-        {"filled", this->safeFloat(order, "executed_amount")},
-        {"remaining", this->safeFloat(order, "remaining_amount")},
-        {"trades", nullptr},
-        {"fee", nullptr},
-        {"info", order}
-    };
+    return ss.str();
 }
 
-String Bitbank::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
-        {"UNFILLED", "open"},
-        {"PARTIALLY_FILLED", "open"},
-        {"FULLY_FILLED", "closed"},
-        {"CANCELED_UNFILLED", "canceled"},
-        {"CANCELED_PARTIALLY_FILLED", "canceled"}
+// Async Market Data API
+boost::future<json> Bitbank::fetchMarketsAsync(const json& params) {
+    return requestAsync("", "public", "GET", params);
+}
+
+boost::future<json> Bitbank::fetchTickerAsync(const String& symbol, const json& params) {
+    String market = getBitbankSymbol(symbol);
+    String path = market + "/ticker";
+    return requestAsync(path, "public", "GET", params);
+}
+
+boost::future<json> Bitbank::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    String market = getBitbankSymbol(symbol);
+    String path = market + "/depth";
+    return requestAsync(path, "public", "GET", params);
+}
+
+boost::future<json> Bitbank::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    String market = getBitbankSymbol(symbol);
+    String path = market + "/transactions";
+    return requestAsync(path, "public", "GET", params);
+}
+
+boost::future<json> Bitbank::fetchOHLCVAsync(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+    String market = getBitbankSymbol(symbol);
+    String candleType = timeframes[timeframe];
+    String date = getYYYYMMDD(since);
+    String path = market + "/candlestick/" + candleType + "/" + date;
+    return requestAsync(path, "public", "GET", params);
+}
+
+boost::future<json> Bitbank::fetchTradingFeesAsync(const json& params) {
+    return requestAsync("user/spot/trade_history", "private", "GET", params);
+}
+
+// Async Trading API
+boost::future<json> Bitbank::fetchBalanceAsync(const json& params) {
+    return requestAsync("user/assets", "private", "GET", params);
+}
+
+boost::future<json> Bitbank::createOrderAsync(const String& symbol, const String& type, const String& side,
+                                          double amount, double price, const json& params) {
+    json request = {
+        {"pair", getBitbankSymbol(symbol)},
+        {"amount", std::to_string(amount)},
+        {"side", side},
+        {"type", type}
+    };
+
+    if (type == "limit") {
+        request["price"] = std::to_string(price);
+    }
+
+    return requestAsync("user/spot/order", "private", "POST", request);
+}
+
+boost::future<json> Bitbank::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+    json request = {
+        {"pair", getBitbankSymbol(symbol)},
+        {"order_id", id}
+    };
+    return requestAsync("user/spot/cancel_order", "private", "POST", request);
+}
+
+boost::future<json> Bitbank::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+    json request = {
+        {"pair", getBitbankSymbol(symbol)},
+        {"order_id", id}
+    };
+    return requestAsync("user/spot/order", "private", "GET", request);
+}
+
+boost::future<json> Bitbank::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    json request = {{"pair", getBitbankSymbol(symbol)}};
+    return requestAsync("user/spot/active_orders", "private", "GET", request);
+}
+
+boost::future<json> Bitbank::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    json request = {{"pair", getBitbankSymbol(symbol)}};
+    return requestAsync("user/spot/trade_history", "private", "GET", request);
+}
+
+// Async Account API
+boost::future<json> Bitbank::fetchDepositAddressAsync(const String& code, const json& params) {
+    return requestAsync("user/withdrawal_account", "private", "GET", params);
+}
+
+boost::future<json> Bitbank::withdrawAsync(const String& code, double amount, const String& address,
+                                       const String& tag, const json& params) {
+    json request = {
+        {"asset", code.toLower()},
+        {"amount", std::to_string(amount)},
+        {"address", address}
     };
     
-    return this->safeString(statuses, status, status);
+    if (!tag.empty()) {
+        request["memo"] = tag;
+    }
+    
+    return requestAsync("user/crypto_withdrawal", "private", "POST", request);
 }
 
 } // namespace ccxt

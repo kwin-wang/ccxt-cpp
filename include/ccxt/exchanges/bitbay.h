@@ -1,72 +1,47 @@
 #ifndef CCXT_BITBAY_H
 #define CCXT_BITBAY_H
 
-#include "../base/exchange.h"
-#include <string>
-#include <map>
+#include "zonda.h"
+#include <boost/thread/future.hpp>
 
 namespace ccxt {
 
-class bitbay : public exchange {
+class BitBay : public Zonda {
 public:
-    explicit bitbay(const Config& config);
-    ~bitbay() override = default;
+    explicit BitBay(const Config& config = Config());
+    ~BitBay() override = default;
 
-    // Public API - Market Data
-    json fetch_markets() override;
-    json fetch_currencies() override;
-    json fetch_ticker(const std::string& symbol);
-    json fetch_tickers(const std::vector<std::string>& symbols = {});
-    json fetch_order_book(const std::string& symbol, int limit = 100);
-    json fetch_trades(const std::string& symbol, int limit = 100);
-    json fetch_ohlcv(const std::string& symbol, const std::string& timeframe = "1m", 
-                    long since = 0, int limit = 100);
-    json fetch_trading_fees(const std::string& symbol = "");
+    // Async Market Data API
+    boost::future<json> fetchMarketsAsync(const json& params = json::object());
+    boost::future<json> fetchTickerAsync(const String& symbol, const json& params = json::object());
+    boost::future<json> fetchOrderBookAsync(const String& symbol, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchTradesAsync(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+                                      int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchTradingFeesAsync(const json& params = json::object());
 
-    // Private API - Trading
-    json create_order(const std::string& symbol, const std::string& type, const std::string& side,
-                     double amount, double price = 0, const std::map<std::string, std::string>& params = {});
-    json cancel_order(const std::string& id, const std::string& symbol = "");
-    json cancel_all_orders(const std::string& symbol = "");
-    json edit_order(const std::string& id, const std::string& symbol, const std::string& type,
-                   const std::string& side, double amount, double price = 0,
-                   const std::map<std::string, std::string>& params = {});
+    // Async Trading API
+    boost::future<json> fetchBalanceAsync(const json& params = json::object());
+    boost::future<json> createOrderAsync(const String& symbol, const String& type, const String& side,
+                                      double amount, double price = 0, const json& params = json::object());
+    boost::future<json> cancelOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
+    boost::future<json> fetchOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
+    boost::future<json> fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchMyTradesAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
 
-    // Private API - Account/Balance
-    json fetch_balance();
-    json fetch_open_orders(const std::string& symbol = "");
-    json fetch_closed_orders(const std::string& symbol = "", long since = 0, int limit = 100);
-    json fetch_order(const std::string& id, const std::string& symbol = "");
-    json fetch_orders(const std::string& symbol = "", long since = 0, int limit = 100);
-    json fetch_my_trades(const std::string& symbol = "", long since = 0, int limit = 100);
-    json fetch_trading_fee(const std::string& symbol);
-
-    // Account Management
-    json fetch_deposit_address(const std::string& code, const std::map<std::string, std::string>& params = {});
-    json fetch_deposits(const std::string& code = "", long since = 0, int limit = 100);
-    json fetch_withdrawals(const std::string& code = "", long since = 0, int limit = 100);
-    json withdraw(const std::string& code, double amount, const std::string& address,
-                 const std::string& tag = "", const std::map<std::string, std::string>& params = {});
-
-    // Additional BitBay-specific methods
-    json fetch_funding_fees();
-    json fetch_transaction_history(const std::string& code = "", long since = 0, int limit = 100);
-    json fetch_wallets();
-    json transfer(const std::string& code, double amount, const std::string& fromAccount,
-                 const std::string& toAccount);
+    // Async Account API
+    boost::future<json> fetchDepositAddressAsync(const String& code, const json& params = json::object());
+    boost::future<json> withdrawAsync(const String& code, double amount, const String& address,
+                                   const String& tag = "", const json& params = json::object());
 
 protected:
-    void init() override;
-    std::string get_uuid();
-    std::string sign(const std::string& path, const std::string& method, const std::string& body,
-                    const std::map<std::string, std::string>& headers) override;
-
-private:
-    json private_get(const std::string& path, const std::map<std::string, std::string>& params = {});
-    json private_post(const std::string& path, const std::map<std::string, std::string>& params = {});
-    json private_put(const std::string& path, const std::map<std::string, std::string>& params = {});
-    json private_delete(const std::string& path, const std::map<std::string, std::string>& params = {});
-    json public_get(const std::string& path, const std::map<std::string, std::string>& params = {});
+    json describe() override {
+        return this->deepExtend(Zonda::describe(), {
+            {"id", "bitbay"},
+            {"name", "BitBay"},
+            {"alias", true}
+        });
+    }
 };
 
 } // namespace ccxt

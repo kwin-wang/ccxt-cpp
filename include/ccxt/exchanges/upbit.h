@@ -1,65 +1,134 @@
-#pragma once
+#ifndef CCXT_UPBIT_H
+#define CCXT_UPBIT_H
 
-#include "../base/exchange.h"
+#include "../exchange.h"
+#include <future>
 
 namespace ccxt {
 
-class Upbit : public Exchange {
+class upbit : public ExchangeImpl {
 public:
-    Upbit();
-    ~Upbit() override = default;
+    explicit upbit(const Config& config = Config{});
+    void init() override;
+    Json describeImpl() const override;
 
-    // Market Data API
-    json fetchMarkets(const json& params = json::object()) override;
-    json fetchTicker(const String& symbol, const json& params = json::object()) override;
-    json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object()) override;
-    json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object()) override;
-    json fetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
-                    int since = 0, int limit = 0, const json& params = json::object()) override;
+    // Market Data
+    Json fetchMarketsImpl() const override;
+    Json fetchCurrenciesImpl() const override;
+    Json fetchTickerImpl(const std::string& symbol) const override;
+    Json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const override;
+    Json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchTradesImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt,
+                        const std::optional<long long>& since = std::nullopt) const override;
+    Json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
+                       const std::optional<long long>& since = std::nullopt,
+                       const std::optional<int>& limit = std::nullopt) const override;
 
-    // Trading API
-    json fetchBalance(const json& params = json::object()) override;
-    json createOrder(const String& symbol, const String& type, const String& side,
-                    double amount, double price = 0, const json& params = json::object()) override;
-    json cancelOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    // Trading
+    Json createOrderImpl(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
+                        const std::optional<double>& price = std::nullopt) override;
+    Json cancelOrderImpl(const std::string& id, const std::string& symbol) override;
+    Json fetchOrderImpl(const std::string& id, const std::string& symbol) const override;
+    Json fetchOrdersImpl(const std::string& symbol = "",
+                        const std::optional<long long>& since = std::nullopt,
+                        const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchOpenOrdersImpl(const std::string& symbol = "",
+                           const std::optional<long long>& since = std::nullopt,
+                           const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchClosedOrdersImpl(const std::string& symbol = "",
+                             const std::optional<long long>& since = std::nullopt,
+                             const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchMyTradesImpl(const std::string& symbol = "",
+                          const std::optional<long long>& since = std::nullopt,
+                          const std::optional<int>& limit = std::nullopt) const override;
 
-    // Upbit specific methods
-    json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchDeposits(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchWithdrawals(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchDepositAddresses(const std::vector<String>& codes = {}, const json& params = json::object());
-    json createDepositAddress(const String& code, const json& params = json::object());
-    json fetchDepositAddress(const String& code, const json& params = json::object());
-    json withdraw(const String& code, double amount, const String& address,
-                 const String& tag = "", const json& params = json::object());
-    json fetchMarketLeverageTiers(const String& symbol, const json& params = json::object());
+    // Account
+    Json fetchBalanceImpl() const override;
+    Json fetchDepositAddressImpl(const std::string& code,
+                                const std::optional<std::string>& network = std::nullopt) const override;
+    Json fetchDepositsImpl(const std::optional<std::string>& code = std::nullopt,
+                          const std::optional<long long>& since = std::nullopt,
+                          const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchWithdrawalsImpl(const std::optional<std::string>& code = std::nullopt,
+                             const std::optional<long long>& since = std::nullopt,
+                             const std::optional<int>& limit = std::nullopt) const override;
 
-protected:
-    String sign(const String& path, const String& api = "public",
-               const String& method = "GET", const json& params = json::object(),
-               const std::map<String, String>& headers = {}, const json& body = nullptr) override;
+    // Async Market Data
+    std::future<Json> fetchMarketsAsync() const;
+    std::future<Json> fetchCurrenciesAsync() const;
+    std::future<Json> fetchTickerAsync(const std::string& symbol) const;
+    std::future<Json> fetchTickersAsync(const std::vector<std::string>& symbols = {}) const;
+    std::future<Json> fetchOrderBookAsync(const std::string& symbol,
+                                        const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchTradesAsync(const std::string& symbol,
+                                      const std::optional<int>& limit = std::nullopt,
+                                      const std::optional<long long>& since = std::nullopt) const;
+    std::future<Json> fetchOHLCVAsync(const std::string& symbol,
+                                     const std::string& timeframe,
+                                     const std::optional<long long>& since = std::nullopt,
+                                     const std::optional<int>& limit = std::nullopt) const;
+
+    // Async Trading
+    std::future<Json> createOrderAsync(const std::string& symbol,
+                                     const std::string& type,
+                                     const std::string& side,
+                                     double amount,
+                                     const std::optional<double>& price = std::nullopt);
+    std::future<Json> cancelOrderAsync(const std::string& id,
+                                     const std::string& symbol);
+    std::future<Json> fetchOrderAsync(const std::string& id,
+                                    const std::string& symbol) const;
+    std::future<Json> fetchOrdersAsync(const std::string& symbol = "",
+                                     const std::optional<long long>& since = std::nullopt,
+                                     const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchOpenOrdersAsync(const std::string& symbol = "",
+                                         const std::optional<long long>& since = std::nullopt,
+                                         const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchClosedOrdersAsync(const std::string& symbol = "",
+                                           const std::optional<long long>& since = std::nullopt,
+                                           const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchMyTradesAsync(const std::string& symbol = "",
+                                        const std::optional<long long>& since = std::nullopt,
+                                        const std::optional<int>& limit = std::nullopt) const;
+
+    // Async Account
+    std::future<Json> fetchBalanceAsync() const;
+    std::future<Json> fetchDepositAddressAsync(const std::string& code,
+                                              const std::optional<std::string>& network = std::nullopt) const;
+    std::future<Json> fetchDepositsAsync(const std::optional<std::string>& code = std::nullopt,
+                                        const std::optional<long long>& since = std::nullopt,
+                                        const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchWithdrawalsAsync(const std::optional<std::string>& code = std::nullopt,
+                                           const std::optional<long long>& since = std::nullopt,
+                                           const std::optional<int>& limit = std::nullopt) const;
 
 private:
-    void initializeApiEndpoints();
-    String getUpbitSymbol(const String& symbol);
-    String getCommonSymbol(const String& upbitSymbol);
-    json parseOrder(const json& order, const Market& market = Market());
-    json parseTrade(const json& trade, const Market& market = Market());
-    json parseTransaction(const json& transaction);
-    json parseOrderStatus(const String& status);
-    json parseTradingFee(const json& fee, const Market& market = Market());
-    json parseTransactionType(const String& type);
-    json parseOrderSide(const String& orderType);
-    String createJWT();
+    static const std::string defaultBaseURL;
+    static const std::string defaultVersion;
+    static const int defaultRateLimit;
 
-    std::map<String, String> timeframes;
-    std::map<String, String> options;
-    bool isJwtAuth;
+    // Helper methods
+    Json parseTicker(const Json& ticker, const Json& market) const;
+    Json parseOrder(const Json& order, const Json& market) const;
+    Json parseTrade(const Json& trade, const Json& market) const;
+    Json parseOHLCV(const Json& ohlcv) const;
+    Json parseBalance(const Json& balance) const;
+    Json parseTransaction(const Json& transaction, const std::string& currency) const;
+    std::string parseOrderStatus(const std::string& status) const;
+    std::string getUpbitSymbol(const std::string& symbol) const;
+    std::string getCommonSymbol(const std::string& upbitSymbol) const;
+
+    std::string sign(const std::string& path, const std::string& api,
+                    const std::string& method, const Json& params,
+                    const Json& headers, const Json& body) const override;
+    void handleErrors(const std::string& code, const std::string& reason,
+                     const std::string& url, const std::string& method,
+                     const Json& headers, const Json& body,
+                     const Json& response, const std::string& requestHeaders,
+                     const std::string& requestBody) const override;
 };
 
 } // namespace ccxt
+
+#endif // CCXT_UPBIT_H

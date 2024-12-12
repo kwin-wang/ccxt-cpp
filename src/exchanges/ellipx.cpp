@@ -8,15 +8,13 @@ const std::string ellipx::defaultVersion = "v1";
 const int ellipx::defaultRateLimit = 200;
 const bool ellipx::defaultPro = false;
 
-ExchangeRegistry::Factory ellipx::factory("ellipx", &ellipx::createInstance);
-
 ellipx::ellipx(const Config& config)
-    : ExchangeImpl(config) {
+    : Exchange(config) {
     init();
 }
 
 void ellipx::init() {
-    ExchangeImpl::init();
+    
     this->id = "ellipx";
     this->name = "Ellipx";
     this->countries = {"PL"};  // Poland

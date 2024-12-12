@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_LYKKE_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class lykke : public ExchangeImpl {
+class lykke : public Exchange {
 public:
     lykke(const Config& config = Config());
     ~lykke() = default;
@@ -51,7 +51,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

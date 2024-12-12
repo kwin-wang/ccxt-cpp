@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_COINLIST_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class coinlist : public ExchangeImpl {
+class coinlist : public Exchange {
 public:
     coinlist(const Config& config = Config());
     ~coinlist() = default;
@@ -39,6 +39,27 @@ protected:
     Json fetchBalanceImpl() const override;
     Json fetchLedgerImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
 
+    // Async Methods
+    // Market Data
+    std::future<Json> fetchMarketsAsync() const;
+    std::future<Json> fetchCurrenciesAsync() const;
+    std::future<Json> fetchTickerAsync(const std::string& symbol) const;
+    std::future<Json> fetchTickersAsync(const std::vector<std::string>& symbols = {}) const;
+    std::future<Json> fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+
+    // Trading
+    std::future<Json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt);
+    std::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol);
+    std::future<Json> fetchOrderAsync(const std::string& id, const std::string& symbol) const;
+    std::future<Json> fetchOpenOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchClosedOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchMyTradesAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+
+    // Account
+    std::future<Json> fetchBalanceAsync() const;
+    std::future<Json> fetchLedgerAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+
 private:
     static Exchange* createInstance(const Config& config) {
         return new coinlist(config);
@@ -49,7 +70,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_BITFINEX2_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class bitfinex2 : public ExchangeImpl {
+class bitfinex2 : public Exchange {
 public:
     bitfinex2(const Config& config = Config());
     ~bitfinex2() = default;
@@ -64,7 +64,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseMarket(const Json& market) const;

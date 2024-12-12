@@ -2,11 +2,10 @@
 #define CCXT_EXCHANGE_COINCATCH_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
 
 namespace ccxt {
 
-class coincatch : public ExchangeImpl {
+class coincatch : public Exchange {
 public:
     coincatch(const Config& config = Config());
     ~coincatch() = default;
@@ -31,6 +30,18 @@ protected:
     Json fetchFundingRateImpl(const std::string& symbol, const std::optional<Json>& params = std::nullopt) const override;
     Json fetchFundingRateHistoryImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
 
+    // Async Market Data Methods
+    boost::future<Json> fetchMarketsAsync(const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchCurrenciesAsync(const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchTickerAsync(const std::string& symbol, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchBalanceAsync(const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchLedgerAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchLeverageAsync(const std::string& symbol, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchFundingRateAsync(const std::string& symbol, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchFundingRateHistoryAsync(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const std::optional<Json>& params = std::nullopt) const;
+
     // Trading
     Json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt) override;
     Json createMarketOrderWithCostImpl(const std::string& symbol, const std::string& side, double cost, const std::optional<Json>& params = std::nullopt) override;
@@ -41,17 +52,32 @@ protected:
     Json cancelOrdersImpl(const std::vector<std::string>& ids, const std::string& symbol, const std::optional<Json>& params = std::nullopt) override;
     Json cancelAllOrdersImpl(const std::optional<std::string>& symbol = std::nullopt) override;
 
+    // Async Trading Methods
+    boost::future<Json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt, const std::optional<Json>& params = std::nullopt);
+    boost::future<Json> createMarketOrderWithCostAsync(const std::string& symbol, const std::string& side, double cost, const std::optional<Json>& params = std::nullopt);
+    boost::future<Json> createStopLimitOrderAsync(const std::string& symbol, const std::string& side, double amount, double price, double stopPrice, const std::optional<Json>& params = std::nullopt);
+    boost::future<Json> createStopMarketOrderAsync(const std::string& symbol, const std::string& side, double amount, double stopPrice, const std::optional<Json>& params = std::nullopt);
+    boost::future<Json> createTakeProfitOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt, const std::optional<Json>& params = std::nullopt);
+    boost::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol, const std::optional<Json>& params = std::nullopt);
+    boost::future<Json> cancelOrdersAsync(const std::vector<std::string>& ids, const std::string& symbol, const std::optional<Json>& params = std::nullopt);
+    boost::future<Json> cancelAllOrdersAsync(const std::optional<std::string>& symbol = std::nullopt, const std::optional<Json>& params = std::nullopt);
+
     // Account
     Json fetchDepositAddressImpl(const std::string& code, const std::optional<std::string>& network = std::nullopt) const override;
     Json fetchDepositsImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
     Json addMarginImpl(const std::string& symbol, double amount, const std::optional<Json>& params = std::nullopt) override;
+
+    // Async Account Methods
+    boost::future<Json> fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network = std::nullopt, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> fetchDepositsAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const std::optional<Json>& params = std::nullopt) const;
+    boost::future<Json> addMarginAsync(const std::string& symbol, double amount, const std::optional<Json>& params = std::nullopt);
 
 private:
     static Exchange* createInstance(const Config& config) {
         return new coincatch(config);
     }
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

@@ -3,10 +3,16 @@
 #include <sstream>
 #include <iomanip>
 #include <openssl/hmac.h>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/asio/strand.hpp>
 
 namespace ccxt {
 
-CoinEx::CoinEx() {
+CoinEx::CoinEx(boost::asio::io_context& context)
+    : Exchange()
+    , context_(context) {
     this->id = "coinex";
     this->name = "CoinEx";
     this->countries = {"CN"};
@@ -155,6 +161,10 @@ nlohmann::json CoinEx::fetch_markets() {
     return result;
 }
 
+std::future<nlohmann::json> CoinEx::fetch_markets_async() {
+    return std::async(std::launch::async, [this]() { return fetch_markets(); });
+}
+
 nlohmann::json CoinEx::create_order(const std::string& symbol, const std::string& type,
                                   const std::string& side, double amount, double price) {
     this->check_required_credentials();
@@ -175,6 +185,16 @@ nlohmann::json CoinEx::create_order(const std::string& symbol, const std::string
     return this->parse_order(response["data"]);
 }
 
+std::future<nlohmann::json> CoinEx::create_order_async(const std::string& symbol,
+                                             const std::string& type,
+                                             const std::string& side,
+                                             double amount,
+                                             double price) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price]() {
+        return create_order(symbol, type, side, amount, price);
+    });
+}
+
 nlohmann::json CoinEx::cancel_order(const std::string& id, const std::string& symbol) {
     this->check_required_credentials();
     auto request = {
@@ -187,10 +207,18 @@ nlohmann::json CoinEx::cancel_order(const std::string& id, const std::string& sy
     return this->fetch("order/pending", "private", "DELETE", request);
 }
 
+std::future<nlohmann::json> CoinEx::cancel_order_async(const std::string& id, const std::string& symbol) {
+    return std::async(std::launch::async, [this, id, symbol]() { return cancel_order(id, symbol); });
+}
+
 nlohmann::json CoinEx::fetch_balance() {
     this->check_required_credentials();
     auto response = this->fetch("balance/info", "private");
     return this->parse_balance(response);
+}
+
+std::future<nlohmann::json> CoinEx::fetch_balance_async() {
+    return std::async(std::launch::async, [this]() { return fetch_balance(); });
 }
 
 std::string CoinEx::sign(const std::string& path, const std::string& api,
@@ -285,6 +313,126 @@ std::string CoinEx::get_currency_id(const std::string& code) {
 
 std::string CoinEx::get_tonce() {
     return std::to_string(this->milliseconds());
+}
+
+std::future<nlohmann::json> CoinEx::fetch_ticker_async(const std::string& symbol) {
+    return std::async(std::launch::async, [this, symbol]() { return fetch_ticker(symbol); });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_order_book_async(const std::string& symbol, int limit) {
+    return std::async(std::launch::async, [this, symbol, limit]() { return fetch_order_book(symbol, limit); });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_trades_async(const std::string& symbol, long since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return fetch_trades(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_ohlcv_async(const std::string& symbol,
+                                                 const std::string& timeframe,
+                                                 long since,
+                                                 int limit) {
+    return std::async(std::launch::async, [this, symbol, timeframe, since, limit]() {
+        return fetch_ohlcv(symbol, timeframe, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::cancel_all_orders_async(const std::string& symbol) {
+    return std::async(std::launch::async, [this, symbol]() { return cancel_all_orders(symbol); });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_order_async(const std::string& id, const std::string& symbol) {
+    return std::async(std::launch::async, [this, id, symbol]() { return fetch_order(id, symbol); });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_orders_async(const std::string& symbol, long since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return fetch_orders(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_open_orders_async(const std::string& symbol, long since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return fetch_open_orders(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_closed_orders_async(const std::string& symbol, long since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return fetch_closed_orders(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_my_trades_async(const std::string& symbol, long since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return fetch_my_trades(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_deposit_address_async(const std::string& code) {
+    return std::async(std::launch::async, [this, code]() { return fetch_deposit_address(code); });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_deposits_async(const std::string& code, long since, int limit) {
+    return std::async(std::launch::async, [this, code, since, limit]() {
+        return fetch_deposits(code, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_withdrawals_async(const std::string& code, long since, int limit) {
+    return std::async(std::launch::async, [this, code, since, limit]() {
+        return fetch_withdrawals(code, since, limit);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::withdraw_async(const std::string& code,
+                                              double amount,
+                                              const std::string& address,
+                                              const std::string& tag,
+                                              const nlohmann::json& params) {
+    return std::async(std::launch::async, [this, code, amount, address, tag, params]() {
+        return withdraw(code, amount, address, tag, params);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_margin_balance_async() {
+    return std::async(std::launch::async, [this]() { return fetch_margin_balance(); });
+}
+
+std::future<nlohmann::json> CoinEx::create_margin_order_async(const std::string& symbol,
+                                                 const std::string& type,
+                                                 const std::string& side,
+                                                 double amount,
+                                                 double price) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price]() {
+        return create_margin_order(symbol, type, side, amount, price);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::borrow_margin_async(const std::string& code,
+                                             double amount,
+                                             const std::string& symbol) {
+    return std::async(std::launch::async, [this, code, amount, symbol]() {
+        return borrow_margin(code, amount, symbol);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::repay_margin_async(const std::string& code,
+                                             double amount,
+                                             const std::string& symbol) {
+    return std::async(std::launch::async, [this, code, amount, symbol]() {
+        return repay_margin(code, amount, symbol);
+    });
+}
+
+std::future<nlohmann::json> CoinEx::fetch_async(const std::string& url,
+                                             const std::string& method,
+                                             const std::map<std::string, std::string>& headers,
+                                             const std::string& body) {
+    return std::async(std::launch::async, [this, url, method, headers, body]() {
+        return fetch(url, method, headers, body);
+    });
 }
 
 } // namespace ccxt

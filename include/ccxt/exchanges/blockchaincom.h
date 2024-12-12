@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_BLOCKCHAINCOM_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class blockchaincom : public ExchangeImpl {
+class blockchaincom : public Exchange {
 public:
     blockchaincom(const Config& config = Config());
     ~blockchaincom() = default;
@@ -61,7 +61,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

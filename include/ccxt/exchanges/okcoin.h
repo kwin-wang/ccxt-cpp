@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../base/exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 
@@ -27,6 +27,31 @@ public:
     json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
     json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
     json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+
+    // Async REST API methods
+    json fetchTickerAsync(const String& symbol, const json& params = json::object());
+    json fetchBalanceAsync(const json& params = json::object());
+    json createOrderAsync(const String& symbol, const String& type,
+                         const String& side, double amount,
+                         double price = 0, const json& params = json::object());
+    json cancelOrderAsync(const String& id, const String& symbol = "",
+                         const json& params = json::object());
+    json fetchOrderAsync(const String& id, const String& symbol = "",
+                        const json& params = json::object());
+    json fetchOrdersAsync(const String& symbol = "", int since = 0,
+                         int limit = 0, const json& params = json::object());
+    json fetchOpenOrdersAsync(const String& symbol = "", int since = 0,
+                            int limit = 0, const json& params = json::object());
+    json fetchClosedOrdersAsync(const String& symbol = "", int since = 0,
+                              int limit = 0, const json& params = json::object());
+    json fetchMyTradesAsync(const String& symbol = "", int since = 0,
+                           int limit = 0, const json& params = json::object());
+    json fetchMarketsAsync(const json& params = json::object());
+    json fetchOrderBookAsync(const String& symbol, int limit = 0,
+                           const json& params = json::object());
+    json fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+                        int since = 0, int limit = 0,
+                        const json& params = json::object());
 
     // OKCoin specific methods
     json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());

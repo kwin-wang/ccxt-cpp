@@ -1,7 +1,7 @@
 #ifndef CCXT_EXCHANGE_CRYPTOCOM_H
 #define CCXT_EXCHANGE_CRYPTOCOM_H
 
-#include "../base/exchange.h"
+#include "ccxt/base/exchange.h"
 #include "../base/types.h"
 
 namespace ccxt {

@@ -289,4 +289,288 @@ json Mexc::parseOrderStatus(const String& status) {
     return statuses.contains(status) ? statuses.at(status) : status;
 }
 
+json Mexc::fetchTicker(const String& symbol, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {{"symbol", market.id}};
+    json response = fetch("/api/v3/ticker/24hr", "public", "GET", this->extend(request, params));
+    return this->parseTicker(response, market);
+}
+
+json Mexc::fetchTickers(const std::vector<String>& symbols, const json& params) {
+    this->loadMarkets();
+    json response = fetch("/api/v3/ticker/24hr", "public", "GET", params);
+    json result = json::object();
+    
+    for (const auto& ticker : response) {
+        String marketId = this->safeString(ticker, "symbol");
+        if (this->markets_by_id.contains(marketId)) {
+            Market market = this->markets_by_id[marketId];
+            String symbol = market.symbol;
+            if (symbols.empty() || std::find(symbols.begin(), symbols.end(), symbol) != symbols.end()) {
+                result[symbol] = this->parseTicker(ticker, market);
+            }
+        }
+    }
+    
+    return result;
+}
+
+json Mexc::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {{"symbol", market.id}};
+    
+    if (limit) {
+        request["limit"] = limit;
+    }
+    
+    json response = fetch("/api/v3/depth", "public", "GET", this->extend(request, params));
+    return this->parseOrderBook(response, symbol);
+}
+
+json Mexc::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {{"symbol", market.id}};
+    
+    if (limit) {
+        request["limit"] = limit;
+    }
+    
+    json response = fetch("/api/v3/trades", "public", "GET", this->extend(request, params));
+    return this->parseTrades(response, market, since, limit);
+}
+
+json Mexc::fetchOHLCV(const String& symbol, const String& timeframe,
+                     int since, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market.id},
+        {"interval", this->timeframes[timeframe]}
+    };
+    
+    if (since) {
+        request["startTime"] = since;
+    }
+    
+    if (limit) {
+        request["limit"] = limit;
+    }
+    
+    json response = fetch("/api/v3/klines", "public", "GET", this->extend(request, params));
+    return this->parseOHLCVs(response, market, timeframe, since, limit);
+}
+
+json Mexc::cancelOrder(const String& id, const String& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("cancelOrder requires a symbol argument");
+    }
+    
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market.id},
+        {"orderId", id}
+    };
+    
+    return fetch("/api/v3/order", "private", "DELETE", this->extend(request, params));
+}
+
+json Mexc::fetchOrder(const String& id, const String& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("fetchOrder requires a symbol argument");
+    }
+    
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market.id},
+        {"orderId", id}
+    };
+    
+    json response = fetch("/api/v3/order", "private", "GET", this->extend(request, params));
+    return this->parseOrder(response, market);
+}
+
+json Mexc::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("fetchOrders requires a symbol argument");
+    }
+    
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {{"symbol", market.id}};
+    
+    if (since) {
+        request["startTime"] = since;
+    }
+    
+    if (limit) {
+        request["limit"] = limit;
+    }
+    
+    json response = fetch("/api/v3/allOrders", "private", "GET", this->extend(request, params));
+    return this->parseOrders(response, market, since, limit);
+}
+
+json Mexc::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {{"symbol", market.id}};
+    
+    if (since) {
+        request["startTime"] = since;
+    }
+    
+    if (limit) {
+        request["limit"] = limit;
+    }
+    
+    json response = fetch("/api/v3/openOrders", "private", "GET", this->extend(request, params));
+    return this->parseOrders(response, market, since, limit);
+}
+
+json Mexc::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+    json orders = this->fetchOrders(symbol, since, limit, params);
+    return this->filterBy(orders, "status", "closed");
+}
+
+json Mexc::fetchPositions(const String& symbols, const json& params) {
+    this->loadMarkets();
+    json response = fetch("/api/futures/v1/account/positions", "futures", "GET", params);
+    return this->parsePositions(response);
+}
+
+json Mexc::fetchPositionRisk(const String& symbols, const json& params) {
+    this->loadMarkets();
+    json response = fetch("/api/futures/v1/account/risk", "futures", "GET", params);
+    return this->parsePositionRisk(response);
+}
+
+json Mexc::setLeverage(int leverage, const String& symbol, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market.id},
+        {"leverage", leverage}
+    };
+    
+    return fetch("/api/futures/v1/position/leverage", "futures", "POST", this->extend(request, params));
+}
+
+json Mexc::setMarginMode(const String& marginMode, const String& symbol, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market.id},
+        {"marginMode", marginMode}
+    };
+    
+    return fetch("/api/futures/v1/position/margin", "futures", "POST", this->extend(request, params));
+}
+
+json Mexc::fetchFundingRate(const String& symbol, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {{"symbol", market.id}};
+    
+    json response = fetch("/api/futures/v1/funding/rate", "futures", "GET", this->extend(request, params));
+    return this->parseFundingRate(response);
+}
+
+json Mexc::fetchFundingRates(const std::vector<String>& symbols, const json& params) {
+    this->loadMarkets();
+    json response = fetch("/api/futures/v1/funding/rate", "futures", "GET", params);
+    return this->parseFundingRates(response);
+}
+
+json Mexc::fetchFundingHistory(const String& symbol, int since, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {{"symbol", market.id}};
+    
+    if (since) {
+        request["startTime"] = since;
+    }
+    
+    if (limit) {
+        request["limit"] = limit;
+    }
+    
+    json response = fetch("/api/futures/v1/funding/history", "futures", "GET", this->extend(request, params));
+    return this->parseFundingHistory(response);
+}
+
+String Mexc::getTimestamp() {
+    return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count());
+}
+
+String Mexc::createSignature(const String& timestamp, const String& method,
+                           const String& path, const String& body) {
+    String message = timestamp + method + path;
+    if (!body.empty()) {
+        message += body;
+    }
+    
+    unsigned char* digest = HMAC(EVP_sha256(), this->secret.c_str(), this->secret.length(),
+                                (unsigned char*)message.c_str(), message.length(), NULL, NULL);
+    
+    std::stringstream ss;
+    for(int i = 0; i < 32; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)digest[i];
+    }
+    return ss.str();
+}
+
+String Mexc::getMexcSymbol(const String& symbol) {
+    return symbol.find('/') != String::npos ? symbol.substr(0, symbol.find('/')) + symbol.substr(symbol.find('/') + 1) : symbol;
+}
+
+String Mexc::getCommonSymbol(const String& mexcSymbol) {
+    return mexcSymbol.substr(0, 3) + "/" + mexcSymbol.substr(3);
+}
+
+json Mexc::parsePosition(const json& position, const Market& market) {
+    String symbol = this->safeString(position, "symbol");
+    String timestamp = this->safeInteger(position, "timestamp");
+    
+    return {
+        {"info", position},
+        {"symbol", symbol},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"initialMargin", this->safeFloat(position, "initialMargin")},
+        {"initialMarginPercentage", this->safeFloat(position, "initialMarginPercentage")},
+        {"maintenanceMargin", this->safeFloat(position, "maintenanceMargin")},
+        {"maintenanceMarginPercentage", this->safeFloat(position, "maintenanceMarginPercentage")},
+        {"entryPrice", this->safeFloat(position, "entryPrice")},
+        {"notional", this->safeFloat(position, "notional")},
+        {"leverage", this->safeFloat(position, "leverage")},
+        {"unrealizedPnl", this->safeFloat(position, "unrealizedPnl")},
+        {"contracts", this->safeFloat(position, "contracts")},
+        {"contractSize", this->safeFloat(position, "contractSize")},
+        {"marginRatio", this->safeFloat(position, "marginRatio")},
+        {"liquidationPrice", this->safeFloat(position, "liquidationPrice")},
+        {"markPrice", this->safeFloat(position, "markPrice")},
+        {"collateral", this->safeFloat(position, "collateral")},
+        {"marginType", this->safeString(position, "marginType")},
+        {"side", this->safeString(position, "side")},
+        {"percentage", this->safeFloat(position, "percentage")}
+    };
+}
+
+json Mexc::parseLedgerEntryType(const String& type) {
+    static const std::map<String, String> types = {
+        {"deposit", "transaction"},
+        {"withdrawal", "transaction"},
+        {"trade", "trade"},
+        {"fee", "fee"}
+    };
+    
+    return types.contains(type) ? types.at(type) : type;
+}
+
 } // namespace ccxt

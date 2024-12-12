@@ -8,16 +8,13 @@ const std::string mercado::defaultVersion = "v3";
 const int mercado::defaultRateLimit = 1000;
 const bool mercado::defaultPro = true;
 
-ExchangeRegistry::Factory mercado::factory = []() {
-    return new mercado();
-};
 
-mercado::mercado(const Config& config) : ExchangeImpl(config) {
+mercado::mercado(const Config& config) : Exchange(config) {
     init();
 }
 
 void mercado::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

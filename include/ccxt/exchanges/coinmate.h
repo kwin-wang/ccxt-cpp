@@ -1,41 +1,83 @@
-#pragma once
+#ifndef CCXT_EXCHANGE_COINMATE_H
+#define CCXT_EXCHANGE_COINMATE_H
 
 #include "ccxt/base/exchange.h"
+#include <future>
 
 namespace ccxt {
 
-class Coinmate : public Exchange {
+class coinmate : public Exchange {
 public:
-    Coinmate();
-    ~Coinmate() override = default;
+    coinmate(const Config& config = Config());
+    ~coinmate() = default;
 
-    // Market data endpoints
-    nlohmann::json fetch_markets() override;
-    nlohmann::json fetch_ticker(const std::string& symbol) override;
-    nlohmann::json fetch_order_book(const std::string& symbol, int limit = 0) override;
-    nlohmann::json fetch_trades(const std::string& symbol, int limit = 0) override;
-    nlohmann::json fetch_balance() override;
-
-    // Trading endpoints
-    nlohmann::json create_order(const std::string& symbol, const std::string& type,
-                               const std::string& side, double amount,
-                               double price = 0.0) override;
-    nlohmann::json cancel_order(const std::string& id, const std::string& symbol = "") override;
-    nlohmann::json fetch_order(const std::string& id, const std::string& symbol = "") override;
-    nlohmann::json fetch_orders(const std::string& symbol = "", int limit = 0) override;
-    nlohmann::json fetch_open_orders(const std::string& symbol = "");
-    nlohmann::json fetch_my_trades(const std::string& symbol = "", int limit = 0);
+    static Exchange* create(const Config& config = Config()) {
+        return new coinmate(config);
+    }
 
 protected:
-    std::string sign(const std::string& path, const std::string& api = "public",
-                    const std::string& method = "GET", const nlohmann::json& params = nlohmann::json({}),
-                    const std::map<std::string, std::string>& headers = {}) override;
+    void init() override;
+    Json describeImpl() const override;
+
+    // Market Data
+    Json fetchMarketsImpl() const override;
+    Json fetchTickerImpl(const std::string& symbol) const override;
+    Json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const override;
+    Json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchTradesImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+
+    // Trading
+    Json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt) override;
+    Json cancelOrderImpl(const std::string& id, const std::string& symbol) override;
+    Json fetchOrderImpl(const std::string& id, const std::string& symbol) const override;
+    Json fetchOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchOpenOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchClosedOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+    Json fetchMyTradesImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+
+    // Account
+    Json fetchBalanceImpl() const override;
+    Json fetchDepositsWithdrawalsImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+
+    // Async Methods
+    // Market Data
+    std::future<Json> fetchMarketsAsync() const;
+    std::future<Json> fetchTickerAsync(const std::string& symbol) const;
+    std::future<Json> fetchTickersAsync(const std::vector<std::string>& symbols = {}) const;
+    std::future<Json> fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchTradesAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+
+    // Trading
+    std::future<Json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt);
+    std::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol);
+    std::future<Json> fetchOrderAsync(const std::string& id, const std::string& symbol) const;
+    std::future<Json> fetchOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchOpenOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchClosedOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    std::future<Json> fetchMyTradesAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+
+    // Account
+    std::future<Json> fetchBalanceAsync() const;
+    std::future<Json> fetchDepositsWithdrawalsAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
 
 private:
-    nlohmann::json parse_ticker(const nlohmann::json& ticker, const nlohmann::json& market = nlohmann::json({}));
-    nlohmann::json parse_trade(const nlohmann::json& trade, const nlohmann::json& market = nlohmann::json({}));
-    nlohmann::json parse_order(const nlohmann::json& order, const nlohmann::json& market = nlohmann::json({}));
-    std::string get_currency_id(const std::string& code);
+    static Exchange* createInstance(const Config& config) {
+        return new coinmate(config);
+    }
+
+    static const std::string defaultBaseURL;
+    static const std::string defaultVersion;
+    static const int defaultRateLimit;
+    static const bool defaultPro;
+
+    Json parseTicker(const Json& ticker, const Json& market = Json()) const;
+    Json parseTrade(const Json& trade, const Json& market = Json()) const;
+    Json parseOrder(const Json& order, const Json& market = Json()) const;
+    std::string getCurrencyId(const std::string& code) const;
 };
 
 } // namespace ccxt
+
+#endif // CCXT_EXCHANGE_COINMATE_H

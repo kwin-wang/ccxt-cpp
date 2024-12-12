@@ -3,15 +3,14 @@
 
 namespace ccxt {
 
-ExchangeRegistry::Factory coincatch::factory("coincatch", &coincatch::createInstance);
 
 coincatch::coincatch(const Config& config)
-    : ExchangeImpl(config) {
+    : Exchange(config) {
     init();
 }
 
 void coincatch::init() {
-    ExchangeImpl::init();
+    
     this->apiVersion = "v1";
     this->rateLimit = 50;  // 20 times per second
 }
@@ -180,6 +179,135 @@ Json coincatch::fetchFundingRateImpl(const std::string& symbol, const std::optio
 
     auto response = this->publicGetFundingRate(request);
     return this->parseFundingRate(response["data"]);
+}
+
+// Async Market Data Methods
+boost::future<Json> coincatch::fetchMarketsAsync(const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchMarketsImpl();
+    });
+}
+
+boost::future<Json> coincatch::fetchCurrenciesAsync(const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchCurrenciesImpl();
+    });
+}
+
+boost::future<Json> coincatch::fetchTickerAsync(const std::string& symbol, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, symbol]() {
+        return this->fetchTickerImpl(symbol);
+    });
+}
+
+boost::future<Json> coincatch::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, symbol, limit]() {
+        return this->fetchOrderBookImpl(symbol, limit);
+    });
+}
+
+boost::future<Json> coincatch::fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit]() {
+        return this->fetchTradesImpl(symbol, since, limit);
+    });
+}
+
+boost::future<Json> coincatch::fetchBalanceAsync(const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this]() {
+        return this->fetchBalanceImpl();
+    });
+}
+
+boost::future<Json> coincatch::fetchLedgerAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, code, since, limit]() {
+        return this->fetchLedgerImpl(code, since, limit);
+    });
+}
+
+boost::future<Json> coincatch::fetchLeverageAsync(const std::string& symbol, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->fetchLeverageImpl(symbol, params);
+    });
+}
+
+boost::future<Json> coincatch::fetchFundingRateAsync(const std::string& symbol, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->fetchFundingRateImpl(symbol, params);
+    });
+}
+
+boost::future<Json> coincatch::fetchFundingRateHistoryAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit]() {
+        return this->fetchFundingRateHistoryImpl(symbol, since, limit);
+    });
+}
+
+// Async Trading Methods
+boost::future<Json> coincatch::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price]() {
+        return this->createOrderImpl(symbol, type, side, amount, price);
+    });
+}
+
+boost::future<Json> coincatch::createMarketOrderWithCostAsync(const std::string& symbol, const std::string& side, double cost, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, symbol, side, cost, params]() {
+        return this->createMarketOrderWithCostImpl(symbol, side, cost, params);
+    });
+}
+
+boost::future<Json> coincatch::createStopLimitOrderAsync(const std::string& symbol, const std::string& side, double amount, double price, double stopPrice, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, symbol, side, amount, price, stopPrice, params]() {
+        return this->createStopLimitOrderImpl(symbol, side, amount, price, stopPrice, params);
+    });
+}
+
+boost::future<Json> coincatch::createStopMarketOrderAsync(const std::string& symbol, const std::string& side, double amount, double stopPrice, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, symbol, side, amount, stopPrice, params]() {
+        return this->createStopMarketOrderImpl(symbol, side, amount, stopPrice, params);
+    });
+}
+
+boost::future<Json> coincatch::createTakeProfitOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createTakeProfitOrderImpl(symbol, type, side, amount, price, params);
+    });
+}
+
+boost::future<Json> coincatch::cancelOrderAsync(const std::string& id, const std::string& symbol, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, id, symbol]() {
+        return this->cancelOrderImpl(id, symbol);
+    });
+}
+
+boost::future<Json> coincatch::cancelOrdersAsync(const std::vector<std::string>& ids, const std::string& symbol, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, ids, symbol, params]() {
+        return this->cancelOrdersImpl(ids, symbol, params);
+    });
+}
+
+boost::future<Json> coincatch::cancelAllOrdersAsync(const std::optional<std::string>& symbol, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, symbol]() {
+        return this->cancelAllOrdersImpl(symbol);
+    });
+}
+
+// Async Account Methods
+boost::future<Json> coincatch::fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, code, network]() {
+        return this->fetchDepositAddressImpl(code, network);
+    });
+}
+
+boost::future<Json> coincatch::fetchDepositsAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit, const std::optional<Json>& params) const {
+    return boost::async(boost::launch::async, [this, code, since, limit]() {
+        return this->fetchDepositsImpl(code, since, limit);
+    });
+}
+
+boost::future<Json> coincatch::addMarginAsync(const std::string& symbol, double amount, const std::optional<Json>& params) {
+    return boost::async(boost::launch::async, [this, symbol, amount, params]() {
+        return this->addMarginImpl(symbol, amount, params);
+    });
 }
 
 } // namespace ccxt

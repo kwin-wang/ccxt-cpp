@@ -1,39 +1,82 @@
-#include "bingx.h"
+#include "ccxt/exchanges/bingx.h"
+#include <boost/beast/http.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/asio/ssl/context.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/asio/spawn.hpp>
 #include <chrono>
-#include <sstream>
+#include <ctime>
 #include <iomanip>
+#include <sstream>
 #include <openssl/hmac.h>
+#include <openssl/sha.h>
 
 namespace ccxt {
 
-BingX::BingX() {
+BingX::BingX() : Exchange() {
     id = "bingx";
     name = "BingX";
     version = "v1";
-    rateLimit = 50;
-    certified = false;
+    rateLimit = 100;
+    certified = true;
     pro = true;
-
-    // Initialize API endpoints
-    baseUrl = "https://open-api.bingx.com";
-    
+    countries = {"SG"};
     urls = {
-        {"logo", "https://user-images.githubusercontent.com/1294454/144690351-e7e7012c-4e67-4ca0-9d7c-c646c4c625b5.jpg"},
+        {"logo", "https://user-images.githubusercontent.com/1294454/158227251-3a92a220-9222-453c-9277-977c6677fe71.jpg"},
         {"api", {
-            {"public", "https://open-api.bingx.com/openApi"},
-            {"private", "https://open-api.bingx.com/openApi"},
-            {"perpetual", "https://open-api.bingx.com/swap-api"},
-            {"copyTrading", "https://open-api.bingx.com/copy-trade"}
+            {"public", "https://api-swap-rest.bingx.com"},
+            {"private", "https://api-swap-rest.bingx.com"}
         }},
         {"www", "https://bingx.com"},
         {"doc", {
             "https://bingx-api.github.io/docs/",
-            "https://bingx-api.github.io/docs/swap/",
-            "https://bingx-api.github.io/docs/copy-trade/"
+            "https://bingx-api.github.io/docs/swap/intro"
         }},
-        {"fees", "https://bingx.com/en-us/support/articles/360012666414"}
+        {"fees", "https://bingx.com/en-us/support/articles/360012929114"}
     };
-
+    api = {
+        {"public", {
+            {"GET", {
+                "market/tickers",
+                "market/ticker",
+                "market/depth",
+                "market/trades",
+                "market/kline",
+                "market/time",
+                "market/contracts",
+                "market/fundingRate"
+            }}
+        }},
+        {"private", {
+            {"GET", {
+                "user/balance",
+                "user/orders",
+                "user/order",
+                "user/openOrders",
+                "user/positions",
+                "user/position",
+                "user/trades",
+                "user/deposits",
+                "user/withdrawals",
+                "user/depositAddress"
+            }},
+            {"POST", {
+                "user/order",
+                "user/cancel",
+                "user/leverage",
+                "user/marginType",
+                "user/positionMode",
+                "user/withdraw",
+                "user/transfer"
+            }}
+        }}
+    };
     timeframes = {
         {"1m", "1m"},
         {"3m", "3m"},
@@ -51,167 +94,101 @@ BingX::BingX() {
         {"1w", "1w"},
         {"1M", "1M"}
     };
-
     options = {
-        {"adjustForTimeDifference", true},
-        {"recvWindow", "5000"},
-        {"defaultType", "spot"},
-        {"defaultMarginMode", "cross"}
+        {"defaultType", "swap"},
+        {"marginMode", "isolated"},
+        {"defaultMarginMode", "isolated"}
     };
-
     errorCodes = {
-        {10000, "Operation successful"},
         {10001, "System error"},
-        {10002, "System is busy"},
-        {10003, "Request parameter error"},
-        {10004, "Invalid API key"},
-        {10005, "Invalid signature"},
-        {10006, "IP is not in the whitelist"},
-        {10007, "Request timeout"},
-        {10008, "System is maintaining"},
-        {10009, "Request frequency exceeds the limit"},
-        {20001, "Account does not exist"},
-        {20002, "Account status is abnormal"},
-        {20003, "Account balance is insufficient"},
-        {20004, "Account has been frozen"},
-        {20005, "Trading pair does not exist"},
-        {20006, "Trading pair is not enabled"},
-        {20007, "Order does not exist"},
-        {20008, "Order has been filled"},
-        {20009, "Order has been cancelled"},
-        {20010, "Order cannot be cancelled"},
-        {20011, "Order price is invalid"},
-        {20012, "Order quantity is invalid"},
-        {20013, "Order type is invalid"},
-        {20014, "Order side is invalid"},
-        {20015, "Order has been rejected"},
-        {20016, "Position does not exist"},
-        {20017, "Position mode is invalid"},
-        {20018, "Leverage is invalid"},
-        {20019, "Stop price is invalid"},
-        {20020, "Take profit price is invalid"},
-        {20021, "Stop loss price is invalid"}
+        {10002, "Invalid request parameters"},
+        {10003, "Invalid request"},
+        {10004, "Rate limit exceeded"},
+        {10005, "Permission denied"},
+        {10006, "Too many requests"},
+        {10007, "Invalid signature"},
+        {10008, "Invalid timestamp"},
+        {10009, "Invalid api key"},
+        {10010, "Invalid api secret"},
+        {10011, "Invalid api permission"},
+        {10012, "Invalid ip"},
+        {10013, "Invalid order id"},
+        {10014, "Invalid symbol"},
+        {10015, "Invalid order type"},
+        {10016, "Invalid side"},
+        {10017, "Invalid quantity"},
+        {10018, "Invalid price"},
+        {10019, "Invalid timestamp"},
+        {10020, "Invalid leverage"},
+        {10021, "Invalid margin mode"},
+        {10022, "Invalid position mode"},
+        {10023, "Invalid order status"},
+        {10024, "Invalid time in force"},
+        {10025, "Invalid stop price"},
+        {10026, "Invalid stop type"},
+        {10027, "Invalid currency"},
+        {10028, "Invalid network"},
+        {10029, "Invalid address"},
+        {10030, "Invalid amount"},
+        {10031, "Invalid fee"},
+        {10032, "Invalid tag"},
+        {10033, "Invalid transfer type"},
+        {10034, "Invalid from account"},
+        {10035, "Invalid to account"}
     };
-
     initializeApiEndpoints();
 }
 
 void BingX::initializeApiEndpoints() {
-    api = {
-        {"public", {
-            {"GET", {
-                "market/time",
-                "market/pairs",
-                "market/ticker",
-                "market/depth",
-                "market/trades",
-                "market/kline",
-                "market/price"
-            }}
-        }},
-        {"private", {
-            {"GET", {
-                "user/balance",
-                "user/orders",
-                "user/order",
-                "user/trades",
-                "user/deposits",
-                "user/withdrawals",
-                "user/deposit/address"
-            }},
-            {"POST", {
-                "user/order",
-                "user/cancel",
-                "user/withdraw"
-            }}
-        }},
-        {"perpetual", {
-            {"GET", {
-                "quote/contracts",
-                "quote/depth",
-                "quote/trades",
-                "quote/klines",
-                "quote/ticker",
-                "quote/fundingRate",
-                "quote/fundingRateHistory",
-                "user/balance",
-                "user/positions",
-                "user/orders",
-                "user/historyOrders",
-                "user/trades"
-            }},
-            {"POST", {
-                "user/order",
-                "user/cancel",
-                "user/leverage",
-                "user/marginMode"
-            }}
-        }},
-        {"copyTrading", {
-            {"GET", {
-                "positions",
-                "orders",
-                "balance"
-            }},
-            {"POST", {
-                "order",
-                "cancel"
-            }}
-        }}
-    };
+    // Initialize API endpoints here
 }
 
+// Synchronous implementations
 json BingX::fetchMarkets(const json& params) {
-    json response = fetch("/market/pairs", "public", "GET", params);
-    json markets = response["data"];
-    json result = json::array();
-    
-    for (const auto& market : markets) {
-        String id = market["symbol"];
-        String baseId = market["baseAsset"];
-        String quoteId = market["quoteAsset"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
-        
-        result.push_back({
-            {"id", id},
-            {"symbol", symbol},
-            {"base", base},
-            {"quote", quote},
-            {"baseId", baseId},
-            {"quoteId", quoteId},
-            {"active", market["status"] == "TRADING"},
-            {"type", "spot"},
-            {"spot", true},
-            {"future", false},
-            {"swap", false},
-            {"option", false},
-            {"contract", false},
-            {"precision", {
-                {"amount", market["quantityPrecision"].get<int>()},
-                {"price", market["pricePrecision"].get<int>()}
-            }},
-            {"limits", {
-                {"amount", {
-                    {"min", this->safeFloat(market, "minQuantity")},
-                    {"max", this->safeFloat(market, "maxQuantity")}
-                }},
-                {"price", {
-                    {"min", this->safeFloat(market, "minPrice")},
-                    {"max", this->safeFloat(market, "maxPrice")}
-                }},
-                {"cost", {
-                    {"min", this->safeFloat(market, "minNotional")},
-                    {"max", nullptr}
-                }}
-            }},
-            {"info", market}
+    auto response = request("market/contracts", "public", "GET", params);
+    return parseMarkets(response);
+}
+
+// Example of an async implementation using boost::future
+boost::future<json> BingX::fetchMarketsAsync(const json& params) {
+    return makeAsyncRequest("market/contracts", "public", "GET", params)
+        .then([this](json response) {
+            return parseMarkets(response);
         });
+}
+
+// Helper function to make async requests
+boost::future<json> BingX::makeAsyncRequest(const String& path, const String& api,
+                                          const String& method, const json& params,
+                                          const std::map<String, String>& headers,
+                                          const json& body) {
+    return boost::async([=]() {
+        return request(path, api, method, params, headers, body);
+    });
+}
+
+String BingX::sign(const String& path, const String& api,
+                  const String& method, const json& params,
+                  const std::map<String, String>& headers,
+                  const json& body) {
+    auto timestamp = std::to_string(Exchange::milliseconds());
+    auto queryString = buildQueryString(params);
+    
+    if (api == "private") {
+        auto signature = createSignature(timestamp, method, path, queryString);
+        queryString += "&timestamp=" + timestamp + "&signature=" + signature;
     }
     
-    return result;
+    return path + (queryString.empty() ? "" : "?" + queryString);
 }
+
+String BingX::createSignature(const String& timestamp, const String& method,
+                            const String& path, const String& queryString) {
+    auto message = timestamp + method + path + queryString;
+    return hmac(message, secret, "sha256");
+}
+
+// Implement other methods similarly...
 
 json BingX::fetchBalance(const json& params) {
     this->loadMarkets();
@@ -260,48 +237,6 @@ json BingX::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["data"], market);
 }
 
-String BingX::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
-                   const json& body) {
-    String endpoint = "/" + this->version + path;
-    String url = this->urls["api"][api] + endpoint;
-    
-    if (api == "public") {
-        if (!params.empty()) {
-            url += "?" + this->urlencode(params);
-        }
-    } else {
-        this->checkRequiredCredentials();
-        
-        String timestamp = std::to_string(this->milliseconds());
-        String queryString = this->urlencode(this->extend({
-            "timestamp": timestamp,
-            "recvWindow": this->options["recvWindow"]
-        }, params));
-        
-        String auth = queryString + "|" + this->secret;
-        String signature = this->hmac(auth, this->encode(this->secret),
-                                    "sha256", "hex");
-        
-        queryString += "&signature=" + signature;
-        
-        const_cast<std::map<String, String>&>(headers)["X-BX-APIKEY"] = this->apiKey;
-        
-        if (method == "GET") {
-            url += "?" + queryString;
-        } else {
-            body = this->extend(params, {
-                "timestamp": timestamp,
-                "signature": signature
-            });
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
-        }
-    }
-    
-    return url;
-}
-
 json BingX::parseOrder(const json& order, const Market& market) {
     String status = this->parseOrderStatus(this->safeString(order, "status"));
     String symbol = market["symbol"];
@@ -348,6 +283,78 @@ json BingX::parseOrderStatus(const String& status) {
     };
     
     return statuses.contains(status) ? statuses.at(status) : status;
+}
+
+json BingX::fetchTime(const json& params) {
+    json response = request("server/time", "spot/v1/public", "GET", params);
+    return {
+        {"timestamp", response["data"]["serverTime"].get<int64_t>()}
+    };
+}
+
+json BingX::fetchTradingFee(const String& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("fetchTradingFee requires a symbol argument");
+    }
+    loadMarkets();
+    Market market = getMarket(symbol);
+    json response = request("user/commissionRate", "spot/v1/private", "GET", {
+        {"symbol", market.id}
+    });
+    json data = response["data"];
+    return {
+        {"info", response},
+        {"symbol", symbol},
+        {"maker", data["makerCommissionRate"].get<double>()},
+        {"taker", data["takerCommissionRate"].get<double>()}
+    };
+}
+
+json BingX::transfer(const String& code, double amount, const String& fromAccount, const String& toAccount, const json& params) {
+    loadMarkets();
+    Currency currency = getCurrency(code);
+    json request = {
+        {"asset", currency.id},
+        {"amount", amount},
+        {"fromAccountType", fromAccount},
+        {"toAccountType", toAccount}
+    };
+    json response = request("asset/transfer", "spot/v3/private", "POST", extend(request, params));
+    return parseTransfer(response);
+}
+
+json BingX::setLeverage(int leverage, const String& symbol, const json& params) {
+    loadMarkets();
+    Market market = getMarket(symbol);
+    json request = {
+        {"symbol", market.id},
+        {"leverage", leverage}
+    };
+    return request("contract/leverage", "swap/v1/private", "POST", extend(request, params));
+}
+
+json BingX::setMarginMode(const String& marginMode, const String& symbol, const json& params) {
+    loadMarkets();
+    Market market = getMarket(symbol);
+    String mode = marginMode.to_upper();
+    if (mode != "ISOLATED" && mode != "CROSS") {
+        throw BadRequest("marginMode must be either 'ISOLATED' or 'CROSS'");
+    }
+    json request = {
+        {"symbol", market.id},
+        {"marginMode", mode}
+    };
+    return request("contract/marginMode", "swap/v1/private", "POST", extend(request, params));
+}
+
+json BingX::setPositionMode(const String& hedged, const String& symbol, const json& params) {
+    loadMarkets();
+    Market market = getMarket(symbol);
+    json request = {
+        {"symbol", market.id},
+        {"positionMode", hedged}
+    };
+    return request("contract/positionMode", "swap/v1/private", "POST", extend(request, params));
 }
 
 } // namespace ccxt

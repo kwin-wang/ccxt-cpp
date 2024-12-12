@@ -8,16 +8,12 @@ const std::string lykke::defaultVersion = "2";
 const int lykke::defaultRateLimit = 200;
 const bool lykke::defaultPro = true;
 
-ExchangeRegistry::Factory lykke::factory = []() {
-    return new lykke();
-};
-
-lykke::lykke(const Config& config) : ExchangeImpl(config) {
+lykke::lykke(const Config& config) : Exchange(config) {
     init();
 }
 
 void lykke::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../base/exchange.h"
+#include "ccxt/base/exchange.h"
+#include <boost/thread/future.hpp>
 
 namespace ccxt {
 
@@ -9,7 +10,7 @@ public:
     Bitfinex();
     ~Bitfinex() override = default;
 
-    // Market Data API
+    // Market Data API - Sync
     json fetchMarkets(const json& params = json::object()) override;
     json fetchTicker(const String& symbol, const json& params = json::object()) override;
     json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object()) override;
@@ -18,7 +19,16 @@ public:
     json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
                     int since = 0, int limit = 0, const json& params = json::object()) override;
 
-    // Trading API
+    // Market Data API - Async
+    boost::future<json> fetchMarketsAsync(const json& params = json::object());
+    boost::future<json> fetchTickerAsync(const String& symbol, const json& params = json::object());
+    boost::future<json> fetchTickersAsync(const std::vector<String>& symbols = {}, const json& params = json::object());
+    boost::future<json> fetchOrderBookAsync(const String& symbol, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchTradesAsync(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+                                     int since = 0, int limit = 0, const json& params = json::object());
+
+    // Trading API - Sync
     json fetchBalance(const json& params = json::object()) override;
     json createOrder(const String& symbol, const String& type, const String& side,
                     double amount, double price = 0, const json& params = json::object()) override;
@@ -28,7 +38,17 @@ public:
     json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
     json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
 
-    // Bitfinex specific methods
+    // Trading API - Async
+    boost::future<json> fetchBalanceAsync(const json& params = json::object());
+    boost::future<json> createOrderAsync(const String& symbol, const String& type, const String& side,
+                                     double amount, double price = 0, const json& params = json::object());
+    boost::future<json> cancelOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
+    boost::future<json> fetchOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
+    boost::future<json> fetchOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchClosedOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+
+    // Bitfinex specific methods - Sync
     json fetchPositions(const String& symbol = "", const json& params = json::object());
     json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
     json fetchLedger(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
@@ -36,6 +56,15 @@ public:
     json setLeverage(const String& symbol, double leverage, const json& params = json::object());
     json fetchDeposits(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
     json fetchWithdrawals(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
+
+    // Bitfinex specific methods - Async
+    boost::future<json> fetchPositionsAsync(const String& symbol = "", const json& params = json::object());
+    boost::future<json> fetchMyTradesAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchLedgerAsync(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchFundingRatesAsync(const std::vector<String>& symbols = {}, const json& params = json::object());
+    boost::future<json> setLeverageAsync(const String& symbol, double leverage, const json& params = json::object());
+    boost::future<json> fetchDepositsAsync(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchWithdrawalsAsync(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
 
 protected:
     String sign(const String& path, const String& api = "public",

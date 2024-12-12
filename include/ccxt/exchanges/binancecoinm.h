@@ -1,45 +1,67 @@
 #pragma once
 
-#include "ccxt/exchanges/binance.h"
+#include "binance.h"
 
 namespace ccxt {
 
-class BinanceCoinm : public Binance {
+class BinanceCoinM : public Binance {
 public:
-    BinanceCoinm();
-    ~BinanceCoinm() override = default;
+    static const std::string defaultHostname;
+    static const int defaultRateLimit;
+    static const bool defaultPro;
+    
 
-    // Market data endpoints
-    nlohmann::json fetch_markets() override;
-    nlohmann::json fetch_funding_rate(const std::string& symbol);
-    nlohmann::json fetch_funding_rates(const std::vector<std::string>& symbols = {});
-    nlohmann::json fetch_funding_rate_history(const std::string& symbol = "", int since = 0, int limit = 0);
-    nlohmann::json fetch_index_ohlcv(const std::string& symbol, const std::string& timeframe = "1m",
-                                    int since = 0, int limit = 0);
-    nlohmann::json fetch_mark_ohlcv(const std::string& symbol, const std::string& timeframe = "1m",
-                                   int since = 0, int limit = 0);
-    nlohmann::json fetch_premium_index_ohlcv(const std::string& symbol, const std::string& timeframe = "1m",
-                                            int since = 0, int limit = 0);
+    explicit BinanceCoinM(const Config& config = Config());
+    virtual ~BinanceCoinM() = default;
 
-    // Trading endpoints
-    nlohmann::json fetch_leverage_brackets(const std::vector<std::string>& symbols = {});
-    nlohmann::json fetch_positions(const std::vector<std::string>& symbols = {});
-    nlohmann::json set_leverage(int leverage, const std::string& symbol);
-    nlohmann::json set_margin_mode(const std::string& marginMode, const std::string& symbol = "");
-    nlohmann::json set_position_mode(bool hedged);
-    nlohmann::json add_margin(const std::string& symbol, double amount);
-    nlohmann::json reduce_margin(const std::string& symbol, double amount);
+    void init() override;
 
 protected:
-    std::string sign(const std::string& path, const std::string& api = "public",
-                    const std::string& method = "GET", const nlohmann::json& params = nlohmann::json({}),
-                    const std::map<std::string, std::string>& headers = {}) override;
+    // Market Data API
+    json fetchMarketsImpl() const override;
+    json fetchTickerImpl(const std::string& symbol) const override;
+    json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const override;
+    json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
+    json fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt,
+                      const std::optional<int>& limit = std::nullopt) const override;
+    json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe = "1m",
+                     const std::optional<long long>& since = std::nullopt,
+                     const std::optional<int>& limit = std::nullopt) const override;
+    json fetchIndexOHLCVImpl(const std::string& symbol, const std::string& timeframe = "1m",
+                          const std::optional<long long>& since = std::nullopt,
+                          const std::optional<int>& limit = std::nullopt) const override;
+    json fetchMarkOHLCVImpl(const std::string& symbol, const std::string& timeframe = "1m",
+                         const std::optional<long long>& since = std::nullopt,
+                         const std::optional<int>& limit = std::nullopt) const override;
+    json fetchPremiumIndexOHLCVImpl(const std::string& symbol, const std::string& timeframe = "1m",
+                                 const std::optional<long long>& since = std::nullopt,
+                                 const std::optional<int>& limit = std::nullopt) const override;
+    json fetchFundingRateImpl(const std::string& symbol) const override;
+    json fetchFundingRatesImpl(const std::vector<std::string>& symbols = {}) const override;
+    json fetchFundingRateHistoryImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt,
+                                  const std::optional<int>& limit = std::nullopt) const override;
+
+    // Trading API
+    json fetchLeverageBracketsImpl(const std::vector<std::string>& symbols = {}) const override;
+    json fetchPositionsImpl(const std::vector<std::string>& symbols = {}) const override;
+    json setLeverageImpl(int leverage, const std::string& symbol = "") override;
+    json setMarginModeImpl(const std::string& marginMode, const std::string& symbol = "") override;
+    json setPositionModeImpl(bool hedged) override;
+    json addMarginImpl(const std::string& symbol, double amount) override;
+    json reduceMarginImpl(const std::string& symbol, double amount) override;
+    json transferInImpl(const std::string& code, double amount, const json& params = json::object()) override;
+    json transferOutImpl(const std::string& code, double amount, const json& params = json::object()) override;
 
 private:
-    nlohmann::json parse_funding_rate(const nlohmann::json& fundingRate, const nlohmann::json& market = nlohmann::json({}));
-    nlohmann::json parse_position(const nlohmann::json& position, const nlohmann::json& market = nlohmann::json({}));
-    nlohmann::json parse_leverage_brackets(const nlohmann::json& response, const nlohmann::json& market = nlohmann::json({}));
-    std::string get_settlement_currency(const std::string& market);
+    // Helper methods
+    std::string sign(const std::string& path, const std::string& api = "public",
+                  const std::string& method = "GET", const json& params = json::object(),
+                  const std::map<std::string, std::string>& headers = {},
+                  const json& body = nullptr) const override;
+    json parseFundingRate(const json& fundingRate, const Market& market = Market()) const;
+    json parsePosition(const json& position, const Market& market = Market()) const;
+    json parseLeverageBrackets(const json& response, const Market& market = Market()) const;
+    std::string getSettlementCurrency(const std::string& market) const;
 };
 
 } // namespace ccxt

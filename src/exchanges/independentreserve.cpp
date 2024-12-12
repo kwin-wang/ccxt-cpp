@@ -8,16 +8,12 @@ const std::string independentreserve::defaultVersion = "v1";
 const int independentreserve::defaultRateLimit = 1000;
 const bool independentreserve::defaultPro = true;
 
-ExchangeRegistry::Factory independentreserve::factory = []() {
-    return new independentreserve();
-};
-
-independentreserve::independentreserve(const Config& config) : ExchangeImpl(config) {
+independentreserve::independentreserve(const Config& config) : Exchange(config) {
     init();
 }
 
 void independentreserve::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

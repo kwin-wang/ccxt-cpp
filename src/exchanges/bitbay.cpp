@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <boost/thread/future.hpp>
 
 namespace ccxt {
 
@@ -413,6 +414,90 @@ json bitbay::private_delete(const std::string& path,
 json bitbay::public_get(const std::string& path,
                      const std::map<std::string, std::string>& params) {
     return request("GET", path, params, false);
+}
+
+// Async API implementations
+boost::future<json> bitbay::fetch_markets_async() {
+    return boost::async([this] { return fetch_markets(); });
+}
+
+boost::future<json> bitbay::fetch_ticker_async(const std::string& symbol) {
+    return boost::async([this, symbol] { return fetch_ticker(symbol); });
+}
+
+boost::future<json> bitbay::fetch_tickers_async(const std::vector<std::string>& symbols) {
+    return boost::async([this, symbols] { return fetch_tickers(symbols); });
+}
+
+boost::future<json> bitbay::fetch_order_book_async(const std::string& symbol, int limit) {
+    return boost::async([this, symbol, limit] { return fetch_order_book(symbol, limit); });
+}
+
+boost::future<json> bitbay::fetch_trades_async(const std::string& symbol, int limit) {
+    return boost::async([this, symbol, limit] { return fetch_trades(symbol, limit); });
+}
+
+boost::future<json> bitbay::fetch_ohlcv_async(const std::string& symbol, const std::string& timeframe,
+                                         long since, int limit) {
+    return boost::async([this, symbol, timeframe, since, limit] { return fetch_ohlcv(symbol, timeframe, since, limit); });
+}
+
+boost::future<json> bitbay::fetch_trading_fees_async(const std::string& symbol) {
+    return boost::async([this, symbol] { return fetch_trading_fees(symbol); });
+}
+
+boost::future<json> bitbay::create_order_async(const std::string& symbol, const std::string& type,
+                                         const std::string& side, double amount, double price,
+                                         const std::map<std::string, std::string>& params) {
+    return boost::async([this, symbol, type, side, amount, price, params] { return create_order(symbol, type, side, amount, price, params); });
+}
+
+boost::future<json> bitbay::cancel_order_async(const std::string& id, const std::string& symbol) {
+    return boost::async([this, id, symbol] { return cancel_order(id, symbol); });
+}
+
+boost::future<json> bitbay::cancel_all_orders_async(const std::string& symbol) {
+    return boost::async([this, symbol] { return cancel_all_orders(symbol); });
+}
+
+boost::future<json> bitbay::edit_order_async(const std::string& id, const std::string& symbol,
+                                         const std::string& type, const std::string& side,
+                                         double amount, double price,
+                                         const std::map<std::string, std::string>& params) {
+    return boost::async([this, id, symbol, type, side, amount, price, params] { return edit_order(id, symbol, type, side, amount, price, params); });
+}
+
+boost::future<json> bitbay::fetch_balance_async() {
+    return boost::async([this] { return fetch_balance(); });
+}
+
+boost::future<json> bitbay::fetch_open_orders_async(const std::string& symbol) {
+    return boost::async([this, symbol] { return fetch_open_orders(symbol); });
+}
+
+boost::future<json> bitbay::fetch_closed_orders_async(const std::string& symbol, long since, int limit) {
+    return boost::async([this, symbol, since, limit] { return fetch_closed_orders(symbol, since, limit); });
+}
+
+boost::future<json> bitbay::fetch_order_async(const std::string& id, const std::string& symbol) {
+    return boost::async([this, id, symbol] { return fetch_order(id, symbol); });
+}
+
+boost::future<json> bitbay::fetch_orders_async(const std::string& symbol, long since, int limit) {
+    return boost::async([this, symbol, since, limit] { return fetch_orders(symbol, since, limit); });
+}
+
+boost::future<json> bitbay::fetch_my_trades_async(const std::string& symbol, long since, int limit) {
+    return boost::async([this, symbol, since, limit] { return fetch_my_trades(symbol, since, limit); });
+}
+
+boost::future<json> bitbay::fetch_deposit_address_async(const std::string& code) {
+    return boost::async([this, code] { return fetch_deposit_address(code); });
+}
+
+boost::future<json> bitbay::withdraw_async(const std::string& code, double amount,
+                                      const std::string& address, const std::string& tag) {
+    return boost::async([this, code, amount, address, tag] { return withdraw(code, amount, address, tag); });
 }
 
 } // namespace ccxt

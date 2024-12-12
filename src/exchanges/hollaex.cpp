@@ -8,15 +8,13 @@ const std::string hollaex::defaultVersion = "v2";
 const int hollaex::defaultRateLimit = 250;
 const bool hollaex::defaultPro = true;
 
-ExchangeRegistry::Factory hollaex::factory("hollaex", &hollaex::createInstance);
-
 hollaex::hollaex(const Config& config)
-    : ExchangeImpl(config) {
+    : Exchange(config) {
     init();
 }
 
 void hollaex::init() {
-    ExchangeImpl::init();
+    
     this->id = "hollaex";
     this->name = "HollaEx";
     this->countries = {"KR"};  // South Korea

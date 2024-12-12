@@ -255,4 +255,106 @@ std::string BitBNS::get_payload_hash(const std::string& payload) {
     return this->hmac(payload, this->secret, "sha512", "hex");
 }
 
+// Async Market Data Methods
+boost::future<nlohmann::json> BitBNS::fetch_markets_async(const nlohmann::json& params) {
+    return boost::async([this, params]() {
+        return this->fetch_markets();
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_ticker_async(const std::string& symbol, const nlohmann::json& params) {
+    return boost::async([this, symbol]() {
+        return this->fetch_ticker(symbol);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_order_book_async(const std::string& symbol, int limit, const nlohmann::json& params) {
+    return boost::async([this, symbol, limit]() {
+        return this->fetch_order_book(symbol, limit);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_trades_async(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_trades(symbol, since, limit);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_ohlcv_async(const std::string& symbol, const std::string& timeframe,
+                                                     int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, symbol, timeframe, since, limit]() {
+        return this->fetch_ohlcv(symbol, timeframe, since, limit);
+    });
+}
+
+// Async Trading Methods
+boost::future<nlohmann::json> BitBNS::create_order_async(const std::string& symbol, const std::string& type,
+                                                      const std::string& side, double amount,
+                                                      double price, const nlohmann::json& params) {
+    return boost::async([this, symbol, type, side, amount, price]() {
+        return this->create_order(symbol, type, side, amount, price);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::cancel_order_async(const std::string& id, const std::string& symbol, const nlohmann::json& params) {
+    return boost::async([this, id, symbol]() {
+        return this->cancel_order(id, symbol);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_order_async(const std::string& id, const std::string& symbol, const nlohmann::json& params) {
+    return boost::async([this, id, symbol]() {
+        return this->fetch_order(id, symbol);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_orders_async(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_orders(symbol, since, limit);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_open_orders_async(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_open_orders(symbol, since, limit);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_closed_orders_async(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_closed_orders(symbol, since, limit);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_my_trades_async(const std::string& symbol, int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, symbol, since, limit]() {
+        return this->fetch_my_trades(symbol, since, limit);
+    });
+}
+
+// Async Account Methods
+boost::future<nlohmann::json> BitBNS::fetch_balance_async(const nlohmann::json& params) {
+    return boost::async([this]() {
+        return this->fetch_balance();
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_deposits_async(const std::string& code, int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, code, since, limit]() {
+        return this->fetch_deposits(code, since, limit);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_withdrawals_async(const std::string& code, int since, int limit, const nlohmann::json& params) {
+    return boost::async([this, code, since, limit]() {
+        return this->fetch_withdrawals(code, since, limit);
+    });
+}
+
+boost::future<nlohmann::json> BitBNS::fetch_deposit_address_async(const std::string& code, const nlohmann::json& params) {
+    return boost::async([this, code]() {
+        return this->fetch_deposit_address(code);
+    });
+}
+
 } // namespace ccxt

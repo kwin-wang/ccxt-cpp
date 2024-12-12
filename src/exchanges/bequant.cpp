@@ -1,324 +1,182 @@
 #include "bequant.h"
-#include <chrono>
-#include <sstream>
-#include <iomanip>
-#include <openssl/hmac.h>
 
 namespace ccxt {
 
-Bequant::Bequant() {
+const std::string Bequant::defaultHostname = "api.bequant.io";
+const int Bequant::defaultRateLimit = 50;
+const bool Bequant::defaultPro = true;
+
+Bequant::Bequant(const Config& config) : HitBTC(config) {
     id = "bequant";
     name = "Bequant";
-    version = "2";
-    certified = true;
-    pro = true;
-    hasPublicAPI = true;
-    hasPrivateAPI = true;
-    hasFiatAPI = false;
-    hasMarginAPI = true;
-    hasFuturesAPI = true;
-    hasOptionsAPI = false;
-    hasLeveragedAPI = true;
+}
 
-    // Initialize URLs
-    baseUrl = "https://api.bequant.io";
-    urls = {
-        {"logo", "https://user-images.githubusercontent.com/1294454/55248342-a75dfe00-525a-11e9-8aa2-05e9dca943c6.jpg"},
-        {"api", {
-            {"public", "https://api.bequant.io/api/2"},
-            {"private", "https://api.bequant.io/api/2"},
-            {"futures", "https://api.bequant.io/api/2/futures"}
-        }},
-        {"www", "https://bequant.io"},
-        {"doc", {
-            "https://api.bequant.io/",
-            "https://api.bequant.io/api/2/explore/",
-            "https://api.bequant.io/api/2/futures/explore/"
-        }},
-        {"fees", "https://bequant.io/fees-and-limits"}
+void Bequant::init() {
+    HitBTC::init();
+    hostname = this->extractParam<std::string>(config, "hostname", defaultHostname);
+    urls["api"] = {
+        {"public", "https://" + hostname + "/api/3"},
+        {"private", "https://" + hostname + "/api/3"}
     };
-
-    initializeApiEndpoints();
-    initializeTimeframes();
-    initializeMarketTypes();
-    initializeOptions();
-    initializeErrorCodes();
-    initializeFees();
-}
-
-void Bequant::initializeApiEndpoints() {
-    api = {
-        {"public", {
-            {"GET", {
-                "public/symbol",
-                "public/ticker",
-                "public/ticker/{symbol}",
-                "public/orderbook/{symbol}",
-                "public/trades/{symbol}",
-                "public/candles/{symbol}",
-                "public/currency",
-                "public/funding/currencies",
-                "public/funding/rates",
-                "public/funding/rate_history"
-            }}
-        }},
-        {"private", {
-            {"GET", {
-                "trading/balance",
-                "trading/fee/{symbol}",
-                "trading/order",
-                "trading/order/{clientOrderId}",
-                "trading/order/{orderId}/trades",
-                "trading/trade",
-                "margin/account",
-                "margin/position",
-                "margin/position/history",
-                "margin/position/fee"
-            }},
-            {"POST", {
-                "trading/order",
-                "margin/position/close",
-                "margin/position/close/all",
-                "margin/position/update",
-                "margin/position/update/all"
-            }},
-            {"DELETE", {
-                "trading/order",
-                "trading/order/{clientOrderId}"
-            }}
-        }},
-        {"futures", {
-            {"GET", {
-                "public/futures/info",
-                "public/futures/settlement",
-                "public/futures/positions",
-                "public/futures/funding",
-                "public/futures/candles/{symbol}"
-            }},
-            {"POST", {
-                "futures/order",
-                "futures/position/close",
-                "futures/position/close/all"
-            }},
-            {"DELETE", {
-                "futures/order",
-                "futures/order/{clientOrderId}"
-            }}
-        }}
+    urls["logo"] = "https://user-images.githubusercontent.com/1294454/55248342-a75dfe00-525a-11e9-8aa2-05e9dca943c6.jpg";
+    urls["www"] = "https://bequant.io";
+    urls["doc"] = {
+        "https://api.bequant.io/",
+        "https://api.bequant.io/api/3/docs",
+        "https://api.bequant.io/api/3/docs/websocket"
     };
+    urls["fees"] = "https://bequant.io/fees-and-limits";
+    urls["referral"] = "https://bequant.io";
 }
 
-void Bequant::initializeTimeframes() {
-    timeframes = {
-        {"1m", "M1"},
-        {"3m", "M3"},
-        {"5m", "M5"},
-        {"15m", "M15"},
-        {"30m", "M30"},
-        {"1h", "H1"},
-        {"4h", "H4"},
-        {"1d", "D1"},
-        {"1w", "D7"},
-        {"1M", "1M"}
-    };
+// Market Data API
+json Bequant::fetchMarketsImpl() const {
+    return HitBTC::fetchMarketsImpl();
 }
 
-json Bequant::fetchMarkets(const json& params) {
-    json response = fetch("/public/symbol", "public", "GET", params);
-    json result = json::array();
-    
-    for (const auto& market : response) {
-        String id = market["id"].get<String>();
-        String baseId = market["baseCurrency"].get<String>();
-        String quoteId = market["quoteCurrency"].get<String>();
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
-        String type = "spot";
-        bool spot = true;
-        bool margin = market["marginTrading"].get<bool>();
-        bool future = false;
-        
-        if (market.contains("futuresContract") && market["futuresContract"].get<bool>()) {
-            type = "future";
-            spot = false;
-            future = true;
-        }
-        
-        result.push_back({
-            {"id", id},
-            {"symbol", symbol},
-            {"base", base},
-            {"quote", quote},
-            {"baseId", baseId},
-            {"quoteId", quoteId},
-            {"active", market["trading"].get<bool>()},
-            {"type", type},
-            {"spot", spot},
-            {"margin", margin},
-            {"future", future},
-            {"option", false},
-            {"contract", future},
-            {"precision", {
-                {"amount", market["quantityIncrement"].get<int>()},
-                {"price", market["tickSize"].get<int>()}
-            }},
-            {"limits", {
-                {"amount", {
-                    {"min", this->safeFloat(market, "minQuantity")},
-                    {"max", this->safeFloat(market, "maxQuantity")}
-                }},
-                {"price", {
-                    {"min", this->safeFloat(market, "minPrice")},
-                    {"max", this->safeFloat(market, "maxPrice")}
-                }},
-                {"cost", {
-                    {"min", this->safeFloat(market, "minNotional")},
-                    {"max", nullptr}
-                }}
-            }},
-            {"info", market}
-        });
-    }
-    
-    return result;
+json Bequant::fetchTickerImpl(const std::string& symbol) const {
+    return HitBTC::fetchTickerImpl(symbol);
 }
 
-json Bequant::fetchBalance(const json& params) {
-    this->loadMarkets();
-    json response = fetch("/trading/balance", "private", "GET", params);
-    return parseBalance(response);
+json Bequant::fetchTickersImpl(const std::vector<std::string>& symbols) const {
+    return HitBTC::fetchTickersImpl(symbols);
 }
 
-json Bequant::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
-                         double price, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    String uppercaseType = type.toUpperCase();
-    
-    json request = {
-        {"symbol", market["id"]},
-        {"side", side.toUpperCase()},
-        {"type", uppercaseType},
-        {"quantity", this->amountToPrecision(symbol, amount)}
-    };
-    
-    if (uppercaseType == "LIMIT") {
-        request["price"] = this->priceToPrecision(symbol, price);
-        request["timeInForce"] = "GTC";
-    }
-    
-    json response = fetch("/trading/order", "private", "POST",
-                         this->extend(request, params));
-    return this->parseOrder(response, market);
+json Bequant::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
+    return HitBTC::fetchOrderBookImpl(symbol, limit);
 }
 
-String Bequant::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
-                    const json& body) {
-    String url = this->urls["api"][api] + path;
-    
-    if (api == "private" || api == "futures") {
-        this->checkRequiredCredentials();
-        String timestamp = std::to_string(this->milliseconds());
-        String auth = timestamp + method + path;
-        
-        if (method == "POST" || method == "PUT" || method == "DELETE") {
-            if (!params.empty()) {
-                body = this->json(params);
-                auth += body;
-            }
-        } else {
-            if (!params.empty()) {
-                String query = this->urlencode(this->keysort(params));
-                url += "?" + query;
-                auth += "?" + query;
-            }
-        }
-        
-        String signature = this->hmac(auth, this->encode(this->secret),
-                                    "sha256", "hex");
-        
-        const_cast<std::map<String, String>&>(headers)["X-API-KEY"] = this->apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-API-SIGNATURE"] = signature;
-        const_cast<std::map<String, String>&>(headers)["X-API-TIMESTAMP"] = timestamp;
-        
-        if (method == "POST" || method == "PUT" || method == "DELETE") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
-        }
-    } else {
-        if (!params.empty()) {
-            url += "?" + this->urlencode(params);
-        }
-    }
-    
-    return url;
+json Bequant::fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since,
+                           const std::optional<int>& limit) const {
+    return HitBTC::fetchTradesImpl(symbol, since, limit);
 }
 
-String Bequant::getNonce() {
-    return std::to_string(this->milliseconds());
+json Bequant::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
+                          const std::optional<long long>& since,
+                          const std::optional<int>& limit) const {
+    return HitBTC::fetchOHLCVImpl(symbol, timeframe, since, limit);
 }
 
-json Bequant::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String clientOrderId = this->safeString(order, "clientOrderId");
-    String timestamp = this->safeString(order, "createdAt");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
-    
-    if (!market.empty()) {
-        symbol = market["symbol"];
-    } else {
-        String marketId = this->safeString(order, "symbol");
-        if (marketId != nullptr) {
-            if (this->markets_by_id.contains(marketId)) {
-                market = this->markets_by_id[marketId];
-                symbol = market["symbol"];
-            } else {
-                symbol = marketId;
-            }
-        }
-    }
-    
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
-    
-    return {
-        {"id", id},
-        {"clientOrderId", clientOrderId},
-        {"timestamp", this->parse8601(timestamp)},
-        {"datetime", this->iso8601(timestamp)},
-        {"lastTradeTimestamp", nullptr},
-        {"type", type},
-        {"timeInForce", this->safeString(order, "timeInForce")},
-        {"postOnly", nullptr},
-        {"status", status},
-        {"symbol", symbol},
-        {"side", side},
-        {"price", this->safeFloat(order, "price")},
-        {"amount", this->safeFloat(order, "quantity")},
-        {"filled", this->safeFloat(order, "cumQuantity")},
-        {"remaining", this->safeFloat(order, "quantity") - this->safeFloat(order, "cumQuantity")},
-        {"cost", this->safeFloat(order, "cumQuantity") * this->safeFloat(order, "avgPrice")},
-        {"trades", nullptr},
-        {"fee", nullptr},
-        {"info", order}
-    };
+json Bequant::fetchTimeImpl() const {
+    return HitBTC::fetchTimeImpl();
 }
 
-String Bequant::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
-        {"new", "open"},
-        {"suspended", "open"},
-        {"partiallyFilled", "open"},
-        {"filled", "closed"},
-        {"canceled", "canceled"},
-        {"expired", "expired"}
-    };
-    
-    return this->safeString(statuses, status, status);
+json Bequant::fetchCurrenciesImpl() const {
+    return HitBTC::fetchCurrenciesImpl();
+}
+
+json Bequant::fetchTradingFeesImpl() const {
+    return HitBTC::fetchTradingFeesImpl();
+}
+
+json Bequant::fetchBalanceImpl() const {
+    return HitBTC::fetchBalanceImpl();
+}
+
+json Bequant::fetchDepositAddressImpl(const std::string& code, const json& params) const {
+    return HitBTC::fetchDepositAddressImpl(code, params);
+}
+
+json Bequant::fetchDepositsImpl(const std::string& code, const std::optional<long long>& since,
+                             const std::optional<int>& limit) const {
+    return HitBTC::fetchDepositsImpl(code, since, limit);
+}
+
+json Bequant::fetchWithdrawalsImpl(const std::string& code, const std::optional<long long>& since,
+                                const std::optional<int>& limit) const {
+    return HitBTC::fetchWithdrawalsImpl(code, since, limit);
+}
+
+json Bequant::fetchDepositsWithdrawalsImpl(const std::string& code, const std::optional<long long>& since,
+                                        const std::optional<int>& limit) const {
+    return HitBTC::fetchDepositsWithdrawalsImpl(code, since, limit);
+}
+
+json Bequant::fetchDepositWithdrawFeesImpl() const {
+    return HitBTC::fetchDepositWithdrawFeesImpl();
+}
+
+json Bequant::fetchFundingRatesImpl(const std::vector<std::string>& symbols) const {
+    return HitBTC::fetchFundingRatesImpl(symbols);
+}
+
+json Bequant::fetchFundingRateHistoryImpl(const std::string& symbol, const std::optional<long long>& since,
+                                       const std::optional<int>& limit) const {
+    return HitBTC::fetchFundingRateHistoryImpl(symbol, since, limit);
+}
+
+json Bequant::fetchLeverageImpl(const std::string& symbol) const {
+    return HitBTC::fetchLeverageImpl(symbol);
+}
+
+json Bequant::fetchMarginModesImpl(const std::vector<std::string>& symbols) const {
+    return HitBTC::fetchMarginModesImpl(symbols);
+}
+
+json Bequant::fetchPositionsImpl(const std::vector<std::string>& symbols) const {
+    return HitBTC::fetchPositionsImpl(symbols);
+}
+
+// Trading API
+json Bequant::createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
+                          double amount, const std::optional<double>& price) {
+    return HitBTC::createOrderImpl(symbol, type, side, amount, price);
+}
+
+json Bequant::cancelOrderImpl(const std::string& id, const std::string& symbol) {
+    return HitBTC::cancelOrderImpl(id, symbol);
+}
+
+json Bequant::cancelAllOrdersImpl(const std::string& symbol) {
+    return HitBTC::cancelAllOrdersImpl(symbol);
+}
+
+json Bequant::fetchOrderImpl(const std::string& id, const std::string& symbol) const {
+    return HitBTC::fetchOrderImpl(id, symbol);
+}
+
+json Bequant::fetchOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                          const std::optional<int>& limit) const {
+    return HitBTC::fetchOrdersImpl(symbol, since, limit);
+}
+
+json Bequant::fetchOpenOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                              const std::optional<int>& limit) const {
+    return HitBTC::fetchOpenOrdersImpl(symbol, since, limit);
+}
+
+json Bequant::fetchClosedOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                                const std::optional<int>& limit) const {
+    return HitBTC::fetchClosedOrdersImpl(symbol, since, limit);
+}
+
+json Bequant::setLeverageImpl(int leverage, const std::string& symbol) {
+    return HitBTC::setLeverageImpl(leverage, symbol);
+}
+
+json Bequant::setMarginModeImpl(const std::string& marginMode, const std::string& symbol) {
+    return HitBTC::setMarginModeImpl(marginMode, symbol);
+}
+
+json Bequant::addMarginImpl(const std::string& symbol, double amount) {
+    return HitBTC::addMarginImpl(symbol, amount);
+}
+
+json Bequant::reduceMarginImpl(const std::string& symbol, double amount) {
+    return HitBTC::reduceMarginImpl(symbol, amount);
+}
+
+json Bequant::transferImpl(const std::string& code, double amount, const std::string& fromAccount,
+                       const std::string& toAccount) {
+    return HitBTC::transferImpl(code, amount, fromAccount, toAccount);
+}
+
+// Helper methods
+std::string Bequant::sign(const std::string& path, const std::string& api,
+                       const std::string& method, const json& params,
+                       const std::map<std::string, std::string>& headers,
+                       const json& body) const {
+    return HitBTC::sign(path, api, method, params, headers, body);
 }
 
 } // namespace ccxt

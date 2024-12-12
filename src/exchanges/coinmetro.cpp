@@ -8,15 +8,14 @@ const std::string coinmetro::defaultVersion = "v1";
 const int coinmetro::defaultRateLimit = 200;
 const bool coinmetro::defaultPro = false;
 
-ExchangeRegistry::Factory coinmetro::factory("coinmetro", &coinmetro::createInstance);
 
 coinmetro::coinmetro(const Config& config)
-    : ExchangeImpl(config) {
+    : Exchange(config) {
     init();
 }
 
 void coinmetro::init() {
-    ExchangeImpl::init();
+    
     this->id = "coinmetro";
     this->name = "Coinmetro";
     this->countries = {"EE"};  // Republic of Estonia

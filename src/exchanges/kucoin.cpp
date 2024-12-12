@@ -1,18 +1,19 @@
-#include "kucoin.h"
+#include "ccxt/exchanges/kucoin.h"
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
 #include <base64.h>
 
 namespace ccxt {
 
-KuCoin::KuCoin() {
+KuCoin::KuCoin(const ExchangeConfig& config) : Exchange(config) {
     id = "kucoin";
     name = "KuCoin";
     version = "v2";
     rateLimit = 100;
     
-    // Initialize API endpoints
     baseUrl = "https://api.kucoin.com";
     
     urls = {
@@ -46,224 +47,162 @@ KuCoin::KuCoin() {
         {"1w", "1week"}
     };
 
-    initializeApiEndpoints();
+    initTokens();
 }
 
-void KuCoin::initializeApiEndpoints() {
-    api = {
-        {"public", {
-            {"GET", {
-                "api/v1/market/orderbook/level{level}",
-                "api/v1/market/histories",
-                "api/v1/market/candles",
-                "api/v1/market/stats",
-                "api/v1/symbols",
-                "api/v1/currencies",
-                "api/v1/prices"
-            }}
-        }},
-        {"private", {
-            {"GET", {
-                "api/v1/accounts",
-                "api/v1/orders",
-                "api/v1/orders/{orderId}",
-                "api/v1/fills"
-            }},
-            {"POST", {
-                "api/v1/orders",
-                "api/v1/orders/multi"
-            }},
-            {"DELETE", {
-                "api/v1/orders/{orderId}",
-                "api/v1/orders"
-            }}
-        }}
-    };
-}
+// Synchronous Methods Implementation
 
-json KuCoin::fetchMarkets(const json& params) {
-    json response = fetch("/api/v1/symbols", "public", "GET", params);
-    json markets = json::array();
+std::vector<Market> KuCoin::fetchMarkets(const Params& params) {
+    json response = request("/api/v1/symbols", "public", "GET", params);
+    std::vector<Market> markets;
     
     for (const auto& market : response["data"]) {
-        markets.push_back({
-            {"id", market["symbol"]},
-            {"symbol", market["baseCurrency"] + "/" + market["quoteCurrency"]},
-            {"base", market["baseCurrency"]},
-            {"quote", market["quoteCurrency"]},
-            {"baseId", market["baseCurrency"]},
-            {"quoteId", market["quoteCurrency"]},
-            {"active", market["enableTrading"]},
-            {"precision", {
-                {"amount", std::stoi(market["baseIncrement"].get<String>())},
-                {"price", std::stoi(market["priceIncrement"].get<String>())}
-            }},
-            {"limits", {
-                {"amount", {
-                    {"min", std::stod(market["baseMinSize"].get<String>())},
-                    {"max", std::stod(market["baseMaxSize"].get<String>())}
-                }},
-                {"price", {
-                    {"min", std::stod(market["priceIncrement"].get<String>())}
-                }},
-                {"cost", {
-                    {"min", std::stod(market["quoteMinSize"].get<String>())},
-                    {"max", std::stod(market["quoteMaxSize"].get<String>())}
-                }}
-            }},
-            {"info", market}
-        });
+        markets.push_back(parseMarket(market));
     }
     
     return markets;
 }
 
-json KuCoin::fetchTicker(const String& symbol, const json& params) {
-    Market market = this->market(symbol);
-    json response = fetch("/api/v1/market/stats", "public", "GET", {{"symbol", market.id}});
-    json ticker = response["data"];
+OrderBook KuCoin::fetchOrderBook(const std::string& symbol, int limit, const Params& params) {
+    validateSymbol(symbol);
     
-    return {
-        {"symbol", symbol},
-        {"timestamp", nullptr},
-        {"datetime", nullptr},
-        {"high", std::stod(ticker["high"].get<String>())},
-        {"low", std::stod(ticker["low"].get<String>())},
-        {"bid", std::stod(ticker["buy"].get<String>())},
-        {"bidVolume", nullptr},
-        {"ask", std::stod(ticker["sell"].get<String>())},
-        {"askVolume", nullptr},
-        {"vwap", nullptr},
-        {"open", std::stod(ticker["open"].get<String>())},
-        {"close", std::stod(ticker["last"].get<String>())},
-        {"last", std::stod(ticker["last"].get<String>())},
-        {"previousClose", nullptr},
-        {"change", std::stod(ticker["changePrice"].get<String>())},
-        {"percentage", std::stod(ticker["changeRate"].get<String>()) * 100},
-        {"average", nullptr},
-        {"baseVolume", std::stod(ticker["vol"].get<String>())},
-        {"quoteVolume", std::stod(ticker["volValue"].get<String>())},
-        {"info", ticker}
-    };
-}
-
-json KuCoin::fetchBalance(const json& params) {
-    json response = fetch("/api/v1/accounts", "private", "GET", params);
-    json result = {
-        {"info", response},
-        {"timestamp", nullptr},
-        {"datetime", nullptr}
-    };
-    
-    for (const auto& balance : response["data"]) {
-        String currency = balance["currency"];
-        double total = std::stod(balance["balance"].get<String>());
-        double used = std::stod(balance["holds"].get<String>());
-        double free = total - used;
-        
-        result[currency] = {
-            {"free", free},
-            {"used", used},
-            {"total", total}
-        };
+    Params requestParams = params;
+    if (limit > 0) {
+        requestParams["limit"] = std::to_string(limit);
     }
     
-    return result;
+    std::string endpoint = "/api/v1/market/orderbook/level2/" + getKucoinSymbol(symbol);
+    json response = request(endpoint, "public", "GET", requestParams);
+    
+    return parseOrderBook(response["data"], symbol);
 }
 
-json KuCoin::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
-                        double price, const json& params) {
-    Market market = this->market(symbol);
+Ticker KuCoin::fetchTicker(const std::string& symbol, const Params& params) {
+    validateSymbol(symbol);
     
-    json request = {
-        {"clientOid", getTimestamp()},
-        {"side", side},
-        {"symbol", market.id},
-        {"type", type},
-        {"size", std::to_string(amount)}
-    };
+    std::string endpoint = "/api/v1/market/orderbook/level1/" + getKucoinSymbol(symbol);
+    json response = request(endpoint, "public", "GET", params);
     
-    if (type == "limit") {
-        if (price == 0) {
-            throw InvalidOrder("For limit orders, price cannot be zero");
-        }
-        request["price"] = std::to_string(price);
-    }
-    
-    return fetch("/api/v1/orders", "private", "POST", request);
+    return parseTicker(response["data"], nullptr);
 }
 
-String KuCoin::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
-                    const json& body) {
-    String endpoint = path;
-    String url = baseUrl + endpoint;
-    
-    if (api == "private") {
-        String timestamp = getTimestamp();
-        String bodyStr = body.empty() ? "" : body.dump();
-        auto authHeaders = getAuthHeaders(method, endpoint, bodyStr);
-        
-        for (const auto& [key, value] : authHeaders) {
-            const_cast<std::map<String, String>&>(headers)[key] = value;
-        }
-    }
-    
-    if (!params.empty()) {
-        std::stringstream queryString;
-        bool first = true;
-        for (const auto& [key, value] : params.items()) {
-            if (!first) queryString << "&";
-            queryString << key << "=" << value.get<String>();
-            first = false;
-        }
-        url += "?" + queryString.str();
-    }
-    
-    return url;
+// Implement other synchronous methods...
+
+// Asynchronous Methods Implementation
+
+std::future<std::vector<Market>> KuCoin::fetchMarketsAsync(const Params& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return fetchMarkets(params);
+    });
 }
 
-String KuCoin::getTimestamp() {
+std::future<OrderBook> KuCoin::fetchOrderBookAsync(const std::string& symbol, int limit, const Params& params) {
+    return std::async(std::launch::async, [this, symbol, limit, params]() {
+        return fetchOrderBook(symbol, limit, params);
+    });
+}
+
+std::future<Ticker> KuCoin::fetchTickerAsync(const std::string& symbol, const Params& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return fetchTicker(symbol, params);
+    });
+}
+
+// Implement other asynchronous methods...
+
+// Helper Methods Implementation
+
+std::string KuCoin::sign(const std::string& path, const std::string& api, const std::string& method,
+                        const Params& params, const std::string& body, const std::map<std::string, std::string>& headers) {
+    std::string timestamp = getTimestamp();
+    std::string signature = createSignature(timestamp, method, path, body);
+    
+    auto authHeaders = getAuthHeaders(method, path, body);
+    for (const auto& [key, value] : authHeaders) {
+        addHeader(key, value);
+    }
+    
+    return path;
+}
+
+std::string KuCoin::getTimestamp() const {
     auto now = std::chrono::system_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
     return std::to_string(ms.count());
 }
 
-String KuCoin::createSignature(const String& timestamp, const String& method,
-                             const String& endpoint, const String& body) {
-    String message = timestamp + method + endpoint + body;
+std::string KuCoin::createSignature(const std::string& timestamp, const std::string& method,
+                                  const std::string& endpoint, const std::string& body) const {
+    std::string preHash = timestamp + method + endpoint + body;
     
-    unsigned char* hmac = nullptr;
-    unsigned int hmacLen = 0;
+    unsigned char* digest = HMAC(EVP_sha256(), apiSecret.c_str(), apiSecret.length(),
+                               (unsigned char*)preHash.c_str(), preHash.length(), NULL, NULL);
     
-    HMAC_CTX* ctx = HMAC_CTX_new();
-    HMAC_Init_ex(ctx, secret.c_str(), secret.length(), EVP_sha256(), nullptr);
-    HMAC_Update(ctx, (unsigned char*)message.c_str(), message.length());
-    HMAC_Final(ctx, hmac, &hmacLen);
-    HMAC_CTX_free(ctx);
-    
-    return base64_encode(hmac, hmacLen);
+    return base64_encode(digest, 32);
 }
 
-std::map<String, String> KuCoin::getAuthHeaders(const String& method,
-                                               const String& endpoint,
-                                               const String& body) {
-    String timestamp = getTimestamp();
-    String signature = createSignature(timestamp, method, endpoint, body);
+std::map<std::string, std::string> KuCoin::getAuthHeaders(const std::string& method,
+                                                         const std::string& endpoint,
+                                                         const std::string& body) const {
+    std::string timestamp = getTimestamp();
+    std::string signature = createSignature(timestamp, method, endpoint, body);
     
     return {
         {"KC-API-KEY", apiKey},
         {"KC-API-SIGN", signature},
         {"KC-API-TIMESTAMP", timestamp},
-        {"KC-API-PASSPHRASE", password},
-        {"KC-API-KEY-VERSION", "2"}  // API key version 2
+        {"KC-API-PASSPHRASE", passphrase},
+        {"KC-API-KEY-VERSION", "2"}
     };
 }
 
-String KuCoin::getKucoinSymbol(const String& symbol) {
-    return symbol;  // KuCoin uses standard symbol format
+std::string KuCoin::getKucoinSymbol(const std::string& symbol) const {
+    return symbol;  // Implement proper symbol conversion if needed
 }
+
+void KuCoin::initTokens() {
+    // Initialize API tokens if needed
+}
+
+void KuCoin::refreshTokens() {
+    // Refresh API tokens if needed
+}
+
+std::string KuCoin::getToken(const std::string& type) const {
+    auto it = tokens.find(type);
+    if (it != tokens.end()) {
+        auto expiryIt = tokenExpiry.find(type);
+        if (expiryIt != tokenExpiry.end() && expiryIt->second > std::time(nullptr)) {
+            return it->second;
+        }
+    }
+    return "";
+}
+
+// Parsing Methods Implementation
+
+Market KuCoin::parseMarket(const json& market) {
+    Market result;
+    result.id = market["symbol"].get<std::string>();
+    result.symbol = market["baseCurrency"].get<std::string>() + "/" + market["quoteCurrency"].get<std::string>();
+    result.base = market["baseCurrency"].get<std::string>();
+    result.quote = market["quoteCurrency"].get<std::string>();
+    result.baseId = market["baseCurrency"].get<std::string>();
+    result.quoteId = market["quoteCurrency"].get<std::string>();
+    result.active = market["enableTrading"].get<bool>();
+    
+    // Add precision and limits
+    result.precision.amount = std::stod(market["baseIncrement"].get<std::string>());
+    result.precision.price = std::stod(market["priceIncrement"].get<std::string>());
+    
+    result.limits.amount.min = std::stod(market["baseMinSize"].get<std::string>());
+    result.limits.amount.max = std::stod(market["baseMaxSize"].get<std::string>());
+    result.limits.price.min = std::stod(market["priceIncrement"].get<std::string>());
+    result.limits.cost.min = result.limits.amount.min * result.limits.price.min;
+    
+    return result;
+}
+
+// Implement other parsing methods...
 
 } // namespace ccxt

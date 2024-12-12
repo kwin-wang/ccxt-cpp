@@ -33,6 +33,102 @@ Deribit::Deribit() {
         {"test", "https://test.deribit.com"}
     };
 
+    api = {
+        {"public", {
+            {"get", {
+                "get_time",
+                "get_instruments",
+                "get_currencies",
+                "get_order_book",
+                "get_trade_volumes",
+                "get_last_trades_by_currency",
+                "get_last_trades_by_instrument",
+                "get_index",
+                "get_funding_rate_value",
+                "get_book_summary_by_instrument",
+                "get_book_summary_by_currency",
+                "get_delivery_prices",
+                "get_mark_price_history",
+                "get_historical_volatility"
+            }},
+        }},
+        {"private", {
+            {"get", {
+                "get_positions",
+                "get_position",
+                "get_account_summary",
+                "get_open_orders_by_currency",
+                "get_open_orders_by_instrument",
+                "get_user_trades_by_currency",
+                "get_user_trades_by_instrument",
+                "get_order_history_by_currency",
+                "get_order_history_by_instrument",
+                "get_order_state",
+                "get_transaction_log"
+            }},
+            {"post", {
+                "buy",
+                "sell",
+                "edit",
+                "cancel",
+                "cancel_all",
+                "cancel_all_by_currency",
+                "cancel_all_by_instrument",
+                "close_position",
+                "get_margins",
+                "set_leverage"
+            }}
+        }}
+    };
+
+    has = {
+        {"CORS", true},
+        {"spot", false},
+        {"margin", false},
+        {"swap", true},
+        {"future", true},
+        {"option", true},
+        {"cancelAllOrders", true},
+        {"cancelOrder", true},
+        {"createOrder", true},
+        {"editOrder", true},
+        {"fetchBalance", true},
+        {"fetchClosedOrders", true},
+        {"fetchDeposits", true},
+        {"fetchLedger", true},
+        {"fetchMarkets", true},
+        {"fetchMyTrades", true},
+        {"fetchOHLCV", true},
+        {"fetchOpenOrders", true},
+        {"fetchOrder", true},
+        {"fetchOrderBook", true},
+        {"fetchOrders", true},
+        {"fetchPosition", true},
+        {"fetchPositions", true},
+        {"fetchStatus", true},
+        {"fetchTicker", true},
+        {"fetchTickers", true},
+        {"fetchTime", true},
+        {"fetchTrades", true},
+        {"fetchTransactions", true},
+        {"fetchWithdrawals", true},
+        {"withdraw", true}
+    };
+
+    options = {
+        {"fetchTickerQuotes", true},
+        {"fetchMarkets", {
+            {"types", {"spot", "future", "option"}}
+        }},
+        {"versions", {
+            {"public", {"get", "v2"}},
+            {"private", {"get", "v2"}},
+            {"private", {"post", "v2"}}
+        }}
+    };
+
+    precisionMode = TICK_SIZE;
+
     timeframes = {
         {"1m", "1"},
         {"3m", "3"},
@@ -52,62 +148,6 @@ Deribit::Deribit() {
 }
 
 void Deribit::initializeApiEndpoints() {
-    api = {
-        {"public", {
-            {"GET", {
-                "api/v2/public/auth",
-                "api/v2/public/get_time",
-                "api/v2/public/hello",
-                "api/v2/public/test",
-                "api/v2/public/get_announcements",
-                "api/v2/public/get_book_summary_by_currency",
-                "api/v2/public/get_book_summary_by_instrument",
-                "api/v2/public/get_contract_size",
-                "api/v2/public/get_currencies",
-                "api/v2/public/get_funding_chart_data",
-                "api/v2/public/get_funding_rate_history",
-                "api/v2/public/get_funding_rate_value",
-                "api/v2/public/get_historical_volatility",
-                "api/v2/public/get_index",
-                "api/v2/public/get_instruments",
-                "api/v2/public/get_last_settlements_by_currency",
-                "api/v2/public/get_last_settlements_by_instrument",
-                "api/v2/public/get_last_trades_by_currency",
-                "api/v2/public/get_last_trades_by_currency_and_time",
-                "api/v2/public/get_last_trades_by_instrument",
-                "api/v2/public/get_last_trades_by_instrument_and_time",
-                "api/v2/public/get_order_book",
-                "api/v2/public/get_trade_volumes",
-                "api/v2/public/get_tradingview_chart_data",
-                "api/v2/public/ticker"
-            }}
-        }},
-        {"private", {
-            {"GET", {
-                "api/v2/private/get_account_summary",
-                "api/v2/private/get_position",
-                "api/v2/private/get_positions",
-                "api/v2/private/get_order_history_by_currency",
-                "api/v2/private/get_order_margin_by_ids",
-                "api/v2/private/get_order_state",
-                "api/v2/private/get_user_trades_by_currency",
-                "api/v2/private/get_user_trades_by_instrument",
-                "api/v2/private/get_settlement_history_by_instrument",
-                "api/v2/private/get_settlement_history_by_currency"
-            }},
-            {"POST", {
-                "api/v2/private/buy",
-                "api/v2/private/sell",
-                "api/v2/private/edit",
-                "api/v2/private/cancel",
-                "api/v2/private/cancel_all",
-                "api/v2/private/cancel_all_by_currency",
-                "api/v2/private/close_position",
-                "api/v2/private/get_margins",
-                "api/v2/private/set_leverage"
-            }}
-        }}
-    };
 }
 
 json Deribit::fetchMarkets(const json& params) {
@@ -232,36 +272,101 @@ json Deribit::fetchBalance(const json& params) {
 json Deribit::createOrder(const String& symbol, const String& type,
                          const String& side, double amount,
                          double price, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    
-    String request = {
-        {"instrument_name", market.id},
-        {"amount", amount},
-        {"type", type.upper()}
-    };
-    
-    String method = side == "buy" ? "private/buy" : "private/sell";
+    if (symbol.empty()) {
+        throw ArgumentsRequired("createOrder() requires a symbol argument");
+    }
+
+    auto market = this->market(symbol);
+    auto request = json::object();
+    request["instrument_name"] = market["id"];
+    request["amount"] = this->amountToPrecision(symbol, amount);
     
     if (type == "limit") {
-        if (price == 0) {
-            throw InvalidOrder("For limit orders, price cannot be zero");
-        }
-        request["price"] = price;
+        request["price"] = this->priceToPrecision(symbol, price);
+    }
+
+    String method = side;  // "buy" or "sell"
+    auto response = this->privatePostUserTrades(this->extend(request, params));
+    return this->parseOrder(response, market);
+}
+
+json Deribit::cancelOrder(const String& id, const String& symbol, const json& params) {
+    if (symbol.empty()) {
+        throw ArgumentsRequired("cancelOrder() requires a symbol argument");
+    }
+
+    auto market = this->market(symbol);
+    auto request = json::object();
+    request["order_id"] = id;
+    
+    auto response = this->privatePostCancel(this->extend(request, params));
+    return this->parseOrder(response, market);
+}
+
+json Deribit::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    auto market = this->market(symbol);
+    auto request = json::object();
+    request["instrument_name"] = market["id"];
+    
+    if (limit != 0) {
+        request["depth"] = limit;
+    }
+
+    auto response = this->publicGetGetOrderBook(this->extend(request, params));
+    auto timestamp = this->safeInteger(response, "timestamp");
+    return this->parseOrderBook(response, symbol, timestamp, "bids", "asks", "price", "amount");
+}
+
+json Deribit::fetchBalance(const json& params) {
+    auto response = this->privateGetGetAccountSummary(params);
+    auto result = json::object();
+    
+    for (const auto& balance : response["result"]) {
+        auto currencyId = this->safeString(balance, "currency");
+        auto code = this->safeCurrencyCode(currencyId);
+        
+        result[code] = {
+            {"free", this->safeString(balance, "available_funds")},
+            {"used", this->safeString(balance, "maintenance_margin")},
+            {"total", this->safeString(balance, "equity")}
+        };
     }
     
-    json response = fetch("/api/v2/" + method, "private", "POST",
-                         this->extend(request, params));
-    return this->parseOrder(response["result"], market);
+    return this->parseBalance(result);
+}
+
+json Deribit::fetchPosition(const String& symbol, const json& params) {
+    auto market = this->market(symbol);
+    auto request = json::object();
+    request["instrument_name"] = market["id"];
+    
+    auto response = this->privateGetPosition(this->extend(request, params));
+    return this->parsePosition(response["result"], market);
+}
+
+json Deribit::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+    auto market = this->market(symbol);
+    auto request = json::object();
+    request["instrument_name"] = market["id"];
+    
+    if (since != 0) {
+        request["start_timestamp"] = since;
+    }
+    if (limit != 0) {
+        request["count"] = limit;
+    }
+    
+    auto response = this->privateGetGetUserTradesByCurrency(this->extend(request, params));
+    return this->parseTrades(response["result"]["trades"], market, since, limit);
 }
 
 String Deribit::sign(const String& path, const String& api,
                      const String& method, const json& params,
                      const std::map<String, String>& headers,
                      const json& body) {
-    String request = "/" + this->version + "/" + this->implodeParams(path, params);
-    String url = this->urls["api"][api] + request;
-    String query = this->omit(params, this->extractParams(path));
+    auto request = "/" + this->version + "/" + path;
+    auto query = this->omit(params, this->extractParams(path));
+    auto url = this->urls["api"][api] + request;
     
     if (api == "public") {
         if (!query.empty()) {
@@ -269,38 +374,70 @@ String Deribit::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = std::to_string(this->nonce());
-        String timestamp = this->milliseconds();
-        String requestBody = "";
+        auto nonce = std::to_string(this->nonce());
+        auto timestamp = std::to_string(this->milliseconds());
+        auto auth = timestamp + "\n" + nonce + "\n" + method + "\n" + request;
         
-        if (!query.empty()) {
-            if (method == "GET") {
+        if (method == "GET") {
+            if (!query.empty()) {
                 url += "?" + this->urlencode(query);
-            } else {
-                requestBody = this->json(query);
+                auth += "?" + this->urlencode(query);
+            }
+        } else {
+            if (!query.empty()) {
+                body = this->json(query);
+                auth += body;
             }
         }
         
-        String auth = timestamp + "\n" + nonce + "\n" + method + "\n" + request;
-        if (!requestBody.empty()) {
-            auth += "\n" + requestBody;
-        }
+        auto signature = this->hmac(this->encode(auth), this->encode(this->secret),
+                                  "sha256", "hex");
         
-        String signature = this->hmac(auth, this->secret, "sha256", "hex");
-        
-        const_cast<std::map<String, String>&>(headers)["Authorization"] = "deri-hmac-sha256 " + 
-            this->apiKey + ":" + nonce + ":" + timestamp + ":" + signature;
-        
-        if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
-        }
+        headers["Authorization"] = "deri-hmac-sha256 id=" + this->apiKey +
+                                 ",ts=" + timestamp +
+                                 ",nonce=" + nonce +
+                                 ",sig=" + signature;
     }
     
     return url;
 }
 
+void Deribit::handleErrors(const json& httpCode, const String& reason, const String& url, const String& method,
+                          const std::map<String, String>& headers, const String& body, const json& response,
+                          const json& requestHeaders, const json& requestBody) {
+    if (response.empty()) {
+        return;
+    }
+
+    if (!response.contains("error")) {
+        return;
+    }
+
+    auto error = response["error"];
+    auto errorCode = this->safeString(error, "code");
+    auto message = this->safeString(error, "message");
+
+    if (errorCode != nullptr) {
+        const std::map<String, ExceptionType> exceptions = {
+            {"invalid_request", BadRequest},
+            {"insufficient_funds", InsufficientFunds},
+            {"not_found", OrderNotFound},
+            {"not_supported", NotSupported},
+            {"overload", DDoSProtection},
+            {"server_error", ExchangeError},
+            {"requires_authentication", AuthenticationError},
+            {"forbidden", PermissionDenied},
+            {"rate_limit", DDoSProtection},
+            {"under_maintenance", OnMaintenance},
+        };
+
+        auto Exception = this->safeValue(exceptions, errorCode, ExchangeError);
+        throw Exception(message);
+    }
+}
+
 json Deribit::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+    const std::map<String, String> statuses = {
         {"open", "open"},
         {"filled", "closed"},
         {"rejected", "rejected"},
@@ -309,53 +446,106 @@ json Deribit::parseOrderStatus(const String& status) {
         {"triggered", "open"},
         {"closed", "closed"}
     };
-    
-    return statuses.contains(status) ? statuses.at(status) : status;
+    return this->safeString(statuses, status, status);
 }
 
 json Deribit::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "order_id");
-    String timestamp = this->safeInteger(order, "creation_timestamp");
-    String lastTradeTimestamp = this->safeInteger(order, "last_update_timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "order_state"));
+    auto timestamp = this->safeTimestamp(order, "creation_timestamp");
+    auto lastUpdate = this->safeTimestamp(order, "last_update_timestamp");
+    auto status = this->parseOrderStatus(this->safeString(order, "order_state"));
+    auto marketId = this->safeString(order, "instrument_name");
+    auto symbol = this->safeSymbol(marketId, market);
     
     return {
-        {"id", id},
+        {"id", this->safeString(order, "order_id")},
         {"clientOrderId", this->safeString(order, "label")},
         {"timestamp", timestamp},
         {"datetime", this->iso8601(timestamp)},
-        {"lastTradeTimestamp", lastTradeTimestamp},
+        {"lastUpdate", lastUpdate},
+        {"lastTradeTimestamp", this->safeTimestamp(order, "last_update_timestamp")},
         {"status", status},
-        {"symbol", market.symbol},
-        {"type", this->safeStringLower(order, "order_type")},
-        {"side", this->safeStringLower(order, "direction")},
-        {"price", this->safeFloat(order, "price")},
-        {"amount", this->safeFloat(order, "amount")},
-        {"filled", this->safeFloat(order, "filled_amount")},
-        {"remaining", this->safeFloat(order, "amount") - this->safeFloat(order, "filled_amount")},
-        {"cost", this->safeFloat(order, "average_price") * this->safeFloat(order, "filled_amount")},
-        {"average", this->safeFloat(order, "average_price")},
-        {"trades", nullptr},
+        {"symbol", symbol},
+        {"type", this->safeString(order, "order_type")},
+        {"side", this->safeString(order, "direction")},
+        {"price", this->safeNumber(order, "price")},
+        {"amount", this->safeNumber(order, "amount")},
+        {"filled", this->safeNumber(order, "filled_amount")},
+        {"remaining", this->safeNumber(order, "amount") - this->safeNumber(order, "filled_amount")},
+        {"cost", this->safeNumber(order, "filled_amount") * this->safeNumber(order, "average_price")},
+        {"average", this->safeNumber(order, "average_price")},
         {"fee", {
-            {"cost", this->safeFloat(order, "commission")},
-            {"currency", market.quote}
+            {"cost", this->safeNumber(order, "commission")},
+            {"currency", this->safeCurrencyCode(this->safeString(order, "commission_currency"))},
         }},
+        {"trades", nullptr},
         {"info", order}
     };
 }
 
-json Deribit::parseOptionContract(const json& contract) {
+json Deribit::parseTrade(const json& trade, const Market& market) {
+    auto timestamp = this->safeTimestamp(trade, "timestamp");
+    auto id = this->safeString(trade, "trade_id");
+    auto orderId = this->safeString(trade, "order_id");
+    auto marketId = this->safeString(trade, "instrument_name");
+    auto symbol = this->safeSymbol(marketId, market);
+    auto side = this->safeString(trade, "direction");
+    auto price = this->safeNumber(trade, "price");
+    auto amount = this->safeNumber(trade, "amount");
+    
+    auto fee = json::object();
+    if (trade.contains("commission")) {
+        fee = {
+            {"cost", this->safeNumber(trade, "commission")},
+            {"currency", this->safeCurrencyCode(this->safeString(trade, "commission_currency"))}
+        };
+    }
+    
     return {
-        {"symbol", contract["instrument_name"]},
-        {"timestamp", contract["creation_timestamp"]},
-        {"expiry", contract["expiration_timestamp"]},
-        {"strike", contract["strike"]},
-        {"optionType", contract["option_type"]},
-        {"underlying", contract["base_currency"]},
-        {"settlement", contract["settlement_currency"]},
-        {"contractSize", contract["contract_size"]},
-        {"active", contract["is_active"]},
-        {"info", contract}
+        {"id", id},
+        {"info", trade},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"symbol", symbol},
+        {"order", orderId},
+        {"type", this->safeString(trade, "order_type")},
+        {"side", side},
+        {"takerOrMaker", this->safeString(trade, "liquidity")},
+        {"price", price},
+        {"amount", amount},
+        {"cost", price * amount},
+        {"fee", fee}
+    };
+}
+
+json Deribit::parsePosition(const json& position, const Market& market) {
+    auto marketId = this->safeString(position, "instrument_name");
+    auto symbol = this->safeSymbol(marketId, market);
+    auto timestamp = this->safeTimestamp(position, "creation_timestamp");
+    auto size = this->safeNumber(position, "size");
+    auto side = size < 0 ? "short" : "long";
+    auto notional = this->safeNumber(position, "size_currency");
+    auto initialMargin = this->safeNumber(position, "initial_margin");
+    auto maintenanceMargin = this->safeNumber(position, "maintenance_margin");
+    auto unrealizedPnl = this->safeNumber(position, "floating_profit_loss");
+    auto contracts = std::abs(size);
+    
+    return {
+        {"info", position},
+        {"symbol", symbol},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"initialMargin", initialMargin},
+        {"initialMarginPercentage", initialMargin * 100 / notional},
+        {"maintenanceMargin", maintenanceMargin},
+        {"maintenanceMarginPercentage", maintenanceMargin * 100 / notional},
+        {"entryPrice", this->safeNumber(position, "average_price")},
+        {"notional", notional},
+        {"leverage", this->safeNumber(position, "leverage")},
+        {"unrealizedPnl", unrealizedPnl},
+        {"contracts", contracts},
+        {"contractSize", this->safeNumber(position, "contract_size")},
+        {"side", side},
+        {"percentage", unrealizedPnl * 100 / initialMargin}
     };
 }
 

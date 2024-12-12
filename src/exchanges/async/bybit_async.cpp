@@ -1,10 +1,13 @@
 #include "ccxt/exchanges/async/bybit_async.h"
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/asio/strand.hpp>
 
 namespace ccxt {
 
 BybitAsync::BybitAsync(const boost::asio::io_context& context)
-    : ExchangeAsync(context)
-    , Bybit() {}
+    : ExchangeAsync(context), Bybit() {}
 
 boost::future<json> BybitAsync::fetchAsync(const String& path, const String& api,
                                          const String& method, const json& params,
@@ -12,339 +15,195 @@ boost::future<json> BybitAsync::fetchAsync(const String& path, const String& api
     return ExchangeAsync::fetchAsync(path, api, method, params, headers);
 }
 
-boost::future<json> BybitAsync::fetchTimeAsync(const json& params) {
-    return fetchAsync("/v5/market/time", "public", "GET", params);
-}
-
+// Market Data API
 boost::future<json> BybitAsync::fetchMarketsAsync(const json& params) {
-    return fetchAsync("/v5/market/instruments-info", "public", "GET", params);
-}
-
-boost::future<json> BybitAsync::fetchCurrenciesAsync(const json& params) {
-    return fetchAsync("/v5/asset/coins", "public", "GET", params);
+    return fetchAsync("/v5/market/instruments-info", "public", "GET", params, {});
 }
 
 boost::future<json> BybitAsync::fetchTickerAsync(const String& symbol, const json& params) {
-    String market_id = this->market_id(symbol);
-    json request = {
-        {"symbol", market_id}
-    };
-    request.update(params);
-    return fetchAsync("/v5/market/tickers", "public", "GET", request);
+    json request = {{"symbol", getBybitSymbol(symbol)}};
+    return fetchAsync("/v5/market/tickers", "public", "GET", this->extend(request, params), {});
 }
 
 boost::future<json> BybitAsync::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
-    json request = params;
+    json request = json::object();
     if (!symbols.empty()) {
-        request["symbols"] = symbols;
+        std::vector<String> bybitSymbols;
+        for (const auto& symbol : symbols) {
+            bybitSymbols.push_back(getBybitSymbol(symbol));
+        }
+        request["symbols"] = bybitSymbols;
     }
-    return fetchAsync("/v5/market/tickers", "public", "GET", request);
+    return fetchAsync("/v5/market/tickers", "public", "GET", this->extend(request, params), {});
 }
 
 boost::future<json> BybitAsync::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
-    String market_id = this->market_id(symbol);
     json request = {
-        {"symbol", market_id}
+        {"symbol", getBybitSymbol(symbol)}
     };
-    if (limit > 0) {
+    if (limit != 0) {
         request["limit"] = limit;
     }
-    request.update(params);
-    return fetchAsync("/v5/market/orderbook", "public", "GET", request);
+    return fetchAsync("/v5/market/orderbook", "public", "GET", this->extend(request, params), {});
 }
 
 boost::future<json> BybitAsync::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
-    String market_id = this->market_id(symbol);
     json request = {
-        {"symbol", market_id}
+        {"symbol", getBybitSymbol(symbol)}
     };
-    if (limit > 0) {
+    if (limit != 0) {
         request["limit"] = limit;
     }
-    request.update(params);
-    return fetchAsync("/v5/market/trades", "public", "GET", request);
+    if (since != 0) {
+        request["startTime"] = since;
+    }
+    return fetchAsync("/v5/market/trades", "public", "GET", this->extend(request, params), {});
 }
 
 boost::future<json> BybitAsync::fetchOHLCVAsync(const String& symbol, const String& timeframe,
                                                int since, int limit, const json& params) {
-    String market_id = this->market_id(symbol);
     json request = {
-        {"symbol", market_id},
-        {"interval", timeframe}
+        {"symbol", getBybitSymbol(symbol)},
+        {"interval", timeframes[timeframe]}
     };
-    if (since > 0) {
-        request["start"] = since;
-    }
-    if (limit > 0) {
+    if (limit != 0) {
         request["limit"] = limit;
     }
-    request.update(params);
-    return fetchAsync("/v5/market/kline", "public", "GET", request);
+    if (since != 0) {
+        request["startTime"] = since;
+    }
+    return fetchAsync("/v5/market/kline", "public", "GET", this->extend(request, params), {});
 }
 
+// Trading API
 boost::future<json> BybitAsync::fetchBalanceAsync(const json& params) {
-    return fetchAsync("/v5/account/wallet-balance", "private", "GET", params);
+    return fetchAsync("/v5/account/wallet-balance", "private", "GET", params, {});
 }
 
 boost::future<json> BybitAsync::createOrderAsync(const String& symbol, const String& type,
                                                const String& side, double amount,
                                                double price, const json& params) {
-    String market_id = this->market_id(symbol);
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    String uppercaseType = type.toUpperCase();
+    
     json request = {
-        {"symbol", market_id},
-        {"side", side},
-        {"orderType", type},
-        {"qty", this->amount_to_precision(symbol, amount)}
+        {"symbol", market["id"]},
+        {"side", side.toUpperCase()},
+        {"orderType", uppercaseType},
+        {"qty", this->amountToPrecision(symbol, amount)}
     };
-    if ((type == "Limit") && (price > 0)) {
-        request["price"] = this->price_to_precision(symbol, price);
+    
+    if (uppercaseType == "LIMIT") {
+        if (price == 0) {
+            throw ExchangeError("createOrder requires price for LIMIT orders");
+        }
+        request["price"] = this->priceToPrecision(symbol, price);
     }
-    request.update(params);
-    return fetchAsync("/v5/order/create", "private", "POST", request);
+    
+    return fetchAsync("/v5/order/create", "private", "POST", this->extend(request, params), {});
 }
 
-boost::future<json> BybitAsync::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
+boost::future<json> BybitAsync::cancelOrderAsync(const String& id, const String& symbol,
+                                               const json& params) {
+    if (symbol.empty()) {
+        throw ExchangeError("cancelOrder requires a symbol argument");
     }
-    request["orderId"] = id;
-    return fetchAsync("/v5/order/cancel", "private", "POST", request);
-}
-
-boost::future<json> BybitAsync::cancelAllOrdersAsync(const String& symbol, const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    return fetchAsync("/v5/order/cancel-all", "private", "POST", request);
-}
-
-boost::future<json> BybitAsync::editOrderAsync(const String& id, const String& symbol,
-                                             const String& type, const String& side,
-                                             double amount, double price,
-                                             const json& params) {
-    json request = params;
-    request["orderId"] = id;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    if (amount > 0) {
-        request["qty"] = this->amount_to_precision(symbol, amount);
-    }
-    if (price > 0) {
-        request["price"] = this->price_to_precision(symbol, price);
-    }
-    return fetchAsync("/v5/order/amend", "private", "POST", request);
-}
-
-boost::future<json> BybitAsync::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
-    json request = params;
-    request["orderId"] = id;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    return fetchAsync("/v5/order/history", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/order/history", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/order/realtime", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/order/history", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/execution/list", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchPositionsAsync(const std::vector<String>& symbols, const json& params) {
-    json request = params;
-    if (!symbols.empty()) {
-        request["symbol"] = this->market_ids(symbols);
-    }
-    return fetchAsync("/v5/position/list", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchPositionAsync(const String& symbol, const json& params) {
-    json request = params;
-    request["symbol"] = this->market_id(symbol);
-    return fetchAsync("/v5/position/list", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::setLeverageAsync(double leverage, const String& symbol, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
     json request = {
+        {"symbol", market["id"]},
+        {"orderId", id}
+    };
+    return fetchAsync("/v5/order/cancel", "private", "POST", this->extend(request, params), {});
+}
+
+boost::future<json> BybitAsync::fetchOrderAsync(const String& id, const String& symbol,
+                                              const json& params) {
+    if (symbol.empty()) {
+        throw ExchangeError("fetchOrder requires a symbol argument");
+    }
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market["id"]},
+        {"orderId", id}
+    };
+    return fetchAsync("/v5/order/realtime", "private", "GET", this->extend(request, params), {});
+}
+
+boost::future<json> BybitAsync::fetchOrdersAsync(const String& symbol, int since,
+                                               int limit, const json& params) {
+    if (symbol.empty()) {
+        throw ExchangeError("fetchOrders requires a symbol argument");
+    }
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market["id"]}
+    };
+    if (limit != 0) {
+        request["limit"] = limit;
+    }
+    if (since != 0) {
+        request["startTime"] = since;
+    }
+    return fetchAsync("/v5/order/history", "private", "GET", this->extend(request, params), {});
+}
+
+boost::future<json> BybitAsync::fetchOpenOrdersAsync(const String& symbol, int since,
+                                                   int limit, const json& params) {
+    json request = this->extend({
+        {"orderStatus", "NEW"}
+    }, params);
+    return fetchOrdersAsync(symbol, since, limit, request);
+}
+
+boost::future<json> BybitAsync::fetchClosedOrdersAsync(const String& symbol, int since,
+                                                     int limit, const json& params) {
+    json request = this->extend({
+        {"orderStatus", "FILLED"}
+    }, params);
+    return fetchOrdersAsync(symbol, since, limit, request);
+}
+
+boost::future<json> BybitAsync::fetchPositionsAsync(const std::vector<String>& symbols,
+                                                  const json& params) {
+    this->loadMarkets();
+    json request = json::object();
+    if (!symbols.empty()) {
+        std::vector<String> marketIds;
+        for (const auto& symbol : symbols) {
+            Market market = this->market(symbol);
+            marketIds.push_back(market["id"]);
+        }
+        request["symbol"] = marketIds;
+    }
+    return fetchAsync("/v5/position/list", "private", "GET", this->extend(request, params), {});
+}
+
+boost::future<json> BybitAsync::setLeverageAsync(double leverage, const String& symbol,
+                                               const json& params) {
+    this->loadMarkets();
+    if (symbol.empty()) {
+        throw ExchangeError("setLeverage requires a symbol argument");
+    }
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market["id"]},
         {"leverage", leverage}
     };
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    request.update(params);
-    return fetchAsync("/v5/position/set-leverage", "private", "POST", request);
+    return fetchAsync("/v5/position/set-leverage", "private", "POST", this->extend(request, params), {});
 }
 
-boost::future<json> BybitAsync::setMarginModeAsync(const String& marginMode,
-                                                  const String& symbol,
-                                                  const json& params) {
+boost::future<json> BybitAsync::fetchFundingRateAsync(const String& symbol,
+                                                    const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
     json request = {
-        {"marginMode", marginMode}
+        {"symbol", market["id"]}
     };
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    request.update(params);
-    return fetchAsync("/v5/position/switch-isolated", "private", "POST", request);
-}
-
-boost::future<json> BybitAsync::fetchTradingFeesAsync(const json& params) {
-    return fetchAsync("/v5/account/fee-rate", "private", "GET", params);
-}
-
-boost::future<json> BybitAsync::fetchFundingRateAsync(const String& symbol, const json& params) {
-    json request = {
-        {"symbol", this->market_id(symbol)}
-    };
-    request.update(params);
-    return fetchAsync("/v5/market/funding/history", "public", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchFundingRateHistoryAsync(const String& symbol,
-                                                            int since, int limit,
-                                                            const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/market/funding/history", "public", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchFundingHistoryAsync(const String& symbol,
-                                                        int since, int limit,
-                                                        const json& params) {
-    json request = params;
-    if (!symbol.empty()) {
-        request["symbol"] = this->market_id(symbol);
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/account/funding-records", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchDepositAddressAsync(const String& code, const json& params) {
-    json request = {
-        {"coin", code}
-    };
-    request.update(params);
-    return fetchAsync("/v5/asset/deposit/query-address", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchDepositsAsync(const String& code, int since, int limit, const json& params) {
-    json request = params;
-    if (!code.empty()) {
-        request["coin"] = code;
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/asset/deposit/query-record", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::fetchWithdrawalsAsync(const String& code, int since, int limit, const json& params) {
-    json request = params;
-    if (!code.empty()) {
-        request["coin"] = code;
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/asset/withdraw/query-record", "private", "GET", request);
-}
-
-boost::future<json> BybitAsync::withdrawAsync(const String& code, double amount,
-                                            const String& address, const String& tag,
-                                            const json& params) {
-    json request = {
-        {"coin", code},
-        {"amount", this->number_to_string(amount)},
-        {"address", address}
-    };
-    if (!tag.empty()) {
-        request["tag"] = tag;
-    }
-    request.update(params);
-    return fetchAsync("/v5/asset/withdraw/create", "private", "POST", request);
-}
-
-boost::future<json> BybitAsync::fetchTransactionsAsync(const String& code, int since, int limit, const json& params) {
-    json request = params;
-    if (!code.empty()) {
-        request["coin"] = code;
-    }
-    if (since > 0) {
-        request["startTime"] = since;
-    }
-    if (limit > 0) {
-        request["limit"] = limit;
-    }
-    return fetchAsync("/v5/asset/transfer/query-asset-info", "private", "GET", request);
+    return fetchAsync("/v5/market/funding/history", "public", "GET", this->extend(request, params), {});
 }
 
 } // namespace ccxt

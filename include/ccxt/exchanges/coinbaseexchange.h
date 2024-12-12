@@ -2,6 +2,7 @@
 #define CCXT_COINBASEEXCHANGE_H
 
 #include "ccxt/base/exchange.h"
+#include <boost/future.hpp>
 
 namespace ccxt {
 
@@ -39,6 +40,32 @@ public:
     // Advanced Trading Methods
     std::vector<Position> fetchPositions(const std::vector<std::string>& symbols = std::vector<std::string>(), const Params& params = Params()) override;
     MarginMode setMarginMode(const std::string& symbol, const std::string& marginMode, const Params& params = Params()) override;
+
+    // Market Data Methods - Asynchronous
+    boost::future<OrderBook> fetchOrderBookAsync(const std::string& symbol, int limit = 0, const Params& params = Params()) const;
+    boost::future<std::vector<Trade>> fetchTradesAsync(const std::string& symbol, int since = 0, int limit = 0, const Params& params = Params()) const;
+    boost::future<Ticker> fetchTickerAsync(const std::string& symbol, const Params& params = Params()) const;
+    boost::future<std::map<std::string, Ticker>> fetchTickersAsync(const std::vector<std::string>& symbols = std::vector<std::string>(), const Params& params = Params()) const;
+
+    // Trading Methods - Asynchronous
+    boost::future<Order> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
+                                      double amount, double price = 0, const Params& params = Params());
+    boost::future<Order> cancelOrderAsync(const std::string& id, const std::string& symbol = "", const Params& params = Params());
+    boost::future<std::vector<Order>> fetchOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const Params& params = Params()) const;
+    boost::future<std::vector<Order>> fetchOpenOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const Params& params = Params()) const;
+    boost::future<std::vector<Order>> fetchClosedOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const Params& params = Params()) const;
+    boost::future<Order> fetchOrderAsync(const std::string& id, const std::string& symbol = "", const Params& params = Params()) const;
+
+    // Account Methods - Asynchronous
+    boost::future<Balance> fetchBalanceAsync(const Params& params = Params()) const;
+    boost::future<std::vector<Account>> fetchAccountsAsync(const Params& params = Params()) const;
+    boost::future<TradingFees> fetchTradingFeesAsync(const Params& params = Params()) const;
+
+    // Funding Methods - Asynchronous
+    boost::future<std::vector<Transaction>> fetchDepositsAsync(const std::string& code = "", int since = 0, int limit = 0, const Params& params = Params()) const;
+    boost::future<std::vector<Transaction>> fetchWithdrawalsAsync(const std::string& code = "", int since = 0, int limit = 0, const Params& params = Params()) const;
+    boost::future<DepositAddress> fetchDepositAddressAsync(const std::string& code, const Params& params = Params()) const;
+    boost::future<std::vector<LedgerEntry>> fetchLedgerAsync(const std::string& code = "", int since = 0, int limit = 0, const Params& params = Params()) const;
 
 protected:
     // API Endpoints

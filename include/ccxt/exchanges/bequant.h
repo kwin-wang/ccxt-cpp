@@ -1,98 +1,76 @@
 #pragma once
 
-#include "../base/exchange.h"
+#include "hitbtc.h"
 
 namespace ccxt {
 
-class Bequant : public Exchange {
+class Bequant : public HitBTC {
 public:
-    Bequant();
-    ~Bequant() override = default;
+    static const std::string defaultHostname;
+    static const int defaultRateLimit;
+    static const bool defaultPro;
+    
 
-    // Market Data API
-    json fetchMarkets(const json& params = json::object()) override;
-    json fetchTicker(const String& symbol, const json& params = json::object()) override;
-    json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object()) override;
-    json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object()) override;
-    json fetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
-                    int since = 0, int limit = 0, const json& params = json::object()) override;
+    explicit Bequant(const Config& config = Config());
+    virtual ~Bequant() = default;
 
-    // Trading API
-    json fetchBalance(const json& params = json::object()) override;
-    json createOrder(const String& symbol, const String& type, const String& side,
-                    double amount, double price = 0, const json& params = json::object()) override;
-    json cancelOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-
-    // Account API
-    json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchDeposits(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchWithdrawals(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchDepositAddress(const String& code, const json& params = json::object());
-    json withdraw(const String& code, double amount, const String& address, const String& tag = "", const json& params = json::object());
-
-    // Additional Features
-    json fetchCurrencies(const json& params = json::object());
-    json fetchTradingFees(const json& params = json::object());
-    json fetchFundingFees(const json& params = json::object());
-    json fetchTransactionFees(const json& params = json::object());
-    json fetchMarginMarkets(const json& params = json::object());
-    json fetchLeverage(const String& symbol, const json& params = json::object());
-    json fetchPositions(const std::vector<String>& symbols = {}, const json& params = json::object());
-    json fetchFundingRate(const String& symbol, const json& params = json::object());
-    json fetchFundingRateHistory(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    void init() override;
 
 protected:
-    String sign(const String& path, const String& api = "public",
-               const String& method = "GET", const json& params = json::object(),
-               const std::map<String, String>& headers = {}, const json& body = nullptr) override;
+    // Market Data API
+    json fetchMarketsImpl() const override;
+    json fetchTickerImpl(const std::string& symbol) const override;
+    json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const override;
+    json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
+    json fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt,
+                      const std::optional<int>& limit = std::nullopt) const override;
+    json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe = "1m",
+                     const std::optional<long long>& since = std::nullopt,
+                     const std::optional<int>& limit = std::nullopt) const override;
+    json fetchTimeImpl() const override;
+    json fetchCurrenciesImpl() const override;
+    json fetchTradingFeesImpl() const override;
+    json fetchBalanceImpl() const override;
+    json fetchDepositAddressImpl(const std::string& code, const json& params = json::object()) const override;
+    json fetchDepositsImpl(const std::string& code = "", const std::optional<long long>& since = std::nullopt,
+                        const std::optional<int>& limit = std::nullopt) const override;
+    json fetchWithdrawalsImpl(const std::string& code = "", const std::optional<long long>& since = std::nullopt,
+                          const std::optional<int>& limit = std::nullopt) const override;
+    json fetchDepositsWithdrawalsImpl(const std::string& code = "", const std::optional<long long>& since = std::nullopt,
+                                   const std::optional<int>& limit = std::nullopt) const override;
+    json fetchDepositWithdrawFeesImpl() const override;
+    json fetchFundingRatesImpl(const std::vector<std::string>& symbols = {}) const override;
+    json fetchFundingRateHistoryImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt,
+                                  const std::optional<int>& limit = std::nullopt) const override;
+    json fetchLeverageImpl(const std::string& symbol) const override;
+    json fetchMarginModesImpl(const std::vector<std::string>& symbols = {}) const override;
+    json fetchPositionsImpl(const std::vector<std::string>& symbols = {}) const override;
+
+    // Trading API
+    json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
+                      double amount, const std::optional<double>& price = std::nullopt) override;
+    json cancelOrderImpl(const std::string& id, const std::string& symbol = "") override;
+    json cancelAllOrdersImpl(const std::string& symbol = "") override;
+    json fetchOrderImpl(const std::string& id, const std::string& symbol = "") const override;
+    json fetchOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt,
+                      const std::optional<int>& limit = std::nullopt) const override;
+    json fetchOpenOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt,
+                         const std::optional<int>& limit = std::nullopt) const override;
+    json fetchClosedOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt,
+                           const std::optional<int>& limit = std::nullopt) const override;
+    json setLeverageImpl(int leverage, const std::string& symbol = "") override;
+    json setMarginModeImpl(const std::string& marginMode, const std::string& symbol = "") override;
+    json addMarginImpl(const std::string& symbol, double amount) override;
+    json reduceMarginImpl(const std::string& symbol, double amount) override;
+    json transferImpl(const std::string& code, double amount, const std::string& fromAccount,
+                   const std::string& toAccount) override;
 
 private:
-    void initializeApiEndpoints();
-    void initializeTimeframes();
-    void initializeMarketTypes();
-    void initializeOptions();
-    void initializeErrorCodes();
-    void initializeFees();
-
-    String getBequantSymbol(const String& symbol);
-    String getCommonSymbol(const String& bequantSymbol);
-    String parseOrderStatus(const String& status);
-    String parseOrderType(const String& type);
-    String parseOrderSide(const String& side);
-    String parseTimeInForce(const String& timeInForce);
-
-    json parseOrder(const json& order, const Market& market = Market());
-    json parseTrade(const json& trade, const Market& market = Market());
-    json parseTicker(const json& ticker, const Market& market = Market());
-    json parseOHLCV(const json& ohlcv, const Market& market = Market(), const String& timeframe = "1m");
-    json parseBalance(const json& response);
-    json parseFee(const json& fee, const Market& market = Market());
-    json parsePosition(const json& position, const Market& market = Market());
-    json parseFundingRate(const json& fundingRate, const Market& market = Market());
-    json parseTransaction(const json& transaction, const String& currency = "");
-    json parseDepositAddress(const json& depositAddress, const String& currency = "");
-
-    String createSignature(const String& timestamp, const String& method,
-                         const String& path, const String& body = "");
-    String getNonce();
-
-    std::map<String, String> timeframes;
-    std::map<String, String> marketTypes;
-    std::map<String, String> options;
-    std::map<int, String> errorCodes;
-    std::map<String, json> fees;
-    bool hasPublicAPI;
-    bool hasPrivateAPI;
-    bool hasFiatAPI;
-    bool hasMarginAPI;
-    bool hasFuturesAPI;
-    bool hasOptionsAPI;
-    bool hasLeveragedAPI;
+    // Helper methods
+    std::string sign(const std::string& path, const std::string& api = "public",
+                  const std::string& method = "GET", const json& params = json::object(),
+                  const std::map<std::string, std::string>& headers = {},
+                  const json& body = nullptr) const override;
 };
 
 } // namespace ccxt

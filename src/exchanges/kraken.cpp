@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <base64.h>
+#include <future>
 
 namespace ccxt {
 
@@ -59,6 +60,122 @@ void Kraken::initializeApiEndpoints() {
             }}
         }}
     };
+}
+
+// Async Market Data Methods
+std::future<Json> Kraken::fetchMarketsAsync(const Json& params) const {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchMarketsImpl(params);
+    });
+}
+
+std::future<Json> Kraken::fetchCurrenciesAsync(const Json& params) const {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchCurrenciesImpl(params);
+    });
+}
+
+std::future<Json> Kraken::fetchTickerAsync(const std::string& symbol, const Json& params) const {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->fetchTickerImpl(symbol, params);
+    });
+}
+
+std::future<Json> Kraken::fetchTickersAsync(const std::vector<std::string>& symbols, const Json& params) const {
+    return std::async(std::launch::async, [this, symbols, params]() {
+        return this->fetchTickersImpl(symbols, params);
+    });
+}
+
+std::future<Json> Kraken::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit, const Json& params) const {
+    return std::async(std::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBookImpl(symbol, limit, params);
+    });
+}
+
+std::future<Json> Kraken::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
+                                        const std::optional<long long>& since, const std::optional<int>& limit,
+                                        const Json& params) const {
+    return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCVImpl(symbol, timeframe, since, limit, params);
+    });
+}
+
+std::future<Json> Kraken::fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since,
+                                         const std::optional<int>& limit, const Json& params) const {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchTradesImpl(symbol, since, limit, params);
+    });
+}
+
+// Async Trading Methods
+std::future<Json> Kraken::createOrderAsync(const std::string& symbol, const std::string& type,
+                                         const std::string& side, double amount,
+                                         const std::optional<double>& price, const Json& params) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrderImpl(symbol, type, side, amount, price, params);
+    });
+}
+
+std::future<Json> Kraken::cancelOrderAsync(const std::string& id, const std::string& symbol, const Json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->cancelOrderImpl(id, symbol, params);
+    });
+}
+
+std::future<Json> Kraken::fetchOrderAsync(const std::string& id, const std::string& symbol, const Json& params) const {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->fetchOrderImpl(id, symbol, params);
+    });
+}
+
+std::future<Json> Kraken::fetchOpenOrdersAsync(const std::string& symbol, const std::optional<long long>& since,
+                                             const std::optional<int>& limit, const Json& params) const {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrdersImpl(symbol, since, limit, params);
+    });
+}
+
+std::future<Json> Kraken::fetchClosedOrdersAsync(const std::string& symbol, const std::optional<long long>& since,
+                                               const std::optional<int>& limit, const Json& params) const {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrdersImpl(symbol, since, limit, params);
+    });
+}
+
+std::future<Json> Kraken::fetchMyTradesAsync(const std::string& symbol, const std::optional<long long>& since,
+                                           const std::optional<int>& limit, const Json& params) const {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchMyTradesImpl(symbol, since, limit, params);
+    });
+}
+
+// Async Account Methods
+std::future<Json> Kraken::fetchBalanceAsync(const Json& params) const {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchBalanceImpl(params);
+    });
+}
+
+std::future<Json> Kraken::fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network,
+                                                 const Json& params) const {
+    return std::async(std::launch::async, [this, code, network, params]() {
+        return this->fetchDepositAddressImpl(code, network, params);
+    });
+}
+
+std::future<Json> Kraken::fetchDepositsAsync(const std::optional<std::string>& code, const std::optional<long long>& since,
+                                           const std::optional<int>& limit, const Json& params) const {
+    return std::async(std::launch::async, [this, code, since, limit, params]() {
+        return this->fetchDepositsImpl(code, since, limit, params);
+    });
+}
+
+std::future<Json> Kraken::fetchWithdrawalsAsync(const std::optional<std::string>& code, const std::optional<long long>& since,
+                                             const std::optional<int>& limit, const Json& params) const {
+    return std::async(std::launch::async, [this, code, since, limit, params]() {
+        return this->fetchWithdrawalsImpl(code, since, limit, params);
+    });
 }
 
 json Kraken::fetchMarkets(const json& params) {

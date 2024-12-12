@@ -316,4 +316,87 @@ json OKCoin::parseOrderStatus(const String& status) {
     return statuses.contains(status) ? statuses.at(status) : status;
 }
 
+// Async REST API methods
+json OKCoin::fetchTickerAsync(const String& symbol, const json& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+json OKCoin::fetchBalanceAsync(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+json OKCoin::createOrderAsync(const String& symbol, const String& type,
+                            const String& side, double amount,
+                            double price, const json& params) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+json OKCoin::cancelOrderAsync(const String& id, const String& symbol,
+                            const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+json OKCoin::fetchOrderAsync(const String& id, const String& symbol,
+                           const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+json OKCoin::fetchOrdersAsync(const String& symbol, int since,
+                            int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOrders(symbol, since, limit, params);
+    });
+}
+
+json OKCoin::fetchOpenOrdersAsync(const String& symbol, int since,
+                                int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+json OKCoin::fetchClosedOrdersAsync(const String& symbol, int since,
+                                  int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
+}
+
+json OKCoin::fetchMyTradesAsync(const String& symbol, int since,
+                               int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchMyTrades(symbol, since, limit, params);
+    });
+}
+
+json OKCoin::fetchMarketsAsync(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchMarkets(params);
+    });
+}
+
+json OKCoin::fetchOrderBookAsync(const String& symbol, int limit,
+                               const json& params) {
+    return std::async(std::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+json OKCoin::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+                            int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
+    });
+}
+
 } // namespace ccxt

@@ -8,16 +8,13 @@ const std::string p2b::defaultVersion = "v2";
 const int p2b::defaultRateLimit = 100;
 const bool p2b::defaultPro = true;
 
-ExchangeRegistry::Factory p2b::factory = []() {
-    return new p2b();
-};
 
-p2b::p2b(const Config& config) : ExchangeImpl(config) {
+p2b::p2b(const Config& config) : Exchange(config) {
     init();
 }
 
 void p2b::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

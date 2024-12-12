@@ -8,16 +8,12 @@ const std::string timex::defaultVersion = "v1";
 const int timex::defaultRateLimit = 1500;
 const bool timex::defaultPro = true;
 
-ExchangeRegistry::Factory timex::factory = []() {
-    return new timex();
-};
-
-timex::timex(const Config& config) : ExchangeImpl(config) {
+timex::timex(const Config& config) : Exchange(config) {
     init();
 }
 
 void timex::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

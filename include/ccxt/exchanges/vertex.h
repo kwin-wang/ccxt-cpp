@@ -1,74 +1,69 @@
-#ifndef CCXT_EXCHANGE_VERTEX_H
-#define CCXT_EXCHANGE_VERTEX_H
+#pragma once
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
 
 namespace ccxt {
 
-class vertex : public ExchangeImpl {
+class Vertex : public Exchange {
 public:
-    vertex(const Config& config = Config());
-    ~vertex() = default;
+    Vertex();
+    ~Vertex() override = default;
 
-    static Exchange* create(const Config& config = Config()) {
-        return new vertex(config);
-    }
+    // Market Data API
+    json fetchMarkets(const json& params = json::object()) override;
+    json fetchTicker(const String& symbol, const json& params = json::object()) override;
+    json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object()) override;
+    json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object()) override;
+    json fetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
+                    int since = 0, int limit = 0, const json& params = json::object()) override;
+
+    // Trading API
+    json fetchBalance(const json& params = json::object()) override;
+    json createOrder(const String& symbol, const String& type, const String& side,
+                    double amount, double price = 0, const json& params = json::object()) override;
+    json cancelOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
+    json fetchOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
+    json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+
+    // Vertex specific methods
+    json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    json fetchPositions(const json& params = json::object());
+    json fetchLeverage(const String& symbol, const json& params = json::object());
+    json setLeverage(const String& symbol, double leverage, const json& params = json::object());
+    json fetchFundingRate(const String& symbol, const json& params = json::object());
+    json fetchFundingRateHistory(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    json fetchIndexOHLCV(const String& symbol, const String& timeframe = "1m",
+                        int since = 0, int limit = 0, const json& params = json::object());
+    json fetchMarkOHLCV(const String& symbol, const String& timeframe = "1m",
+                       int since = 0, int limit = 0, const json& params = json::object());
 
 protected:
-    void init() override;
-    Json describeImpl() const override;
-
-    // Market Data
-    Json fetchMarketsImpl() const override;
-    Json fetchCurrenciesImpl() const override;
-    Json fetchTickerImpl(const std::string& symbol) const override;
-    Json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const override;
-    Json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-
-    // Trading
-    Json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt) override;
-    Json cancelOrderImpl(const std::string& id, const std::string& symbol) override;
-    Json fetchOrderImpl(const std::string& id, const std::string& symbol) const override;
-    Json fetchOpenOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchClosedOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchMyTradesImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-
-    // Account
-    Json fetchBalanceImpl() const override;
-    Json fetchDepositAddressImpl(const std::string& code, const std::optional<std::string>& network = std::nullopt) const override;
-    Json fetchDepositsImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchWithdrawalsImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+    String sign(const String& path, const String& api = "public",
+               const String& method = "GET", const json& params = json::object(),
+               const std::map<String, String>& headers = {}, const json& body = nullptr) override;
 
 private:
-    static Exchange* createInstance(const Config& config) {
-        return new vertex(config);
-    }
+    void initializeApiEndpoints();
+    String getVertexSymbol(const String& symbol);
+    String getCommonSymbol(const String& vertexSymbol);
+    json parseOrder(const json& order, const Market& market = Market());
+    json parseTrade(const json& trade, const Market& market = Market());
+    json parsePosition(const json& position, const Market& market = Market());
+    json parseTicker(const json& ticker, const Market& market = Market());
+    json parseOHLCV(const json& ohlcv, const Market& market = Market());
+    json parseBalance(const json& response);
+    json parseFundingRate(const json& fundingRate, const Market& market = Market());
+    json parseLeverage(const json& leverage, const Market& market = Market());
+    String parseOrderStatus(const String& status);
+    String createSignature(const String& timestamp, const String& method,
+                         const String& path, const String& body = "");
 
-    static const std::string defaultBaseURL;
-    static const std::string defaultVersion;
-    static const int defaultRateLimit;
-    static const bool defaultPro;
-
-    static ExchangeRegistry::Factory factory;
-
-    // Helper methods for parsing responses
-    Json parseTicker(const Json& ticker, const Json& market = Json()) const;
-    Json parseTrade(const Json& trade, const Json& market = Json()) const;
-    Json parseOrder(const Json& order, const Json& market = Json()) const;
-    Json parseTransaction(const Json& transaction, const Json& currency = Json()) const;
-
-    // Authentication helpers
-    std::string sign(const std::string& path, const std::string& api = "public", const std::string& method = "GET",
-                    const Json& params = Json::object(), const Json& headers = Json::object(), const Json& body = Json::object()) const;
-
-    // Error handling
-    void handleErrors(const std::string& code, const std::string& reason, const std::string& url, const std::string& method,
-                     const Json& headers, const Json& body, const Json& response, const std::string& requestHeaders,
-                     const std::string& requestBody) const;
+    std::map<String, String> timeframes;
+    std::map<String, String> options;
+    std::map<int, String> errorCodes;
 };
 
 } // namespace ccxt
-
-#endif // CCXT_EXCHANGE_VERTEX_H

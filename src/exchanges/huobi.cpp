@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <base64.h>
+#include <future>
 
 namespace ccxt {
 
@@ -295,6 +296,88 @@ String Huobi::getAccountId() {
         }
     }
     return accountId;
+}
+
+// Async implementations
+std::future<json> Huobi::fetchMarketsAsync(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchMarkets(params);
+    });
+}
+
+std::future<json> Huobi::fetchTickerAsync(const String& symbol, const json& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+std::future<json> Huobi::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+    return std::async(std::launch::async, [this, symbols, params]() {
+        return this->fetchTickers(symbols, params);
+    });
+}
+
+std::future<json> Huobi::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+std::future<json> Huobi::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Huobi::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+                                        int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
+    });
+}
+
+std::future<json> Huobi::fetchBalanceAsync(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+std::future<json> Huobi::createOrderAsync(const String& symbol, const String& type,
+                                        const String& side, double amount,
+                                        double price, const json& params) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+std::future<json> Huobi::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+std::future<json> Huobi::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+std::future<json> Huobi::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOrders(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Huobi::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Huobi::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
 }
 
 } // namespace ccxt

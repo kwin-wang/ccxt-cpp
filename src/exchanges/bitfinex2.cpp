@@ -11,14 +11,12 @@ const std::string bitfinex2::defaultVersion = "v2";
 const int bitfinex2::defaultRateLimit = 1500;
 const bool bitfinex2::defaultPro = true;
 
-ExchangeRegistry::Factory bitfinex2::factory("bitfinex2", bitfinex2::createInstance);
-
-bitfinex2::bitfinex2(const Config& config) : ExchangeImpl(config) {
+bitfinex2::bitfinex2(const Config& config) : Exchange(config) {
     init();
 }
 
 void bitfinex2::init() {
-    ExchangeImpl::init();
+    
     
     // Set exchange properties
     this->id = "bitfinex2";

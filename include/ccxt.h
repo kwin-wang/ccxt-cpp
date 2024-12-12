@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 #include "ccxt/base/exchange_registry.h"
 #include "ccxt/base/errors.h"
 #include "ccxt/base/precise.h"

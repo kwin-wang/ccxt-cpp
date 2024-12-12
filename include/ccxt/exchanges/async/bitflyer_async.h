@@ -5,49 +5,37 @@
 
 namespace ccxt {
 
-class BitflyerAsync : public ExchangeAsync, public Bitflyer {
+class BitflyerAsync : public ExchangeAsync, public bitflyer {
 public:
-    explicit BitflyerAsync(const boost::asio::io_context& context);
+    explicit BitflyerAsync(const boost::asio::io_context& context, const Config& config = Config());
     ~BitflyerAsync() override = default;
 
-    // Market Data API
-    boost::future<json> fetchMarketsAsync(const json& params = json::object());
-    boost::future<json> fetchTickerAsync(const String& symbol, const json& params = json::object());
-    boost::future<json> fetchTickersAsync(const std::vector<String>& symbols = {}, const json& params = json::object());
-    boost::future<json> fetchOrderBookAsync(const String& symbol, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchTradesAsync(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
-                                      int since = 0, int limit = 0, const json& params = json::object());
+    // Market Data
+    boost::future<Json> fetchMarketsAsync() const;
+    boost::future<Json> fetchTickerAsync(const std::string& symbol) const;
+    boost::future<Json> fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
 
-    // Trading API
-    boost::future<json> fetchBalanceAsync(const json& params = json::object());
-    boost::future<json> createOrderAsync(const String& symbol, const String& type, const String& side,
-                                       double amount, double price = 0, const json& params = json::object());
-    boost::future<json> cancelOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
-    boost::future<json> fetchOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
-    boost::future<json> fetchOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchClosedOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    // Trading
+    boost::future<Json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt);
+    boost::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol);
+    boost::future<Json> fetchOrderAsync(const std::string& id, const std::string& symbol) const;
+    boost::future<Json> fetchOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchOpenOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchClosedOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchMyTradesAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
 
-    // Account API
-    boost::future<json> fetchMyTradesAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchDepositsAsync(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchWithdrawalsAsync(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchDepositAddressAsync(const String& code, const json& params = json::object());
-    boost::future<json> withdrawAsync(const String& code, double amount, const String& address,
-                                    const String& tag = "", const json& params = json::object());
-
-    // Additional Features
-    boost::future<json> fetchCurrenciesAsync(const json& params = json::object());
-    boost::future<json> fetchTradingFeesAsync(const json& params = json::object());
-    boost::future<json> fetchFundingFeesAsync(const json& params = json::object());
-    boost::future<json> fetchTransactionsAsync(const String& code = "", int since = 0, int limit = 0,
-                                             const json& params = json::object());
+    // Account
+    boost::future<Json> fetchBalanceAsync() const;
+    boost::future<Json> fetchPositionsAsync(const std::string& symbols = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchDepositsAsync(const std::string& code = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> fetchWithdrawalsAsync(const std::string& code = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const;
+    boost::future<Json> withdrawAsync(const std::string& code, double amount, const std::string& address, const std::string& tag = "", const Json& params = Json::object());
 
 protected:
-    boost::future<json> fetchAsync(const String& path, const String& api = "public",
-                                 const String& method = "GET", const json& params = json::object(),
-                                 const std::map<String, String>& headers = {});
+    boost::future<Json> fetchAsync(const std::string& path, const std::string& api = "public",
+                                 const std::string& method = "GET", const Json& params = Json::object(),
+                                 const std::map<std::string, std::string>& headers = {}) const;
 };
 
 } // namespace ccxt

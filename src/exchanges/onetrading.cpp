@@ -250,6 +250,161 @@ json onetrading::set_margin_mode(const std::string& symbol, const std::string& m
     return this->privatePostMarginMode(this->extend(request, params));
 }
 
+// Async Market Data
+json onetrading::fetch_markets_async(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetch_markets(params);
+    });
+}
+
+json onetrading::fetch_currencies_async(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetch_currencies(params);
+    });
+}
+
+json onetrading::fetch_ticker_async(const std::string& symbol, const json& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->fetch_ticker(symbol, params);
+    });
+}
+
+json onetrading::fetch_order_book_async(const std::string& symbol, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, limit, params]() {
+        return this->fetch_order_book(symbol, limit, params);
+    });
+}
+
+json onetrading::fetch_trades_async(const std::string& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_trades(symbol, since, limit, params);
+    });
+}
+
+json onetrading::fetch_ohlcv_async(const std::string& symbol, const std::string& timeframe,
+                                  int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetch_ohlcv(symbol, timeframe, since, limit, params);
+    });
+}
+
+json onetrading::fetch_trading_fees_async(const std::string& symbol, const json& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->fetch_trading_fees(symbol, params);
+    });
+}
+
+// Async Trading
+json onetrading::create_order_async(const std::string& symbol, const std::string& type,
+                                  const std::string& side, double amount,
+                                  double price, const json& params) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->create_order(symbol, type, side, amount, price, params);
+    });
+}
+
+json onetrading::cancel_order_async(const std::string& id, const std::string& symbol, const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->cancel_order(id, symbol, params);
+    });
+}
+
+json onetrading::cancel_all_orders_async(const std::string& symbol, const json& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->cancel_all_orders(symbol, params);
+    });
+}
+
+json onetrading::edit_order_async(const std::string& id, const std::string& symbol,
+                                const std::string& type, const std::string& side,
+                                double amount, double price, const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, type, side, amount, price, params]() {
+        return this->edit_order(id, symbol, type, side, amount, price, params);
+    });
+}
+
+// Async Account
+json onetrading::fetch_balance_async(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetch_balance(params);
+    });
+}
+
+json onetrading::fetch_open_orders_async(const std::string& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_open_orders(symbol, since, limit, params);
+    });
+}
+
+json onetrading::fetch_closed_orders_async(const std::string& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_closed_orders(symbol, since, limit, params);
+    });
+}
+
+json onetrading::fetch_my_trades_async(const std::string& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_my_trades(symbol, since, limit, params);
+    });
+}
+
+json onetrading::fetch_order_async(const std::string& id, const std::string& symbol, const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->fetch_order(id, symbol, params);
+    });
+}
+
+json onetrading::fetch_deposit_address_async(const std::string& code, const json& params) {
+    return std::async(std::launch::async, [this, code, params]() {
+        return this->fetch_deposit_address(code, params);
+    });
+}
+
+json onetrading::fetch_deposits_async(const std::string& code, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, code, since, limit, params]() {
+        return this->fetch_deposits(code, since, limit, params);
+    });
+}
+
+json onetrading::fetch_withdrawals_async(const std::string& code, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, code, since, limit, params]() {
+        return this->fetch_withdrawals(code, since, limit, params);
+    });
+}
+
+json onetrading::withdraw_async(const std::string& code, double amount,
+                              const std::string& address, const std::string& tag,
+                              const json& params) {
+    return std::async(std::launch::async, [this, code, amount, address, tag, params]() {
+        return this->withdraw(code, amount, address, tag, params);
+    });
+}
+
+// Async OneTrading specific methods
+json onetrading::fetch_funding_history_async(const std::string& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetch_funding_history(symbol, since, limit, params);
+    });
+}
+
+json onetrading::fetch_positions_async(const std::string& symbol, const json& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->fetch_positions(symbol, params);
+    });
+}
+
+json onetrading::set_leverage_async(const std::string& symbol, int leverage, const json& params) {
+    return std::async(std::launch::async, [this, symbol, leverage, params]() {
+        return this->set_leverage(symbol, leverage, params);
+    });
+}
+
+json onetrading::set_margin_mode_async(const std::string& symbol, const std::string& marginMode, const json& params) {
+    return std::async(std::launch::async, [this, symbol, marginMode, params]() {
+        return this->set_margin_mode(symbol, marginMode, params);
+    });
+}
+
 void onetrading::sign(Request& request, const std::string& path,
                      const std::string& api, const std::string& method,
                      const json& params, const json& headers, const json& body) {

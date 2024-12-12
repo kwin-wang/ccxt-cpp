@@ -1,8 +1,10 @@
-#include "bitvavo.h"
+#include "ccxt/exchanges/bitvavo.h"
 #include <chrono>
 #include <sstream>
 #include <iomanip>
 #include <openssl/hmac.h>
+#include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
 
 namespace ccxt {
 
@@ -33,6 +35,8 @@ Bitvavo::Bitvavo() {
         }},
         {"fees", "https://bitvavo.com/en/fees"}
     };
+
+    rateLimit = 60; // 1000 requests per minute
 
     initializeApiEndpoints();
     initializeTimeframes();
@@ -97,192 +101,135 @@ void Bitvavo::initializeTimeframes() {
     };
 }
 
+// Synchronous API Methods
 json Bitvavo::fetchMarkets(const json& params) {
-    json response = fetch("/markets", "public", "GET", params);
-    json result = json::array();
-    
-    for (const auto& market : response) {
-        String id = market["market"].get<String>();
-        String baseId = market["base"].get<String>();
-        String quoteId = market["quote"].get<String>();
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
-        
-        result.push_back({
-            {"id", id},
-            {"symbol", symbol},
-            {"base", base},
-            {"quote", quote},
-            {"baseId", baseId},
-            {"quoteId", quoteId},
-            {"active", market["status"].get<String>() == "trading"},
-            {"precision", {
-                {"amount", market["pricePrecision"].get<int>()},
-                {"price", market["pricePrecision"].get<int>()}
-            }},
-            {"limits", {
-                {"amount", {
-                    {"min", this->safeFloat(market, "minOrderInBaseAsset")},
-                    {"max", this->safeFloat(market, "maxOrderInBaseAsset")}
-                }},
-                {"price", {
-                    {"min", this->safeFloat(market, "minOrderInQuoteAsset")},
-                    {"max", this->safeFloat(market, "maxOrderInQuoteAsset")}
-                }},
-                {"cost", {
-                    {"min", this->safeFloat(market, "minOrderInQuoteAsset")},
-                    {"max", nullptr}
-                }}
-            }},
-            {"info", market}
-        });
-    }
-    
-    return result;
+    auto response = this->publicGetMarkets(params);
+    return this->parseMarkets(response);
 }
 
 json Bitvavo::fetchBalance(const json& params) {
-    this->loadMarkets();
-    json response = fetch("/balance", "private", "GET", params);
-    return parseBalance(response);
+    auto response = this->privateGetBalance(params);
+    return this->parseBalance(response);
 }
 
-json Bitvavo::parseBalance(const json& response) {
-    json result = {{"info", response}};
-    
-    for (const auto& balance : response) {
-        String currencyId = balance["symbol"].get<String>();
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
-            {"free", this->safeFloat(balance, "available")},
-            {"used", this->safeFloat(balance, "inOrder")},
-            {"total", this->safeFloat(balance, "available") + this->safeFloat(balance, "inOrder")}
-        };
-        result[code] = account;
-    }
-    
-    return result;
-}
-
-json Bitvavo::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
-                         double price, const json& params) {
+json Bitvavo::createOrder(const String& symbol, const String& type, const String& side,
+                         double amount, double price, const json& params) {
     this->loadMarkets();
-    Market market = this->market(symbol);
-    String uppercaseType = type.toUpperCase();
-    
-    json request = {
+    auto market = this->market(symbol);
+    auto request = {
         {"market", market["id"]},
-        {"side", side.toLower()},
-        {"orderType", uppercaseType.toLower()},
-        {"amount", this->amountToPrecision(symbol, amount)}
+        {"side", side},
+        {"orderType", type}
     };
-    
-    if (uppercaseType == "LIMIT") {
+    if (type == "limit") {
         request["price"] = this->priceToPrecision(symbol, price);
     }
-    
-    json response = fetch("/order", "private", "POST",
-                         this->extend(request, params));
+    request["amount"] = this->amountToPrecision(symbol, amount);
+    auto response = this->privatePostOrder(this->extend(request, params));
     return this->parseOrder(response, market);
 }
 
+// Async API Methods
+boost::future<json> Bitvavo::fetchMarketsAsync(const json& params) {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchMarkets(params);
+    });
+}
+
+boost::future<json> Bitvavo::fetchBalanceAsync(const json& params) {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+boost::future<json> Bitvavo::createOrderAsync(const String& symbol, const String& type,
+                                            const String& side, double amount,
+                                            double price, const json& params) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+// Helper Methods
 String Bitvavo::sign(const String& path, const String& api,
                      const String& method, const json& params,
                      const std::map<String, String>& headers,
                      const json& body) {
-    String url = this->urls["api"][api] + path;
-    String timestamp = std::to_string(this->milliseconds());
+    auto url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    auto query = this->omit(params, this->extractParams(path));
     
-    if (api == "private") {
-        this->checkRequiredCredentials();
-        
-        json request = params;
-        if (method == "GET") {
-            if (!params.empty()) {
-                url += "?" + this->urlencode(params);
-            }
-        } else {
-            if (!params.empty()) {
-                body = this->json(params);
-            }
-        }
-        
-        String payload = timestamp + method + "/v2" + path;
-        if (body != nullptr) {
-            payload += this->json(body);
-        }
-        
-        String signature = this->hmac(payload, this->encode(this->secret),
-                                    "sha256", "hex");
-        
-        const_cast<std::map<String, String>&>(headers)["BITVAVO-ACCESS-KEY"] = this->apiKey;
-        const_cast<std::map<String, String>&>(headers)["BITVAVO-ACCESS-SIGNATURE"] = signature;
-        const_cast<std::map<String, String>&>(headers)["BITVAVO-ACCESS-TIMESTAMP"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["BITVAVO-ACCESS-WINDOW"] = "10000";
-        
-        if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+    if (api == "public") {
+        if (!query.empty()) {
+            url += "?" + this->urlencode(query);
         }
     } else {
-        if (!params.empty()) {
-            url += "?" + this->urlencode(params);
+        this->checkRequiredCredentials();
+        auto nonce = this->getNonce();
+        auto request = "";
+        if (method == "GET") {
+            if (!query.empty()) {
+                url += "?" + this->urlencode(query);
+            }
+        } else {
+            if (!query.empty()) {
+                body = query;
+                request = this->json(query);
+            }
         }
+        auto timestamp = std::to_string(nonce);
+        auto auth = timestamp + method + "/v2/" + path;
+        if (request != "") {
+            auth += request;
+        }
+        auto signature = this->hmac(auth, this->secret, "sha256");
+        headers["BITVAVO-ACCESS-KEY"] = this->apiKey;
+        headers["BITVAVO-ACCESS-SIGNATURE"] = signature;
+        headers["BITVAVO-ACCESS-TIMESTAMP"] = timestamp;
+        headers["BITVAVO-ACCESS-WINDOW"] = "10000";
     }
-    
     return url;
 }
 
 String Bitvavo::getNonce() {
-    return std::to_string(this->milliseconds());
+    return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count());
 }
 
 json Bitvavo::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "orderId");
-    String timestamp = this->safeString(order, "created");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
-    
-    if (!market.empty()) {
-        symbol = market["symbol"];
-    } else {
-        String marketId = this->safeString(order, "market");
-        if (marketId != nullptr) {
-            if (this->markets_by_id.contains(marketId)) {
-                market = this->markets_by_id[marketId];
-                symbol = market["symbol"];
-            } else {
-                symbol = marketId;
-            }
-        }
-    }
-    
-    String type = this->safeStringLower(order, "orderType");
-    String side = this->safeStringLower(order, "side");
+    auto timestamp = this->safeInteger(order, "created");
+    auto status = this->parseOrderStatus(this->safeString(order, "status"));
+    auto side = this->safeString(order, "side");
+    auto type = this->parseOrderType(this->safeString(order, "orderType"));
+    auto id = this->safeString(order, "orderId");
+    auto marketId = this->safeString(order, "market");
+    auto symbol = this->safeSymbol(marketId, market);
+    auto price = this->safeString(order, "price");
+    auto amount = this->safeString(order, "amount");
+    auto cost = this->safeString(order, "filledAmount");
+    auto filled = this->safeString(order, "filledAmount");
+    auto remaining = this->safeString(order, "remainingAmount");
     
     return {
         {"id", id},
-        {"clientOrderId", this->safeString(order, "clientOrderId")},
-        {"timestamp", this->parse8601(timestamp)},
+        {"clientOrderId", nullptr},
+        {"timestamp", timestamp},
         {"datetime", this->iso8601(timestamp)},
         {"lastTradeTimestamp", nullptr},
-        {"type", type},
-        {"timeInForce", this->safeString(order, "timeInForce")},
-        {"postOnly", this->safeValue(order, "postOnly")},
         {"status", status},
         {"symbol", symbol},
+        {"type", type},
+        {"timeInForce", nullptr},
+        {"postOnly", nullptr},
         {"side", side},
-        {"price", this->safeFloat(order, "price")},
-        {"amount", this->safeFloat(order, "amount")},
-        {"filled", this->safeFloat(order, "filledAmount")},
-        {"remaining", this->safeFloat(order, "remainingAmount")},
-        {"cost", this->safeFloat(order, "filledAmountQuote")},
+        {"price", this->parseNumber(price)},
+        {"stopPrice", nullptr},
+        {"cost", this->parseNumber(cost)},
+        {"amount", this->parseNumber(amount)},
+        {"filled", this->parseNumber(filled)},
+        {"remaining", this->parseNumber(remaining)},
         {"trades", nullptr},
-        {"fee", {
-            {"cost", this->safeFloat(order, "feePaid")},
-            {"currency", this->safeString(order, "feeCurrency")}
-        }},
+        {"fee", nullptr},
         {"info", order}
     };
 }
@@ -295,8 +242,17 @@ String Bitvavo::parseOrderStatus(const String& status) {
         {"partial", "open"},
         {"rejected", "rejected"}
     };
-    
     return this->safeString(statuses, status, status);
+}
+
+String Bitvavo::parseOrderType(const String& type) {
+    static const std::map<String, String> types = {
+        {"limit", "limit"},
+        {"market", "market"},
+        {"stop", "stop"},
+        {"stopLimit", "stop_limit"}
+    };
+    return this->safeString(types, type, type);
 }
 
 } // namespace ccxt

@@ -1,36 +1,56 @@
 #include "ccxt/exchanges/cex.h"
-#include "ccxt/base/json_helper.h"
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <openssl/hmac.h>
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <openssl/hmac.h>
 
 namespace ccxt {
 
-const std::string cex::defaultBaseURL = "https://cex.io/api";
-const std::string cex::defaultVersion = "v1";
-const int cex::defaultRateLimit = 1000;
-const bool cex::defaultPro = false;
-
-ExchangeRegistry::Factory cex::factory(cex::createInstance);
-
-cex::cex(const Config& config) : ExchangeImpl(config) {
-    init();
+cex::cex(const Config& config) : Exchange(config) {
+    this->describe();
 }
 
-void cex::init() {
-    name = "CEX";
-    id = "cex";
-    version = defaultVersion;
-    rateLimit = defaultRateLimit;
-    pro = defaultPro;
-    baseURL = defaultBaseURL;
+void cex::describe() {
+    this->id = "cex";
+    this->name = "CEX.IO";
+    this->countries = {"GB", "EU", "CY", "RU"};
+    this->rateLimit = 300;  // 200 req/min
+    this->pro = true;
+    
+    this->has = {
+        {"CORS", nullptr},
+        {"spot", true},
+        {"margin", false},  // has, but not through api
+        {"swap", false},
+        {"future", false},
+        {"option", false},
+        {"cancelAllOrders", true},
+        {"cancelOrder", true},
+        {"createOrder", true},
+        {"createStopOrder", true},
+        {"createTriggerOrder", true},
+        {"fetchAccounts", true},
+        {"fetchBalance", true},
+        {"fetchClosedOrder", true},
+        {"fetchClosedOrders", true},
+        {"fetchCurrencies", true},
+        {"fetchDepositAddress", true},
+        {"fetchDepositsWithdrawals", true},
+        {"fetchLedger", true},
+        {"fetchMarkets", true},
+        {"fetchOHLCV", true},
+        {"fetchOpenOrder", true},
+        {"fetchOpenOrders", true},
+        {"fetchOrderBook", true},
+        {"fetchTicker", true},
+        {"fetchTickers", true},
+        {"fetchTime", true},
+        {"fetchTrades", true},
+        {"fetchTradingFees", true},
+        {"transfer", true}
+    };
 
-    // Initialize URLs
-    urls = {
+    this->urls = {
         {"logo", "https://user-images.githubusercontent.com/1294454/27766442-8ddc33b0-5ed8-11e7-8b98-f786aef0f3c9.jpg"},
         {"api", {
             {"public", "https://cex.io/api"},
@@ -44,8 +64,7 @@ void cex::init() {
         {"fees", "https://cex.io/fee-schedule"}
     };
 
-    // Initialize API endpoints
-    api = {
+    this->api = {
         {"public", {
             {"get", {
                 "currency_profile",
@@ -85,240 +104,291 @@ void cex::init() {
         }}
     };
 
-    // Initialize fees
-    fees = {
+    this->fees = {
         {"trading", {
-            {"maker", 0.0016},  // 0.16%
-            {"taker", 0.0025}   // 0.25%
+            {"maker", 0.16 / 100},  // 0.16%
+            {"taker", 0.25 / 100}   // 0.25%
         }}
     };
-
-    // Initialize precision rules
-    precisionMode = DECIMAL_PLACES;
-    
-    requiredCredentials = {
-        {"apiKey", true},
-        {"secret", true},
-        {"uid", true}
-    };
 }
 
-Json cex::describeImpl() const {
-    return {
-        {"id", id},
-        {"name", name},
-        {"countries", Json::array({"UK", "EU", "Cyprus", "RU"})},
-        {"rateLimit", rateLimit},
-        {"pro", pro},
-        {"has", {
-            {"fetchMarkets", true},
-            {"fetchCurrencies", true},
-            {"fetchTicker", true},
-            {"fetchTickers", true},
-            {"fetchOrderBook", true},
-            {"fetchTrades", true},
-            {"fetchOHLCV", true},
-            {"fetchBalance", true},
-            {"createOrder", true},
-            {"cancelOrder", true},
-            {"fetchOrder", true},
-            {"fetchOpenOrders", true},
-            {"fetchClosedOrders", true},
-            {"fetchDepositAddress", true},
-            {"withdraw", true},
-            {"fetchMyTrades", true},
-            {"fetchLedger", true}
-        }},
-        {"timeframes", {
-            {"1m", "1m"},
-            {"3m", "3m"},
-            {"5m", "5m"},
-            {"15m", "15m"},
-            {"30m", "30m"},
-            {"1h", "1h"},
-            {"2h", "2h"},
-            {"4h", "4h"},
-            {"6h", "6h"},
-            {"12h", "12h"},
-            {"1d", "1d"},
-            {"1w", "1w"},
-            {"1M", "1M"}
-        }},
-        {"urls", urls},
-        {"api", api},
-        {"fees", fees},
-        {"precisionMode", precisionMode}
-    };
-}
-
-Json cex::fetchMarketsImpl() const {
-    auto response = get("currency_limits");
-    auto markets = Json::array();
-    auto pairs = response["data"]["pairs"].array_items();
+json cex::fetchMarkets(const json& params) {
+    json response = this->fetch("/currency_profile", "public", "GET", params);
+    json result = json::array();
     
-    for (const auto& pair : pairs) {
-        auto symbol = pair["symbol1"].string_value() + "/" + pair["symbol2"].string_value();
-        markets.push_back({
-            {"id", pair["symbol1"].string_value() + pair["symbol2"].string_value()},
-            {"symbol", symbol},
-            {"base", pair["symbol1"].string_value()},
-            {"quote", pair["symbol2"].string_value()},
-            {"baseId", pair["symbol1"].string_value()},
-            {"quoteId", pair["symbol2"].string_value()},
+    for (const auto& market : response["data"]["pairs"]) {
+        json entry = {
+            {"id", market["symbol1"] + "/" + market["symbol2"]},
+            {"symbol", market["symbol1"] + "/" + market["symbol2"]},
+            {"base", market["symbol1"]},
+            {"quote", market["symbol2"]},
+            {"baseId", market["symbol1"]},
+            {"quoteId", market["symbol2"]},
             {"active", true},
             {"precision", {
-                {"amount", pair["scale1"].int_value()},
-                {"price", pair["scale2"].int_value()}
+                {"amount", market["scale1"]},
+                {"price", market["scale2"]}
             }},
             {"limits", {
                 {"amount", {
-                    {"min", pair["minLotSize"].number_value()},
-                    {"max", pair["maxLotSize"].number_value()}
+                    {"min", market["minLotSize"]},
+                    {"max", market["maxLotSize"]}
                 }},
                 {"price", {
-                    {"min", pair["minPrice"].number_value()},
-                    {"max", pair["maxPrice"].number_value()}
+                    {"min", market["minPrice"]},
+                    {"max", market["maxPrice"]}
                 }},
                 {"cost", {
-                    {"min", pair["minLotSizeS2"].number_value()},
-                    {"max", pair["maxLotSizeS2"].number_value()}
+                    {"min", market["minLotSizeS2"]},
+                    {"max", market["maxLotSizeS2"]}
                 }}
             }},
-            {"info", pair}
-        });
+            {"info", market}
+        };
+        result.push_back(entry);
     }
-    
-    return markets;
-}
-
-Json cex::fetchTickerImpl(const std::string& symbol) const {
-    auto market = this->market(symbol);
-    auto response = get("ticker/" + market["id"].string_value());
-    return parseTicker(response, market);
-}
-
-Json cex::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
-    auto market = this->market(symbol);
-    auto request = "order_book/" + market["id"].string_value();
-    if (limit) {
-        request += "?depth=" + std::to_string(*limit);
-    }
-    auto response = get(request);
-    
-    return {
-        {"bids", response["bids"]},
-        {"asks", response["asks"]},
-        {"timestamp", response["timestamp"].int_value() * 1000},
-        {"datetime", iso8601(response["timestamp"].int_value() * 1000)},
-        {"nonce", response["timestamp"].int_value()}
-    };
-}
-
-Json cex::createOrderImpl(const std::string& symbol, const std::string& type,
-                         const std::string& side, double amount,
-                         const std::optional<double>& price) {
-    auto market = this->market(symbol);
-    auto request = {
-        {"type", side},
-        {"amount", formatNumber(amount, market["precision"]["amount"].int_value())}
-    };
-    
-    if (type == "limit") {
-        if (!price) {
-            throw std::runtime_error("Price is required for limit orders");
-        }
-        request["price"] = formatNumber(*price, market["precision"]["price"].int_value());
-    }
-    
-    auto response = privatePost("place_order/" + market["id"].string_value(), request);
-    return parseOrder(response, market);
-}
-
-Json cex::cancelOrderImpl(const std::string& id, const std::string& symbol) {
-    return privatePost("cancel_order", {{"id", id}});
-}
-
-Json cex::fetchBalanceImpl() const {
-    auto response = privatePost("balance/");
-    auto result = {
-        {"info", response},
-        {"timestamp", nullptr},
-        {"datetime", nullptr}
-    };
-    
-    for (const auto& balance : response.object_items()) {
-        if (balance.first.find("available") != std::string::npos) {
-            auto currencyId = balance.first.substr(0, balance.first.find("available"));
-            auto currency = this->currency(currencyId);
-            auto account = {
-                {"free", balance.second.number_value()},
-                {"used", response[currencyId + "orders"].number_value()},
-                {"total", response[currencyId + "orders"].number_value() + balance.second.number_value()}
-            };
-            result[currency["code"].string_value()] = account;
-        }
-    }
-    
     return result;
 }
 
-Json cex::parseTicker(const Json& ticker, const Json& market) const {
-    auto timestamp = ticker["timestamp"].int_value() * 1000;
-    auto symbol = market ? market["symbol"].string_value() : "";
+json cex::fetchTicker(const String& symbol, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market["id"]}
+    };
+    json response = this->fetch("/ticker/" + market["id"], "public", "GET", this->extend(request, params));
+    return this->parseTicker(response, market);
+}
+
+json cex::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market["id"]}
+    };
+    if (limit != 0) {
+        request["depth"] = limit;
+    }
+    json response = this->fetch("/order_book/" + market["id"], "public", "GET", this->extend(request, params));
+    return this->parseOrderBook(response, market["symbol"]);
+}
+
+json cex::createOrder(const String& symbol, const String& type, const String& side,
+                     double amount, double price, const json& params) {
+    this->loadMarkets();
+    Market market = this->market(symbol);
+    
+    json request = {
+        {"type", type},
+        {"side", side},
+        {"amount", this->amountToPrecision(symbol, amount)}
+    };
+    
+    if (type == "limit") {
+        if (price == 0) {
+            throw ExchangeError("createOrder requires price for limit orders");
+        }
+        request["price"] = this->priceToPrecision(symbol, price);
+    }
+    
+    String endpoint = "/place_order/" + market["id"];
+    json response = this->fetch(endpoint, "private", "POST", this->extend(request, params));
+    return this->parseOrder(response, market);
+}
+
+json cex::cancelOrder(const String& id, const String& symbol, const json& params) {
+    json request = {
+        {"id", id}
+    };
+    if (!symbol.empty()) {
+        this->loadMarkets();
+        Market market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    return this->fetch("/cancel_order", "private", "POST", this->extend(request, params));
+}
+
+json cex::fetchBalance(const json& params) {
+    this->loadMarkets();
+    json response = this->fetch("/balance/", "private", "POST", params);
+    json result = {
+        {"info", response}
+    };
+    
+    for (const auto& balance : response.items()) {
+        String currencyId = balance.key();
+        json account = this->account();
+        
+        if (balance.value().contains("available")) {
+            account["free"] = this->safeString(balance.value(), "available");
+        }
+        if (balance.value().contains("orders")) {
+            account["used"] = this->safeString(balance.value(), "orders");
+        }
+        
+        String code = this->safeCurrencyCode(currencyId);
+        result[code] = account;
+    }
+    
+    return this->parseBalance(result);
+}
+
+json cex::parseTicker(const json& ticker, const json& market) {
+    long timestamp = this->safeTimestamp(ticker, "timestamp");
+    String symbol = this->safeString(market, "symbol");
     
     return {
         {"symbol", symbol},
         {"timestamp", timestamp},
-        {"datetime", iso8601(timestamp)},
-        {"high", ticker["high"]},
-        {"low", ticker["low"]},
-        {"bid", ticker["bid"]},
+        {"datetime", this->iso8601(timestamp)},
+        {"high", this->safeString(ticker, "high")},
+        {"low", this->safeString(ticker, "low")},
+        {"bid", this->safeString(ticker, "bid")},
         {"bidVolume", nullptr},
-        {"ask", ticker["ask"]},
+        {"ask", this->safeString(ticker, "ask")},
         {"askVolume", nullptr},
         {"vwap", nullptr},
-        {"open", nullptr},
-        {"close", ticker["last"]},
-        {"last", ticker["last"]},
+        {"open", this->safeString(ticker, "open")},
+        {"close", this->safeString(ticker, "last")},
+        {"last", this->safeString(ticker, "last")},
         {"previousClose", nullptr},
         {"change", nullptr},
         {"percentage", nullptr},
         {"average", nullptr},
-        {"baseVolume", ticker["volume"]},
-        {"quoteVolume", nullptr},
+        {"baseVolume", this->safeString(ticker, "volume")},
+        {"quoteVolume", this->safeString(ticker, "volumeQuote")},
         {"info", ticker}
     };
 }
 
-std::string cex::sign(const std::string& path, const std::string& api,
-                     const std::string& method, const Json& params,
-                     const Json& headers, const Json& body) const {
-    auto url = urls["api"][api] + "/" + path;
+String cex::sign(const String& path, const String& api, const String& method,
+                const json& params, const json& headers, const json& body) {
+    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    json query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
-        if (!params.empty()) {
-            url += "?" + urlencode(params);
+        if (!query.empty()) {
+            url += "?" + this->urlencode(query);
         }
     } else {
-        checkRequiredCredentials();
-        auto nonce = std::to_string(milliseconds());
-        auto auth = nonce + uid + apiKey;
-        auto signature = hmac(auth, secret, "sha256", "hex");
+        this->checkRequiredCredentials();
+        long nonce = this->nonce();
+        String auth = std::to_string(nonce) + this->apiKey;
+        String signature = this->hmac(auth, this->secret, "sha256", "hex");
         
-        auto request = params;
-        request["key"] = apiKey;
-        request["signature"] = signature;
-        request["nonce"] = nonce;
+        json request = this->extend({
+            {"key", this->apiKey},
+            {"signature", signature},
+            {"nonce", nonce}
+        }, query);
         
-        if (method == "GET") {
-            url += "?" + urlencode(request);
-        } else {
-            headers["Content-Type"] = "application/x-www-form-urlencoded";
-            body = urlencode(request);
-        }
+        body = this->json(request);
+        headers["Content-Type"] = "application/json";
     }
     
     return url;
+}
+
+// Async Market Data Functions
+boost::future<Json> cex::fetchMarketsAsync(const Json& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchMarkets(params);
+    });
+}
+
+boost::future<Json> cex::fetchTickerAsync(const std::string& symbol, const Json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+boost::future<Json> cex::fetchTickersAsync(const std::vector<std::string>& symbols, const Json& params) const {
+    return boost::async(boost::launch::async, [this, symbols, params]() {
+        return this->fetchTickers(symbols, params);
+    });
+}
+
+boost::future<Json> cex::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit, const Json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+boost::future<Json> cex::fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since, 
+                                        const std::optional<int>& limit, const Json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+boost::future<Json> cex::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
+                                       const std::optional<long long>& since, const std::optional<int>& limit,
+                                       const Json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
+    });
+}
+
+// Async Trading Functions
+boost::future<Json> cex::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
+                                       double amount, const std::optional<double>& price, const Json& params) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+boost::future<Json> cex::cancelOrderAsync(const std::string& id, const std::string& symbol, const Json& params) {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+boost::future<Json> cex::fetchOrderAsync(const std::string& id, const std::string& symbol, const Json& params) const {
+    return boost::async(boost::launch::async, [this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+boost::future<Json> cex::fetchOpenOrdersAsync(const std::optional<std::string>& symbol,
+                                           const std::optional<long long>& since,
+                                           const std::optional<int>& limit,
+                                           const Json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+boost::future<Json> cex::fetchClosedOrdersAsync(const std::optional<std::string>& symbol,
+                                             const std::optional<long long>& since,
+                                             const std::optional<int>& limit,
+                                             const Json& params) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
+}
+
+// Async Account Functions
+boost::future<Json> cex::fetchBalanceAsync(const Json& params) const {
+    return boost::async(boost::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+boost::future<Json> cex::fetchDepositAddressAsync(const std::string& code,
+                                               const std::optional<std::string>& network,
+                                               const Json& params) const {
+    return boost::async(boost::launch::async, [this, code, network, params]() {
+        return this->fetchDepositAddress(code, network, params);
+    });
+}
+
+boost::future<Json> cex::fetchTransactionsAsync(const std::optional<std::string>& code,
+                                             const std::optional<long long>& since,
+                                             const std::optional<int>& limit,
+                                             const Json& params) const {
+    return boost::async(boost::launch::async, [this, code, since, limit, params]() {
+        return this->fetchTransactions(code, since, limit, params);
+    });
 }
 
 } // namespace ccxt

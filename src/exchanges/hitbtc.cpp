@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <openssl/hmac.h>
+#include <future>
 
 namespace ccxt {
 
@@ -10,9 +11,16 @@ HitBTC::HitBTC() {
     this->id = "hitbtc";
     this->name = "HitBTC";
     this->countries = {"HK"};  // Hong Kong
-    this->version = "2";
-    this->rateLimit = 1500;
+    this->version = "3";
+    this->rateLimit = 3.333;  // 300 requests per second for trading
     this->has = {
+        {"CORS", false},
+        {"spot", true},
+        {"margin", true},
+        {"swap", true},
+        {"future", false},
+        {"option", false},
+        {"addMargin", true},
         {"cancelAllOrders", true},
         {"cancelOrder", true},
         {"createOrder", true},
@@ -49,88 +57,70 @@ HitBTC::HitBTC() {
     this->urls = {
         {"logo", "https://user-images.githubusercontent.com/1294454/27766555-8eaec20e-5edc-11e7-9c5b-6dc69fc42f5e.jpg"},
         {"api", {
-            {"public", "https://api.hitbtc.com/api/2"},
-            {"private", "https://api.hitbtc.com/api/2"}
+            {"public", "https://api.hitbtc.com/api/3/public"},
+            {"private", "https://api.hitbtc.com/api/3"},
+            {"spot", "https://api.hitbtc.com/api/3/spot"},
+            {"margin", "https://api.hitbtc.com/api/3/margin"},
+            {"futures", "https://api.hitbtc.com/api/3/futures"}
         }},
         {"www", "https://hitbtc.com"},
-        {"doc", {
-            "https://api.hitbtc.com",
-            "https://github.com/hitbtc-com/hitbtc-api"
-        }},
-        {"fees", "https://hitbtc.com/fees-and-limits"}
+        {"doc", {"https://api.hitbtc.com"}},
+        {"fees", {"https://hitbtc.com/fees-and-limits"}}
     };
 
     this->api = {
         {"public", {
             {"GET", {
-                "symbol",
-                "symbol/{symbol}",
                 "currency",
-                "currency/{currency}",
+                "symbol",
                 "ticker",
-                "ticker/{symbol}",
                 "trades/{symbol}",
                 "orderbook/{symbol}",
-                "candles/{symbol}"
+                "candles/{symbol}",
+                "indexes/history/{symbol}",
+                "derivatives/{symbol}/info",
+                "futures/{symbol}/mark-price/history",
+                "futures/{symbol}/premium-index/history",
+                "futures/{symbol}/open-interest/history"
             }}
         }},
         {"private", {
             {"GET", {
-                "order",
-                "order/{clientOrderId}",
-                "trading/balance",
-                "trading/fee/{symbol}",
-                "history/trades",
-                "history/order",
-                "history/order/{orderId}/trades",
-                "account/balance",
-                "account/transactions",
-                "account/transactions/{id}",
-                "account/crypto/address/{currency}"
+                "spot/balance",
+                "spot/order",
+                "spot/order/{client_order_id}",
+                "spot/fee/{symbol}",
+                "margin/account",
+                "margin/account/isolated/{symbol}",
+                "margin/order",
+                "margin/order/{client_order_id}",
+                "margin/position",
+                "margin/position/{symbol}",
+                "wallet/balance",
+                "wallet/crypto/address",
+                "wallet/crypto/address/{currency}",
+                "wallet/crypto/networks/{currency}",
+                "wallet/transactions",
+                "wallet/crypto/check-mine/{txid}",
+                "wallet/crypto/check-mine/{txid}/{address}"
             }},
             {"POST", {
-                "order",
-                "account/crypto/withdraw",
-                "account/crypto/address/{currency}"
-            }},
-            {"PUT", {
-                "order/{clientOrderId}"
+                "spot/order",
+                "margin/order",
+                "margin/position/close",
+                "margin/position/close/all",
+                "margin/position/reduce",
+                "wallet/crypto/withdraw",
+                "wallet/crypto/transfer",
+                "wallet/crypto/address/new"
             }},
             {"DELETE", {
-                "order",
-                "order/{clientOrderId}"
+                "spot/order",
+                "spot/order/{client_order_id}",
+                "margin/order",
+                "margin/order/{client_order_id}",
+                "margin/position/reduce/{symbol}"
             }}
-        }}
-    };
-
-    this->fees = {
-        {"trading", {
-            {"tierBased", true},
-            {"percentage", true},
-            {"maker", 0.1 / 100},
-            {"taker", 0.2 / 100},
-            {"tiers", {
-                {"maker", {
-                    {0, 0.1 / 100},
-                    {10, 0.08 / 100},
-                    {100, 0.06 / 100},
-                    {500, 0.04 / 100},
-                    {1000, 0.02 / 100},
-                    {5000, 0}
-                }},
-                {"taker", {
-                    {0, 0.2 / 100},
-                    {10, 0.18 / 100},
-                    {100, 0.16 / 100},
-                    {500, 0.14 / 100},
-                    {1000, 0.12 / 100},
-                    {5000, 0.1 / 100}
-                }}
-            }}
-        }},
-        {"funding", {
-            {"withdraw", {}},
-            {"deposit", {}}
         }}
     };
 }
@@ -294,6 +284,140 @@ std::string HitBTC::get_client_order_id() {
 bool HitBTC::is_margin_trading_enabled(const std::string& symbol) {
     auto market = this->market(symbol);
     return market["info"]["marginTrading"].get<bool>();
+}
+
+// Async Market Data Methods
+std::future<nlohmann::json> HitBTC::fetch_markets_async() {
+    return std::async(std::launch::async, [this]() {
+        return this->fetch_markets();
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_ticker_async(const std::string& symbol) {
+    return std::async(std::launch::async, [this, symbol]() {
+        return this->fetch_ticker(symbol);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_order_book_async(const std::string& symbol, int limit) {
+    return std::async(std::launch::async, [this, symbol, limit]() {
+        return this->fetch_order_book(symbol, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_trades_async(const std::string& symbol, int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return this->fetch_trades(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_ohlcv_async(const std::string& symbol, const std::string& timeframe,
+                                                     int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, timeframe, since, limit]() {
+        return this->fetch_ohlcv(symbol, timeframe, since, limit);
+    });
+}
+
+// Async Trading Methods
+std::future<nlohmann::json> HitBTC::create_order_async(const std::string& symbol, const std::string& type,
+                                                      const std::string& side, double amount, double price) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price]() {
+        return this->create_order(symbol, type, side, amount, price);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::cancel_order_async(const std::string& id, const std::string& symbol) {
+    return std::async(std::launch::async, [this, id, symbol]() {
+        return this->cancel_order(id, symbol);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_order_async(const std::string& id, const std::string& symbol) {
+    return std::async(std::launch::async, [this, id, symbol]() {
+        return this->fetch_order(id, symbol);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_orders_async(const std::string& symbol, int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return this->fetch_orders(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_open_orders_async(const std::string& symbol, int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return this->fetch_open_orders(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_closed_orders_async(const std::string& symbol, int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return this->fetch_closed_orders(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_my_trades_async(const std::string& symbol, int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return this->fetch_my_trades(symbol, since, limit);
+    });
+}
+
+// Async Account Methods
+std::future<nlohmann::json> HitBTC::fetch_balance_async() {
+    return std::async(std::launch::async, [this]() {
+        return this->fetch_balance();
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_deposit_address_async(const std::string& code) {
+    return std::async(std::launch::async, [this, code]() {
+        return this->fetch_deposit_address(code);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_deposits_async(const std::string& code, int since, int limit) {
+    return std::async(std::launch::async, [this, code, since, limit]() {
+        return this->fetch_deposits(code, since, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_withdrawals_async(const std::string& code, int since, int limit) {
+    return std::async(std::launch::async, [this, code, since, limit]() {
+        return this->fetch_withdrawals(code, since, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::withdraw_async(const std::string& code, double amount, const std::string& address,
+                                                 const std::string& tag, const nlohmann::json& params) {
+    return std::async(std::launch::async, [this, code, amount, address, tag, params]() {
+        return this->withdraw(code, amount, address, tag, params);
+    });
+}
+
+// Async Margin Trading Methods
+std::future<nlohmann::json> HitBTC::fetch_margin_balance_async() {
+    return std::async(std::launch::async, [this]() {
+        return this->fetch_margin_balance();
+    });
+}
+
+std::future<nlohmann::json> HitBTC::create_margin_order_async(const std::string& symbol, const std::string& type,
+                                                             const std::string& side, double amount, double price) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price]() {
+        return this->create_margin_order(symbol, type, side, amount, price);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_margin_orders_async(const std::string& symbol, int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return this->fetch_margin_orders(symbol, since, limit);
+    });
+}
+
+std::future<nlohmann::json> HitBTC::fetch_margin_trades_async(const std::string& symbol, int since, int limit) {
+    return std::async(std::launch::async, [this, symbol, since, limit]() {
+        return this->fetch_margin_trades(symbol, since, limit);
+    });
 }
 
 } // namespace ccxt

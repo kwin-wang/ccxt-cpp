@@ -3,6 +3,7 @@
 #include <openssl/hmac.h>
 #include <sstream>
 #include <iomanip>
+#include <boost/bind/bind.hpp>
 
 namespace ccxt {
 
@@ -11,14 +12,13 @@ const std::string bl3p::defaultVersion = "1";
 const int bl3p::defaultRateLimit = 1000;
 const bool bl3p::defaultPro = false;
 
-ExchangeRegistry::Factory bl3p::factory("bl3p", bl3p::createInstance);
 
-bl3p::bl3p(const Config& config) : ExchangeImpl(config) {
+bl3p::bl3p(const Config& config) : Exchange(config) {
     init();
 }
 
 void bl3p::init() {
-    ExchangeImpl::init();
+    
     
     // Set exchange properties
     this->id = "bl3p";
@@ -252,6 +252,61 @@ Json bl3p::parseFees(const Json& response) const {
             {"taker", this->safeNumber(response, "taker_fee")}
         }},
         {"info", response}
+    });
+}
+
+// Async Market Data implementations
+boost::future<Json> bl3p::fetchTickerAsync(const std::string& symbol) const {
+    return boost::async(boost::launch::async, [this, symbol]() {
+        return this->fetchTickerImpl(symbol);
+    });
+}
+
+boost::future<Json> bl3p::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit) const {
+    return boost::async(boost::launch::async, [this, symbol, limit]() {
+        return this->fetchOrderBookImpl(symbol, limit);
+    });
+}
+
+boost::future<Json> bl3p::fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since,
+                                         const std::optional<int>& limit) const {
+    return boost::async(boost::launch::async, [this, symbol, since, limit]() {
+        return this->fetchTradesImpl(symbol, since, limit);
+    });
+}
+
+boost::future<Json> bl3p::fetchTradingFeesAsync() const {
+    return boost::async(boost::launch::async, [this]() {
+        return this->fetchTradingFeesImpl();
+    });
+}
+
+// Async Trading implementations
+boost::future<Json> bl3p::createOrderAsync(const std::string& symbol, const std::string& type,
+                                         const std::string& side, double amount,
+                                         const std::optional<double>& price) {
+    return boost::async(boost::launch::async, [this, symbol, type, side, amount, price]() {
+        return this->createOrderImpl(symbol, type, side, amount, price);
+    });
+}
+
+boost::future<Json> bl3p::cancelOrderAsync(const std::string& id, const std::string& symbol) {
+    return boost::async(boost::launch::async, [this, id, symbol]() {
+        return this->cancelOrderImpl(id, symbol);
+    });
+}
+
+boost::future<Json> bl3p::createDepositAddressAsync(const std::string& code,
+                                                   const std::optional<std::string>& network) {
+    return boost::async(boost::launch::async, [this, code, network]() {
+        return this->createDepositAddressImpl(code, network);
+    });
+}
+
+// Async Account implementations
+boost::future<Json> bl3p::fetchBalanceAsync() const {
+    return boost::async(boost::launch::async, [this]() {
+        return this->fetchBalanceImpl();
     });
 }
 

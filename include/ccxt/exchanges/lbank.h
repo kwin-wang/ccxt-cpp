@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../base/exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 
@@ -18,6 +18,15 @@ public:
     json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
                     int since = 0, int limit = 0, const json& params = json::object()) override;
 
+    // Async Market Data API
+    std::future<json> asyncFetchMarkets(const json& params = json::object());
+    std::future<json> asyncFetchTicker(const String& symbol, const json& params = json::object());
+    std::future<json> asyncFetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object());
+    std::future<json> asyncFetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object());
+    std::future<json> asyncFetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
+    std::future<json> asyncFetchOHLCV(const String& symbol, const String& timeframe = "1m",
+                                     int since = 0, int limit = 0, const json& params = json::object());
+
     // Trading API
     json fetchBalance(const json& params = json::object()) override;
     json createOrder(const String& symbol, const String& type, const String& side,
@@ -28,12 +37,29 @@ public:
     json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
     json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
 
+    // Async Trading API
+    std::future<json> asyncFetchBalance(const json& params = json::object());
+    std::future<json> asyncCreateOrder(const String& symbol, const String& type, const String& side,
+                                     double amount, double price = 0, const json& params = json::object());
+    std::future<json> asyncCancelOrder(const String& id, const String& symbol = "", const json& params = json::object());
+    std::future<json> asyncFetchOrder(const String& id, const String& symbol = "", const json& params = json::object());
+    std::future<json> asyncFetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    std::future<json> asyncFetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    std::future<json> asyncFetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+
     // Account API
     json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
     json fetchDeposits(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
     json fetchWithdrawals(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
     json fetchDepositAddress(const String& code, const json& params = json::object());
     json withdraw(const String& code, double amount, const String& address, const String& tag = "", const json& params = json::object());
+
+    // Async Account API
+    std::future<json> asyncFetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    std::future<json> asyncFetchDeposits(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
+    std::future<json> asyncFetchWithdrawals(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
+    std::future<json> asyncFetchDepositAddress(const String& code, const json& params = json::object());
+    std::future<json> asyncWithdraw(const String& code, double amount, const String& address, const String& tag = "", const json& params = json::object());
 
     // Additional Features
     json fetchCurrencies(const json& params = json::object());
@@ -42,6 +68,14 @@ public:
     json fetchTransactionFees(const json& params = json::object());
     json fetchSystemStatus(const json& params = json::object());
     json fetchTime(const json& params = json::object());
+
+    // Async Additional Features
+    std::future<json> asyncFetchCurrencies(const json& params = json::object());
+    std::future<json> asyncFetchTradingFees(const json& params = json::object());
+    std::future<json> asyncFetchFundingFees(const json& params = json::object());
+    std::future<json> asyncFetchTransactionFees(const json& params = json::object());
+    std::future<json> asyncFetchSystemStatus(const json& params = json::object());
+    std::future<json> asyncFetchTime(const json& params = json::object());
 
 protected:
     String sign(const String& path, const String& api = "public",

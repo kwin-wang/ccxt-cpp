@@ -1,4 +1,4 @@
-#include "bitpanda.h"
+#include "ccxt/exchanges/bitpanda.h"
 #include <chrono>
 #include <sstream>
 #include <iomanip>
@@ -6,7 +6,7 @@
 
 namespace ccxt {
 
-Bitpanda::Bitpanda() {
+Bitpanda::Bitpanda() : onetrading() {
     id = "bitpanda";
     name = "Bitpanda Pro";
     version = "v1";
@@ -34,15 +34,7 @@ Bitpanda::Bitpanda() {
         {"fees", "https://www.bitpanda.com/en/pro/fees"}
     };
 
-    initializeApiEndpoints();
-    initializeTimeframes();
-    initializeMarketTypes();
-    initializeOptions();
-    initializeErrorCodes();
-    initializeFees();
-}
-
-void Bitpanda::initializeApiEndpoints() {
+    // Set up API endpoints
     api = {
         {"public", {
             {"GET", {
@@ -83,9 +75,8 @@ void Bitpanda::initializeApiEndpoints() {
             }}
         }}
     };
-}
 
-void Bitpanda::initializeTimeframes() {
+    // Initialize timeframes for OHLCV data
     timeframes = {
         {"1m", "1"},
         {"5m", "5"},
@@ -99,193 +90,44 @@ void Bitpanda::initializeTimeframes() {
     };
 }
 
-json Bitpanda::fetchMarkets(const json& params) {
-    json response = fetch("/instruments", "public", "GET", params);
-    json result = json::array();
-    
-    for (const auto& market : response) {
-        String id = market["instrument_code"].get<String>();
-        String baseId = market["base"]["code"].get<String>();
-        String quoteId = market["quote"]["code"].get<String>();
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
-        
-        result.push_back({
-            {"id", id},
-            {"symbol", symbol},
-            {"base", base},
-            {"quote", quote},
-            {"baseId", baseId},
-            {"quoteId", quoteId},
-            {"active", market["state"].get<String>() == "ACTIVE"},
-            {"precision", {
-                {"amount", market["amount_precision"].get<int>()},
-                {"price", market["price_precision"].get<int>()}
-            }},
-            {"limits", {
-                {"amount", {
-                    {"min", this->safeFloat(market, "min_size")},
-                    {"max", this->safeFloat(market, "max_size")}
-                }},
-                {"price", {
-                    {"min", this->safeFloat(market, "min_price")},
-                    {"max", this->safeFloat(market, "max_price")}
-                }},
-                {"cost", {
-                    {"min", this->safeFloat(market, "min_value")},
-                    {"max", nullptr}
-                }}
-            }},
-            {"info", market}
-        });
-    }
-    
-    return result;
-}
-
-json Bitpanda::fetchBalance(const json& params) {
-    this->loadMarkets();
-    json response = fetch("/account/balances", "private", "GET", params);
-    return parseBalance(response);
-}
-
-json Bitpanda::parseBalance(const json& response) {
-    json result = {{"info", response}};
-    
-    for (const auto& balance : response) {
-        String currencyId = balance["currency_code"].get<String>();
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
-            {"free", this->safeFloat(balance, "available")},
-            {"used", this->safeFloat(balance, "locked")},
-            {"total", this->safeFloat(balance, "total")}
-        };
-        result[code] = account;
-    }
-    
-    return result;
-}
-
-json Bitpanda::createOrder(const String& symbol, const String& type,
-                          const String& side, double amount,
-                          double price, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    String uppercaseType = type.toUpperCase();
-    
-    json request = {
-        {"instrument_code", market["id"]},
-        {"type", uppercaseType},
-        {"side", side.toUpperCase()},
-        {"amount", this->amountToPrecision(symbol, amount)}
-    };
-    
-    if (uppercaseType == "LIMIT") {
-        request["price"] = this->priceToPrecision(symbol, price);
-    }
-    
-    json response = fetch("/account/orders", "private", "POST",
-                         this->extend(request, params));
-    return this->parseOrder(response, market);
-}
-
-String Bitpanda::sign(const String& path, const String& api,
-                      const String& method, const json& params,
-                      const std::map<String, String>& headers,
-                      const json& body) {
-    String url = this->urls["api"][api];
-    String endpoint = this->implodeParams(path, params);
-    url += "/" + this->implodeParams(endpoint, params);
-    json query = this->omit(params, this->extractParams(path));
-    
-    if (api == "public") {
-        if (!query.empty()) {
-            url += "?" + this->urlencode(query);
+void Bitpanda::sign(Request& request, const std::string& path, const std::string& api,
+                   const std::string& method, const json& params, const json& headers,
+                   const json& body) {
+    if (api == "private") {
+        if (this->apiKey.empty()) {
+            throw AuthenticationError("Authentication failed: API key required for private endpoints");
         }
-    } else {
-        this->checkRequiredCredentials();
-        String nonce = this->uuid();
-        String timestamp = std::to_string(this->milliseconds());
-        
-        const_cast<std::map<String, String>&>(headers)["Accept"] = "application/json";
-        const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bearer " + this->apiKey;
-        const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
-        
-        if (method == "GET") {
-            if (!query.empty()) {
-                url += "?" + this->urlencode(query);
-            }
-        } else {
-            if (!query.empty()) {
-                body = this->json(query);
-            }
-        }
+
+        std::string nonce = get_nonce();
+        std::string bodyStr = body.dump();
+        std::string signature = get_signature(nonce, method, path, bodyStr);
+
+        request.headers["ACCESS-KEY"] = this->apiKey;
+        request.headers["ACCESS-TIMESTAMP"] = nonce;
+        request.headers["ACCESS-SIGNATURE"] = signature;
+        request.headers["Content-Type"] = "application/json";
     }
-    
-    return url;
 }
 
-String Bitpanda::getNonce() {
-    return this->uuid();
-}
-
-json Bitpanda::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "order_id");
-    String timestamp = this->safeString(order, "time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+std::string Bitpanda::get_signature(const std::string& timestamp, const std::string& method,
+                                  const std::string& path, const std::string& body) {
+    std::string message = timestamp + method + path + body;
+    unsigned char* digest = HMAC(EVP_sha256(),
+                               this->secret.c_str(), this->secret.length(),
+                               (unsigned char*)message.c_str(), message.length(),
+                               nullptr, nullptr);
     
-    if (!market.empty()) {
-        symbol = market["symbol"];
-    } else {
-        String marketId = this->safeString(order, "instrument_code");
-        if (marketId != nullptr) {
-            if (this->markets_by_id.contains(marketId)) {
-                market = this->markets_by_id[marketId];
-                symbol = market["symbol"];
-            } else {
-                symbol = marketId;
-            }
-        }
+    std::stringstream ss;
+    for(int i = 0; i < 32; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)digest[i];
     }
-    
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
-    
-    return {
-        {"id", id},
-        {"clientOrderId", this->safeString(order, "client_id")},
-        {"timestamp", this->parse8601(timestamp)},
-        {"datetime", this->iso8601(timestamp)},
-        {"lastTradeTimestamp", nullptr},
-        {"type", type},
-        {"timeInForce", this->safeString(order, "time_in_force")},
-        {"postOnly", nullptr},
-        {"status", status},
-        {"symbol", symbol},
-        {"side", side},
-        {"price", this->safeFloat(order, "price")},
-        {"amount", this->safeFloat(order, "amount")},
-        {"filled", this->safeFloat(order, "filled_amount")},
-        {"remaining", this->safeFloat(order, "remaining_amount")},
-        {"cost", this->safeFloat(order, "filled_amount") * this->safeFloat(order, "price")},
-        {"trades", nullptr},
-        {"fee", nullptr},
-        {"info", order}
-    };
+    return ss.str();
 }
 
-String Bitpanda::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
-        {"OPEN", "open"},
-        {"FILLED", "closed"},
-        {"CANCELLED", "canceled"},
-        {"PARTIALLY_FILLED", "open"},
-        {"REJECTED", "rejected"}
-    };
-    
-    return this->safeString(statuses, status, status);
+std::string Bitpanda::get_nonce() {
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+    return std::to_string(ms.count());
 }
 
 } // namespace ccxt

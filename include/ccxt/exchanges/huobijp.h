@@ -1,57 +1,81 @@
-#ifndef CCXT_EXCHANGE_HUOBIJP_H
-#define CCXT_EXCHANGE_HUOBIJP_H
+#pragma once
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+#include <future>
 
 namespace ccxt {
 
-class huobijp : public ExchangeImpl {
+class HuobiJP : public Exchange {
 public:
-    huobijp(const Config& config = Config());
-    ~huobijp() = default;
+    HuobiJP(const Config& config = Config());
+    ~HuobiJP() override = default;
 
     static Exchange* create(const Config& config = Config()) {
-        return new huobijp(config);
+        return new HuobiJP(config);
     }
+
+    // Market Data API - Sync
+    Json fetchMarketsImpl(const Json& params = Json::object()) const override;
+    Json fetchTickerImpl(const std::string& symbol, const Json& params = Json::object()) const override;
+    Json fetchTickersImpl(const std::vector<std::string>& symbols = {}, const Json& params = Json::object()) const override;
+    Json fetchOrderBookImpl(const std::string& symbol, int limit = 0, const Json& params = Json::object()) const override;
+    Json fetchTradesImpl(const std::string& symbol, int since = 0, int limit = 0, const Json& params = Json::object()) const override;
+    Json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe = "1m",
+                        int since = 0, int limit = 0, const Json& params = Json::object()) const override;
+
+    // Trading API - Sync
+    Json fetchBalanceImpl(const Json& params = Json::object()) const override;
+    Json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
+                        double amount, double price = 0, const Json& params = Json::object()) override;
+    Json cancelOrderImpl(const std::string& id, const std::string& symbol = "", const Json& params = Json::object()) override;
+    Json fetchOrderImpl(const std::string& id, const std::string& symbol = "", const Json& params = Json::object()) override;
+    Json fetchOrdersImpl(const std::string& symbol = "", int since = 0, int limit = 0, const Json& params = Json::object()) override;
+    Json fetchOpenOrdersImpl(const std::string& symbol = "", int since = 0, int limit = 0, const Json& params = Json::object()) override;
+    Json fetchClosedOrdersImpl(const std::string& symbol = "", int since = 0, int limit = 0, const Json& params = Json::object()) override;
+
+    // Market Data API - Async
+    std::future<Json> fetchMarketsAsync(const Json& params = Json::object());
+    std::future<Json> fetchTickerAsync(const std::string& symbol, const Json& params = Json::object());
+    std::future<Json> fetchTickersAsync(const std::vector<std::string>& symbols = {}, const Json& params = Json::object());
+    std::future<Json> fetchOrderBookAsync(const std::string& symbol, int limit = 0, const Json& params = Json::object());
+    std::future<Json> fetchTradesAsync(const std::string& symbol, int since = 0, int limit = 0, const Json& params = Json::object());
+    std::future<Json> fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe = "1m",
+                                     int since = 0, int limit = 0, const Json& params = Json::object());
+
+    // Trading API - Async
+    std::future<Json> fetchBalanceAsync(const Json& params = Json::object());
+    std::future<Json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
+                                     double amount, double price = 0, const Json& params = Json::object());
+    std::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol = "", const Json& params = Json::object());
+    std::future<Json> fetchOrderAsync(const std::string& id, const std::string& symbol = "", const Json& params = Json::object());
+    std::future<Json> fetchOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const Json& params = Json::object());
+    std::future<Json> fetchOpenOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const Json& params = Json::object());
+    std::future<Json> fetchClosedOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const Json& params = Json::object());
 
 protected:
     void init() override;
     Json describeImpl() const override;
 
-    // Market Data
-    Json fetchMarketsImpl() const override;
-    Json fetchCurrenciesImpl() const override;
-    Json fetchTickerImpl(const std::string& symbol) const override;
-    Json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const override;
-    Json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-
-    // Trading
-    Json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt) override;
-    Json cancelOrderImpl(const std::string& id, const std::string& symbol) override;
-    Json fetchOrderImpl(const std::string& id, const std::string& symbol) const override;
-    Json fetchOpenOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchClosedOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchMyTradesImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-
-    // Account
-    Json fetchBalanceImpl() const override;
-    Json fetchDepositAddressImpl(const std::string& code, const std::optional<std::string>& network = std::nullopt) const override;
-    Json fetchDepositsImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
-    Json fetchWithdrawalsImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
+    String sign(const String& path, const String& api = "public",
+               const String& method = "GET", const Json& params = Json::object(),
+               const std::map<String, String>& headers = {}, const Json& body = nullptr) override;
 
 private:
-    static Exchange* createInstance(const Config& config) {
-        return new huobijp(config);
-    }
+    void initializeApiEndpoints();
+    String getTimestamp();
+    String createSignature(const String& method, const String& host,
+                         const String& path, const std::map<String, String>& params);
+    String getAccountId();
+
+    String accountId;
+    std::map<String, String> timeframes;
 
     static const std::string defaultBaseURL;
     static const std::string defaultVersion;
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;
@@ -70,5 +94,3 @@ private:
 };
 
 } // namespace ccxt
-
-#endif // CCXT_EXCHANGE_HUOBIJP_H

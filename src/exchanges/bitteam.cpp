@@ -1,8 +1,10 @@
 #include "ccxt/exchanges/bitteam.h"
-#include "ccxt/base/json_helper.h"
-#include <openssl/hmac.h>
+#include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <openssl/hmac.h>
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
 
 namespace ccxt {
 
@@ -11,76 +13,169 @@ const std::string bitteam::defaultVersion = "v2.0.6";
 const int bitteam::defaultRateLimit = 1;  // no rate limit
 const bool bitteam::defaultPro = false;
 
-ExchangeRegistry::Factory bitteam::factory("bitteam", bitteam::createInstance);
-
-bitteam::bitteam(const Config& config) : ExchangeImpl(config) {
+bitteam::bitteam(const Config& config)
+    : Exchange(config)
+    , io_context()
+    , work_guard(boost::asio::make_work_guard(io_context))
+    , io_thread([this]() { io_context.run(); }) {
     init();
 }
 
-void bitteam::init() {
-    ExchangeImpl::init();
-    
-    // Set exchange properties
-    this->id = "bitteam";
-    this->name = "BIT.TEAM";
-    this->countries = {"UK"};
-    this->version = defaultVersion;
-    this->rateLimit = defaultRateLimit;
-    this->pro = defaultPro;
-    
-    if (this->urls.empty()) {
-        this->urls = {
-            {"logo", "https://user-images.githubusercontent.com/1294454/156902113-2c1b91a5-726e-4f11-a04e-1c5d8fb9a58a.jpg"},
-            {"api", {
-                {"rest", defaultBaseURL}
-            }},
-            {"www", "https://bit.team"},
-            {"doc", {"https://bit.team/api-docs"}}
-        };
+bitteam::~bitteam() {
+    work_guard.reset();
+    if (io_thread.joinable()) {
+        io_thread.join();
     }
+}
 
-    this->has = {
-        {"CORS", std::nullopt},
-        {"spot", true},
-        {"margin", false},
-        {"swap", false},
-        {"future", false},
-        {"option", false},
-        {"cancelAllOrders", true},
-        {"cancelOrder", true},
-        {"createOrder", true},
-        {"fetchBalance", true},
-        {"fetchCanceledOrders", true},
-        {"fetchClosedOrders", true},
-        {"fetchCurrencies", true},
-        {"fetchDepositsWithdrawals", true},
-        {"fetchMarkets", true},
-        {"fetchMyTrades", true},
-        {"fetchOHLCV", true},
-        {"fetchOpenOrders", true},
-        {"fetchOrder", true},
-        {"fetchOrderBook", true},
-        {"fetchOrders", true},
-        {"fetchTicker", true},
-        {"fetchTrades", true}
+void bitteam::init() {
+    id = "bitteam";
+    name = "BIT.TEAM";
+    countries = {"UK"};
+    version = defaultVersion;
+    rateLimit = defaultRateLimit;
+    
+    urls = {
+        {"logo", "https://user-images.githubusercontent.com/1294454/156902113-2c1b91a5-726e-4f11-a04e-1c5d8fb9a58a.jpg"},
+        {"api", {
+            {"rest", defaultBaseURL}
+        }},
+        {"www", "https://bit.team"},
+        {"doc", {"https://bit.team/api-docs"}}
+    };
+
+    api = {
+        {"public", {
+            {"GET", {
+                "market/pairs",
+                "market/currencies",
+                "market/ticker/{symbol}",
+                "market/depth/{symbol}",
+                "market/history/{symbol}",
+                "market/kline/{symbol}"
+            }}
+        }},
+        {"private", {
+            {"POST", {
+                "account/balances",
+                "order/new",
+                "order/cancel",
+                "order/cancel-all",
+                "order/status",
+                "order/active",
+                "order/history",
+                "trade/history"
+            }}
+        }}
     };
 }
 
-Json bitteam::describeImpl() const {
-    return Json::object({
-        {"id", this->id},
-        {"name", this->name},
-        {"countries", this->countries},
-        {"version", this->version},
-        {"rateLimit", this->rateLimit},
-        {"pro", this->pro},
-        {"has", this->has}
+// Synchronous REST API Implementation
+Json bitteam::fetchMarkets(const json& params) {
+    auto response = this->publicGetMarketPairs(params);
+    return this->parseMarkets(response);
+}
+
+Json bitteam::fetchTicker(const String& symbol, const json& params) {
+    auto market = this->market(symbol);
+    auto request = this->extend(params, {
+        "symbol": market["id"]
+    });
+    auto response = this->publicGetMarketTickerSymbol(request);
+    auto ticker = this->parseTicker(response, market);
+    ticker["symbol"] = symbol;
+    return ticker;
+}
+
+Json bitteam::fetchOrderBook(const String& symbol, int limit, const json& params) {
+    auto market = this->market(symbol);
+    auto request = this->extend(params, {
+        "symbol": market["id"]
+    });
+    if (limit) {
+        request["limit"] = limit;
+    }
+    auto response = this->publicGetMarketDepthSymbol(request);
+    return this->parseOrderBook(response, symbol);
+}
+
+Json bitteam::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+    auto market = this->market(symbol);
+    auto request = this->extend(params, {
+        "symbol": market["id"]
+    });
+    if (limit) {
+        request["limit"] = limit;
+    }
+    auto response = this->publicGetMarketHistorySymbol(request);
+    return this->parseTrades(response, market, since, limit);
+}
+
+Json bitteam::fetchBalance(const json& params) {
+    auto response = this->privatePostAccountBalances(params);
+    return this->parseBalance(response);
+}
+
+Json bitteam::createOrder(const String& symbol, const String& type, const String& side,
+                         double amount, double price, const json& params) {
+    auto market = this->market(symbol);
+    auto request = {
+        "symbol": market["id"],
+        "side": side.toLowerCase(),
+        "type": type.toLowerCase(),
+        "amount": this->amountToPrecision(symbol, amount)
+    };
+    if (type == "limit") {
+        request["price"] = this->priceToPrecision(symbol, price);
+    }
+    auto response = this->privatePostOrderNew(this->extend(request, params));
+    return this->parseOrder(response, market);
+}
+
+// Asynchronous REST API Implementation
+boost::future<Json> bitteam::fetchMarketsAsync(const json& params) {
+    return boost::async([this, params]() {
+        return this->fetchMarkets(params);
     });
 }
 
-std::string bitteam::sign(const std::string& path, const std::string& api, const std::string& method,
-                         const Json& params, const Json& headers, const Json& body) const {
-    std::string url = this->urls["api"]["rest"] + "/" + this->version + "/" + path;
+boost::future<Json> bitteam::fetchTickerAsync(const String& symbol, const json& params) {
+    return boost::async([this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+boost::future<Json> bitteam::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    return boost::async([this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+boost::future<Json> bitteam::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return boost::async([this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+boost::future<Json> bitteam::fetchBalanceAsync(const json& params) {
+    return boost::async([this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+boost::future<Json> bitteam::createOrderAsync(const String& symbol, const String& type,
+                                            const String& side, double amount,
+                                            double price, const json& params) {
+    return boost::async([this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+// Helper methods
+String bitteam::sign(const String& path, const String& api, const String& method,
+                    const json& params, const std::map<String, String>& headers,
+                    const json& body) {
+    auto url = this->urls["api"]["rest"] + "/" + this->version + "/" + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -88,173 +183,55 @@ std::string bitteam::sign(const std::string& path, const std::string& api, const
         }
     } else {
         this->checkRequiredCredentials();
+        auto nonce = this->nonce();
+        auto auth = nonce + this->apiKey;
+        auto signature = this->hmac(auth, this->secret, "sha256");
         
-        long long timestamp = this->milliseconds();
-        std::string nonce = std::to_string(timestamp);
+        json request = this->extend({
+            "key": this->apiKey,
+            "signature": signature,
+            "nonce": nonce
+        }, params);
         
-        std::string auth = nonce + this->apiKey;
-        std::string signature = this->hmac(auth, this->secret, "SHA256", "hex");
-        
-        headers["Authorization"] = "Bearer " + signature;
-        headers["Request-Time"] = nonce;
-        headers["Request-Hash"] = this->apiKey;
+        body = this->json(request);
+        headers["Content-Type"] = "application/json";
     }
-
+    
     return url;
 }
 
-void bitteam::handleErrors(const std::string& code, const std::string& reason, const std::string& url, const std::string& method,
-                          const Json& headers, const Json& body, const Json& response, const std::string& requestHeaders,
-                          const std::string& requestBody) const {
-    if (response.is_object() && response.contains("success") && !response["success"].get<bool>()) {
-        std::string message = this->safeString(response, "message", "Unknown error");
-        std::string errorCode = this->safeString(response, "code", "");
-        
-        if (errorCode == "4001") {
-            throw AuthenticationError(message);
-        } else if (errorCode == "4004") {
-            throw OrderNotFound(message);
-        } else if (errorCode == "4006") {
-            throw InsufficientFunds(message);
-        } else if (errorCode == "4007") {
-            throw BadSymbol(message);
-        } else if (errorCode == "4008") {
-            throw BadRequest(message);
-        } else if (errorCode == "5001") {
-            throw ExchangeNotAvailable(message);
-        }
-        
-        throw ExchangeError(message);
+void bitteam::handleErrors(const String& httpCode, const String& reason, const String& url,
+                          const String& method, const json& headers, const json& body,
+                          const json& response, const json& requestHeaders,
+                          const json& requestBody) {
+    if (!response.contains("success")) {
+        return;
     }
-}
-
-Json bitteam::fetchMarketsImpl() const {
-    Json response = this->publicGetMarkets();
-    return this->parseMarkets(response["data"]);
-}
-
-Json bitteam::fetchCurrenciesImpl() const {
-    Json response = this->publicGetCurrencies();
-    return this->parseCurrencies(response["data"]);
-}
-
-Json bitteam::fetchTickerImpl(const std::string& symbol) const {
-    this->loadMarkets();
-    Json market = this->market(symbol);
-    Json response = this->publicGetTicker(Json::object({
-        {"market", market["id"]}
-    }));
-    return this->parseTicker(response["data"], market);
-}
-
-Json bitteam::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
-    this->loadMarkets();
-    Json request = Json::object({
-        {"market", this->marketId(symbol)}
-    });
-    if (limit) {
-        request["limit"] = *limit;
-    }
-    Json response = this->publicGetOrderbook(request);
-    return this->parseOrderBook(response["data"], symbol);
-}
-
-Json bitteam::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
-                            const std::optional<long long>& since, const std::optional<int>& limit) const {
-    this->loadMarkets();
-    Json request = Json::object({
-        {"market", this->marketId(symbol)},
-        {"interval", this->timeframes[timeframe]}
-    });
-    if (since) {
-        request["start"] = *since;
-    }
-    if (limit) {
-        request["limit"] = *limit;
-    }
-    Json response = this->publicGetKlines(request);
-    return this->parseOHLCVs(response["data"], market, timeframe, since, limit);
-}
-
-Json bitteam::createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
-                            double amount, const std::optional<double>& price) {
-    this->loadMarkets();
-    Json market = this->market(symbol);
     
-    Json request = Json::object({
-        {"market", market["id"]},
-        {"side", side},
-        {"type", type},
-        {"amount", this->amountToPrecision(symbol, amount)}
-    });
-
-    if (type == "limit") {
-        if (!price) {
-            throw ArgumentsRequired("createOrder() requires a price argument for limit orders");
-        }
-        request["price"] = this->priceToPrecision(symbol, *price);
+    auto success = this->safeBool(response, "success");
+    if (success) {
+        return;
     }
-
-    Json response = this->privatePostOrders(request);
-    return this->parseOrder(response["data"]);
-}
-
-Json bitteam::cancelOrderImpl(const std::string& id, const std::string& symbol) {
-    this->loadMarkets();
-    Json request = Json::object({
-        {"orderId", id}
-    });
-    return this->privateDeleteOrders(request);
-}
-
-Json bitteam::cancelAllOrdersImpl(const std::optional<std::string>& symbol) {
-    this->loadMarkets();
-    Json request = Json::object();
-    if (symbol) {
-        Json market = this->market(*symbol);
-        request["market"] = market["id"];
+    
+    auto message = this->safeString(response, "message", "Unknown error");
+    auto feedback = this->id + " " + message;
+    
+    if (message.find("Invalid signature") != String::npos) {
+        throw AuthenticationError(feedback);
+    } else if (message.find("Insufficient funds") != String::npos) {
+        throw InsufficientFunds(feedback);
+    } else if (message.find("Order not found") != String::npos) {
+        throw OrderNotFound(feedback);
     }
-    return this->privateDeleteOrdersAll(request);
+    
+    throw ExchangeError(feedback);
 }
 
-Json bitteam::fetchOrderImpl(const std::string& id, const std::string& symbol) const {
-    this->loadMarkets();
-    Json request = Json::object({
-        {"orderId", id}
-    });
-    Json response = this->privateGetOrders(request);
-    return this->parseOrder(response["data"]);
-}
-
-Json bitteam::fetchBalanceImpl() const {
-    this->loadMarkets();
-    Json response = this->privateGetBalance();
-    return this->parseBalance(response["data"]);
-}
-
-Json bitteam::fetchDepositsWithdrawalsImpl(const std::optional<std::string>& code,
-                                          const std::optional<long long>& since,
-                                          const std::optional<int>& limit) const {
-    this->loadMarkets();
-    Json request = Json::object();
-    if (code) {
-        Json currency = this->currency(*code);
-        request["currency"] = currency["id"];
-    }
-    if (since) {
-        request["start"] = *since;
-    }
-    if (limit) {
-        request["limit"] = *limit;
-    }
-    Json response = this->privateGetHistory(request);
-    return this->parseTransactions(response["data"]);
-}
-
-Json bitteam::parseTicker(const Json& ticker, const Json& market) const {
-    long long timestamp = this->milliseconds();
-    std::string symbol = this->safeString(market, "symbol");
-    return Json::object({
+Json bitteam::parseTicker(const Json& ticker, const Json& market) {
+    auto timestamp = this->safeTimestamp(ticker, "timestamp");
+    auto symbol = market ? this->safeString(market, "symbol") : undefined;
+    
+    return {
         {"symbol", symbol},
         {"timestamp", timestamp},
         {"datetime", this->iso8601(timestamp)},
@@ -263,73 +240,35 @@ Json bitteam::parseTicker(const Json& ticker, const Json& market) const {
         {"bid", this->safeString(ticker, "bid")},
         {"ask", this->safeString(ticker, "ask")},
         {"last", this->safeString(ticker, "last")},
+        {"close", this->safeString(ticker, "close")},
         {"baseVolume", this->safeString(ticker, "baseVolume")},
         {"quoteVolume", this->safeString(ticker, "quoteVolume")},
         {"info", ticker}
-    });
+    };
 }
 
-Json bitteam::parseTrade(const Json& trade, const Json& market) const {
-    long long timestamp = this->safeTimestamp(trade, "time");
-    std::string id = this->safeString(trade, "id");
-    std::string side = this->safeString(trade, "side");
-    std::string price = this->safeString(trade, "price");
-    std::string amount = this->safeString(trade, "amount");
+Json bitteam::parseOrder(const Json& order, const Json& market) {
+    auto id = this->safeString(order, "id");
+    auto timestamp = this->safeTimestamp(order, "timestamp");
+    auto symbol = market ? this->safeString(market, "symbol") : undefined;
+    auto type = this->safeStringLower(order, "type");
+    auto side = this->safeStringLower(order, "side");
     
-    return Json::object({
-        {"id", id},
-        {"info", trade},
-        {"timestamp", timestamp},
-        {"datetime", this->iso8601(timestamp)},
-        {"symbol", market["symbol"]},
-        {"type", nullptr},
-        {"side", side},
-        {"price", this->parseNumber(price)},
-        {"amount", this->parseNumber(amount)}
-    });
-}
-
-Json bitteam::parseOrder(const Json& order, const Json& market) const {
-    std::string id = this->safeString(order, "id");
-    long long timestamp = this->safeTimestamp(order, "time");
-    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
-    std::string symbol = this->safeString(market, "symbol");
-    std::string type = this->safeString(order, "type");
-    std::string side = this->safeString(order, "side");
-    
-    return Json::object({
+    return {
         {"id", id},
         {"timestamp", timestamp},
         {"datetime", this->iso8601(timestamp)},
-        {"status", status},
         {"symbol", symbol},
         {"type", type},
         {"side", side},
-        {"price", this->safeNumber(order, "price")},
-        {"amount", this->safeNumber(order, "amount")},
-        {"filled", this->safeNumber(order, "filled")},
-        {"remaining", this->safeNumber(order, "remaining")},
+        {"price", this->safeString(order, "price")},
+        {"amount", this->safeString(order, "amount")},
+        {"cost", this->safeString(order, "cost")},
+        {"filled", this->safeString(order, "filled")},
+        {"remaining", this->safeString(order, "remaining")},
+        {"status", this->parseOrderStatus(this->safeString(order, "status"))},
         {"info", order}
-    });
-}
-
-Json bitteam::parseTransaction(const Json& transaction, const Json& currency) const {
-    std::string id = this->safeString(transaction, "id");
-    long long timestamp = this->safeTimestamp(transaction, "time");
-    std::string type = this->safeString(transaction, "type");
-    std::string status = this->parseTransactionStatus(this->safeString(transaction, "status"));
-    
-    return Json::object({
-        {"id", id},
-        {"info", transaction},
-        {"timestamp", timestamp},
-        {"datetime", this->iso8601(timestamp)},
-        {"currency", currency["code"]},
-        {"type", type},
-        {"status", status},
-        {"amount", this->safeNumber(transaction, "amount")},
-        {"fee", this->safeNumber(transaction, "fee")}
-    });
+    };
 }
 
 } // namespace ccxt

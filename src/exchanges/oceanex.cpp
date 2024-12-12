@@ -8,16 +8,12 @@ const std::string oceanex::defaultVersion = "v1";
 const int oceanex::defaultRateLimit = 3000;
 const bool oceanex::defaultPro = true;
 
-ExchangeRegistry::Factory oceanex::factory = []() {
-    return new oceanex();
-};
-
-oceanex::oceanex(const Config& config) : ExchangeImpl(config) {
+oceanex::oceanex(const Config& config) : Exchange(config) {
     init();
 }
 
 void oceanex::init() {
-    ExchangeImpl::init();
+    
     setBaseURL(defaultBaseURL);
     setVersion(defaultVersion);
     setRateLimit(defaultRateLimit);

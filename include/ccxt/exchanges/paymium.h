@@ -2,11 +2,11 @@
 #define CCXT_EXCHANGE_PAYMIUM_H
 
 #include "ccxt/base/exchange.h"
-#include "ccxt/base/exchange_impl.h"
+
 
 namespace ccxt {
 
-class paymium : public ExchangeImpl {
+class paymium : public Exchange {
 public:
     paymium(const Config& config = Config());
     ~paymium() = default;
@@ -51,7 +51,7 @@ private:
     static const int defaultRateLimit;
     static const bool defaultPro;
 
-    static ExchangeRegistry::Factory factory;
+    
 
     // Helper methods for parsing responses
     Json parseTicker(const Json& ticker, const Json& market = Json()) const;

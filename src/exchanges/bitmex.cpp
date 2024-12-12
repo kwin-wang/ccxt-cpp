@@ -1,312 +1,509 @@
 #include "bitmex.h"
-#include <chrono>
-#include <sstream>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <ctime>
 #include <iomanip>
-#include <openssl/hmac.h>
+#include <sstream>
 
 namespace ccxt {
 
-BitMEX::BitMEX() {
-    id = "bitmex";
-    name = "BitMEX";
-    version = "v1";
-    rateLimit = 2000;
-    testnet = false;  // Set to true for testnet
-
-    // Initialize API endpoints
-    baseUrl = testnet ? "https://testnet.bitmex.com" : "https://www.bitmex.com";
-    
-    urls = {
-        {"logo", "https://user-images.githubusercontent.com/1294454/27766319-f653c6e6-5ed4-11e7-933d-f0bc3699ae8f.jpg"},
+BitMEX::BitMEX(const Config& config) : Exchange(config) {
+    this->describe({
+        {"id", "bitmex"},
+        {"name", "BitMEX"},
+        {"countries", Json::array({"SC"})},  // Seychelles
+        {"version", "v1"},
+        {"userAgent", "ccxt-cpp"},
+        {"rateLimit", 2000},
+        {"pro", true},
+        {"has", {
+            {"CORS", false},
+            {"spot", true},
+            {"margin", true},
+            {"swap", true},
+            {"future", true},
+            {"option", false},
+            {"cancelAllOrders", true},
+            {"cancelOrder", true},
+            {"createOrder", true},
+            {"editOrder", true},
+            {"fetchBalance", true},
+            {"fetchClosedOrders", true},
+            {"fetchCurrencies", true},
+            {"fetchDepositAddress", true},
+            {"fetchFundingRate", true},
+            {"fetchFundingRates", true},
+            {"fetchIndexOHLCV", true},
+            {"fetchLeverage", true},
+            {"fetchMarkets", true},
+            {"fetchMarkOHLCV", true},
+            {"fetchMyTrades", true},
+            {"fetchOHLCV", true},
+            {"fetchOpenOrders", true},
+            {"fetchOrder", true},
+            {"fetchOrderBook", true},
+            {"fetchOrders", true},
+            {"fetchPosition", true},
+            {"fetchPositions", true},
+            {"fetchPremiumIndexOHLCV", true},
+            {"fetchTicker", true},
+            {"fetchTickers", true},
+            {"fetchTrades", true},
+            {"setLeverage", true},
+            {"setMarginMode", true}
+        }},
+        {"timeframes", {
+            {"1m", "1m"},
+            {"5m", "5m"},
+            {"1h", "1h"},
+            {"1d", "1d"}
+        }},
+        {"urls", {
+            {"test", {
+                {"rest", "https://testnet.bitmex.com"}
+            }},
+            {"api", {
+                {"rest", "https://www.bitmex.com"}
+            }},
+            {"www", "https://www.bitmex.com"},
+            {"doc", {
+                "https://www.bitmex.com/app/apiOverview",
+                "https://github.com/BitMEX/api-connectors/tree/master/official-http"
+            }}
+        }},
         {"api", {
-            {"public", baseUrl},
-            {"private", baseUrl}
-        }},
-        {"www", "https://www.bitmex.com"},
-        {"test", "https://testnet.bitmex.com"},
-        {"doc", {
-            "https://www.bitmex.com/app/apiOverview",
-            "https://github.com/BitMEX/api-connectors/tree/master/official-http"
-        }},
-        {"fees", "https://www.bitmex.com/app/fees"}
-    };
-
-    timeframes = {
-        {"1m", "1m"},
-        {"5m", "5m"},
-        {"1h", "1h"},
-        {"1d", "1d"}
-    };
-
-    initializeApiEndpoints();
-}
-
-void BitMEX::initializeApiEndpoints() {
-    api = {
-        {"public", {
-            {"GET", {
-                "api/v1/announcement",
-                "api/v1/instrument",
-                "api/v1/instrument/active",
-                "api/v1/instrument/activeAndIndices",
-                "api/v1/instrument/activeIntervals",
-                "api/v1/instrument/compositeIndex",
-                "api/v1/instrument/indices",
-                "api/v1/orderBook/L2",
-                "api/v1/trade",
-                "api/v1/trade/bucketed",
-                "api/v1/quote",
-                "api/v1/quote/bucketed",
-                "api/v1/stats",
-                "api/v1/stats/history",
-                "api/v1/stats/historyUSD"
-            }}
-        }},
-        {"private", {
-            {"GET", {
-                "api/v1/position",
-                "api/v1/user/margin",
-                "api/v1/user/wallet",
-                "api/v1/user/walletHistory",
-                "api/v1/execution",
-                "api/v1/order",
-                "api/v1/funding"
-            }},
-            {"POST", {
-                "api/v1/order",
-                "api/v1/order/bulk",
-                "api/v1/position/leverage",
-                "api/v1/position/isolate",
-                "api/v1/position/transferMargin"
-            }},
-            {"PUT", {
-                "api/v1/order",
-                "api/v1/order/bulk"
-            }},
-            {"DELETE", {
-                "api/v1/order",
-                "api/v1/order/all"
-            }}
-        }}
-    };
-}
-
-json BitMEX::fetchMarkets(const json& params) {
-    json response = fetch("/api/v1/instrument/active", "public", "GET", params);
-    json markets = json::array();
-    
-    for (const auto& market : response) {
-        String id = market["symbol"];
-        String baseId = market["underlying"];
-        String quoteId = market["quoteCurrency"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String type = market["isInverse"] ? "inverse" : "linear";
-        
-        markets.push_back({
-            {"id", id},
-            {"symbol", base + "/" + quote},
-            {"base", base},
-            {"quote", quote},
-            {"baseId", baseId},
-            {"quoteId", quoteId},
-            {"active", market["state"] == "Open"},
-            {"type", type},
-            {"spot", false},
-            {"future", market["expiry"].is_null()},
-            {"swap", !market["expiry"].is_null()},
-            {"prediction", false},
-            {"precision", {
-                {"amount", market["lotSize"]},
-                {"price", market["tickSize"]}
-            }},
-            {"limits", {
-                {"amount", {
-                    {"min", market["lotSize"]},
-                    {"max", market["maxOrderQty"]}
-                }},
-                {"price", {
-                    {"min", market["tickSize"]},
-                    {"max", market["maxPrice"]}
-                }},
-                {"cost", {
-                    {"min", 0},
-                    {"max", nullptr}
+            {"public", {
+                {"get", {
+                    {"announcement", 1},
+                    {"announcement/urgent", 1},
+                    {"funding", 1},
+                    {"instrument", 1},
+                    {"instrument/active", 1},
+                    {"instrument/activeAndIndices", 1},
+                    {"instrument/activeIntervals", 1},
+                    {"instrument/compositeIndex", 1},
+                    {"instrument/indices", 1},
+                    {"insurance", 1},
+                    {"leaderboard", 1},
+                    {"liquidation", 1},
+                    {"orderBook/L2", 1},
+                    {"quote", 1},
+                    {"quote/bucketed", 1},
+                    {"schema", 1},
+                    {"schema/websocketHelp", 1},
+                    {"settlement", 1},
+                    {"stats", 1},
+                    {"stats/history", 1},
+                    {"trade", 1},
+                    {"trade/bucketed", 1}
                 }}
             }},
-            {"info", market}
-        });
+            {"private", {
+                {"get", {
+                    {"apiKey", 1},
+                    {"chat", 1},
+                    {"chat/channels", 1},
+                    {"chat/connected", 1},
+                    {"execution", 1},
+                    {"execution/tradeHistory", 1},
+                    {"notification", 1},
+                    {"order", 1},
+                    {"position", 1},
+                    {"user", 1},
+                    {"user/affiliateStatus", 1},
+                    {"user/checkReferralCode", 1},
+                    {"user/commission", 1},
+                    {"user/depositAddress", 1},
+                    {"user/executionHistory", 1},
+                    {"user/margin", 1},
+                    {"user/minWithdrawalFee", 1},
+                    {"user/wallet", 1},
+                    {"user/walletHistory", 1},
+                    {"user/walletSummary", 1}
+                }},
+                {"post", {
+                    {"apiKey", 1},
+                    {"apiKey/disable", 1},
+                    {"apiKey/enable", 1},
+                    {"chat", 1},
+                    {"order", 1},
+                    {"order/bulk", 1},
+                    {"order/cancelAllAfter", 1},
+                    {"order/closePosition", 1},
+                    {"position/isolate", 1},
+                    {"position/leverage", 1},
+                    {"position/riskLimit", 1},
+                    {"position/transferMargin", 1},
+                    {"user/cancelWithdrawal", 1},
+                    {"user/confirmEmail", 1},
+                    {"user/confirmEnableTFA", 1},
+                    {"user/confirmWithdrawal", 1},
+                    {"user/disableTFA", 1},
+                    {"user/logout", 1},
+                    {"user/logoutAll", 1},
+                    {"user/preferences", 1},
+                    {"user/requestEnableTFA", 1},
+                    {"user/requestWithdrawal", 1}
+                }},
+                {"put", {
+                    {"order", 1},
+                    {"order/bulk", 1},
+                    {"user", 1}
+                }},
+                {"delete", {
+                    {"apiKey", 1},
+                    {"order", 1},
+                    {"order/all", 1}
+                }}
+            }}
+        }}
+    });
+}
+
+// Market Data Implementation
+Json BitMEX::fetchMarketsImpl() const {
+    return this->fetch("/instrument/active");
+}
+
+Json BitMEX::fetchTickerImpl(const std::string& symbol) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    return this->fetch("/instrument?" + this->urlencode(request));
+}
+
+Json BitMEX::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (limit) {
+        request["depth"] = *limit;
     }
-    
-    return markets;
+    return this->fetch("/orderBook/L2?" + this->urlencode(request));
 }
 
-json BitMEX::fetchTicker(const String& symbol, const json& params) {
-    json markets = this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {{"symbol", market.id}, {"binSize", "1d"}, {"partial", true}, {"count", 1}, {"reverse", true}};
-    json response = fetch("/api/v1/trade/bucketed", "public", "GET", this->extend(request, params));
-    
-    json ticker = response[0];
-    String timestamp = this->parse8601(ticker["timestamp"].get<String>());
-    
-    return {
-        {"symbol", symbol},
-        {"timestamp", timestamp},
-        {"datetime", this->iso8601(timestamp)},
-        {"high", ticker["high"]},
-        {"low", ticker["low"]},
-        {"bid", nullptr},
-        {"bidVolume", nullptr},
-        {"ask", nullptr},
-        {"askVolume", nullptr},
-        {"vwap", ticker["vwap"]},
-        {"open", ticker["open"]},
-        {"close", ticker["close"]},
-        {"last", ticker["close"]},
-        {"previousClose", nullptr},
-        {"change", nullptr},
-        {"percentage", nullptr},
-        {"average", nullptr},
-        {"baseVolume", ticker["volume"]},
-        {"quoteVolume", ticker["volume"] * ticker["vwap"]},
-        {"info", ticker}
-    };
-}
-
-json BitMEX::fetchBalance(const json& params) {
-    json response = fetch("/api/v1/user/margin?currency=all", "private", "GET", params);
-    json result = {
-        {"info", response},
-        {"timestamp", nullptr},
-        {"datetime", nullptr}
-    };
-    
-    for (const auto& balance : response) {
-        String currency = balance["currency"];
-        double free = balance["availableMargin"];
-        double total = balance["marginBalance"];
-        double used = total - free;
-        
-        result[currency] = {
-            {"free", free},
-            {"used", used},
-            {"total", total}
-        };
+Json BitMEX::fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since,
+                          const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
     }
-    
-    return result;
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetch("/trade?" + this->urlencode(request));
 }
 
-json BitMEX::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
-                        double price, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    
-    json request = {
-        {"symbol", market.id},
-        {"side", side},
+Json BitMEX::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
+                         const std::optional<long long>& since,
+                         const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"binSize", timeframe},
+        {"partial", true}
+    });
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetch("/trade/bucketed?" + this->urlencode(request));
+}
+
+// Trading Implementation
+Json BitMEX::createOrderImpl(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
+                         const std::optional<double>& price) {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"side", side.upper()},
         {"orderQty", amount},
-        {"ordType", type}
-    };
-    
-    if (type == "limit") {
-        if (price == 0) {
-            throw InvalidOrder("For limit orders, price cannot be zero");
-        }
-        request["price"] = price;
+        {"ordType", type.upper()}
+    });
+    if (price) {
+        request["price"] = *price;
     }
-    
-    json response = fetch("/api/v1/order", "private", "POST", this->extend(request, params));
-    return this->parseOrder(response);
+    return this->fetch("/order", "private", "POST", request);
 }
 
-json BitMEX::fetchPositions(const String& symbol, const json& params) {
-    this->loadMarkets();
-    json request = {};
-    
+Json BitMEX::cancelOrderImpl(const std::string& id, const std::string& symbol) {
+    auto request = Json::object({{"orderID", id}});
     if (!symbol.empty()) {
-        Market market = this->market(symbol);
-        request["symbol"] = market.id;
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
     }
-    
-    json response = fetch("/api/v1/position", "private", "GET", this->extend(request, params));
-    return response;
+    return this->fetch("/order", "private", "DELETE", request);
 }
 
-json BitMEX::fetchFundingRate(const String& symbol, const json& params) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {{"symbol", market.id}};
-    
-    json response = fetch("/api/v1/instrument", "public", "GET", this->extend(request, params));
-    return {
-        {"symbol", symbol},
-        {"markPrice", response[0]["markPrice"]},
-        {"indexPrice", response[0]["indicativeSettlePrice"]},
-        {"interestRate", response[0]["indicativeFundingRate"]},
-        {"timestamp", this->parse8601(response[0]["timestamp"].get<String>())},
-        {"datetime", response[0]["timestamp"]},
-        {"info", response[0]}
-    };
+Json BitMEX::fetchOrderImpl(const std::string& id, const std::string& symbol) const {
+    auto request = Json::object({{"orderID", id}});
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    return this->fetch("/order?" + this->urlencode(request), "private");
 }
 
-String BitMEX::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
-                    const json& body) {
-    String endpoint = "/" + this->implodeParams(path, params);
-    String url = this->urls["api"][api] + endpoint;
+Json BitMEX::fetchOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                         const std::optional<int>& limit) const {
+    auto request = Json::object();
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetch("/order?" + this->urlencode(request), "private");
+}
+
+Json BitMEX::fetchOpenOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                              const std::optional<int>& limit) const {
+    auto request = Json::object({{"filter", {{"open", true}}}});
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetch("/order?" + this->urlencode(request), "private");
+}
+
+Json BitMEX::fetchClosedOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                                const std::optional<int>& limit) const {
+    auto request = Json::object({{"filter", {{"open", false}}}});
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetch("/order?" + this->urlencode(request), "private");
+}
+
+// Account Implementation
+Json BitMEX::fetchBalanceImpl() const {
+    return this->fetch("/user/margin", "private");
+}
+
+Json BitMEX::fetchPositionsImpl(const std::string& symbol) const {
+    auto request = Json::object();
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    return this->fetch("/position?" + this->urlencode(request), "private");
+}
+
+// Async Implementation
+boost::future<Json> BitMEX::fetchAsync(const std::string& path, const std::string& api,
+                                   const std::string& method, const Json& params,
+                                   const std::map<std::string, std::string>& headers) const {
+    return Exchange::fetchAsync(path, api, method, params, headers);
+}
+
+boost::future<Json> BitMEX::fetchMarketsAsync() const {
+    return this->fetchAsync("/instrument/active");
+}
+
+boost::future<Json> BitMEX::fetchTickerAsync(const std::string& symbol) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    return this->fetchAsync("/instrument?" + this->urlencode(request));
+}
+
+boost::future<Json> BitMEX::fetchOrderBookAsync(const std::string& symbol,
+                                            const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (limit) {
+        request["depth"] = *limit;
+    }
+    return this->fetchAsync("/orderBook/L2?" + this->urlencode(request));
+}
+
+boost::future<Json> BitMEX::fetchTradesAsync(const std::string& symbol,
+                                         const std::optional<long long>& since,
+                                         const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({{"symbol", market["id"]}});
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetchAsync("/trade?" + this->urlencode(request));
+}
+
+boost::future<Json> BitMEX::fetchOHLCVAsync(const std::string& symbol,
+                                        const std::string& timeframe,
+                                        const std::optional<long long>& since,
+                                        const std::optional<int>& limit) const {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"binSize", timeframe},
+        {"partial", true}
+    });
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetchAsync("/trade/bucketed?" + this->urlencode(request));
+}
+
+boost::future<Json> BitMEX::createOrderAsync(const std::string& symbol,
+                                        const std::string& type,
+                                        const std::string& side,
+                                        double amount,
+                                        const std::optional<double>& price) {
+    auto market = this->market(symbol);
+    auto request = Json::object({
+        {"symbol", market["id"]},
+        {"side", side.upper()},
+        {"orderQty", amount},
+        {"ordType", type.upper()}
+    });
+    if (price) {
+        request["price"] = *price;
+    }
+    return this->fetchAsync("/order", "private", "POST", request);
+}
+
+boost::future<Json> BitMEX::cancelOrderAsync(const std::string& id,
+                                        const std::string& symbol) {
+    auto request = Json::object({{"orderID", id}});
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    return this->fetchAsync("/order", "private", "DELETE", request);
+}
+
+boost::future<Json> BitMEX::fetchOrderAsync(const std::string& id,
+                                       const std::string& symbol) const {
+    auto request = Json::object({{"orderID", id}});
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    return this->fetchAsync("/order?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> BitMEX::fetchOrdersAsync(const std::string& symbol,
+                                        const std::optional<long long>& since,
+                                        const std::optional<int>& limit) const {
+    auto request = Json::object();
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetchAsync("/order?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> BitMEX::fetchOpenOrdersAsync(const std::string& symbol,
+                                             const std::optional<long long>& since,
+                                             const std::optional<int>& limit) const {
+    auto request = Json::object({{"filter", {{"open", true}}}});
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetchAsync("/order?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> BitMEX::fetchClosedOrdersAsync(const std::string& symbol,
+                                               const std::optional<long long>& since,
+                                               const std::optional<int>& limit) const {
+    auto request = Json::object({{"filter", {{"open", false}}}});
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    if (since) {
+        request["startTime"] = this->iso8601(*since);
+    }
+    if (limit) {
+        request["count"] = *limit;
+    }
+    return this->fetchAsync("/order?" + this->urlencode(request), "private");
+}
+
+boost::future<Json> BitMEX::fetchBalanceAsync() const {
+    return this->fetchAsync("/user/margin", "private");
+}
+
+boost::future<Json> BitMEX::fetchPositionsAsync(const std::string& symbol) const {
+    auto request = Json::object();
+    if (!symbol.empty()) {
+        auto market = this->market(symbol);
+        request["symbol"] = market["id"];
+    }
+    return this->fetchAsync("/position?" + this->urlencode(request), "private");
+}
+
+// Helper methods
+std::string BitMEX::sign(const std::string& path, const std::string& api,
+                      const std::string& method, const Json& params,
+                      std::map<std::string, std::string>& headers,
+                      const Json& body) {
+    auto url = this->urls["api"][api] + path;
+    auto expires = std::to_string(this->milliseconds() + 60000);  // 1 minute in the future
     
     if (api == "private") {
-        String expires = std::to_string(this->nonce() + 5000);
-        String auth = method + endpoint;
+        headers["api-expires"] = expires;
+        headers["api-key"] = this->apiKey;
         
-        if (method == "POST" || method == "PUT" || method == "DELETE") {
-            if (!body.empty()) {
-                auth += body.dump();
+        std::string data;
+        if (method == "GET") {
+            if (!params.empty()) {
+                url += "?" + this->urlencode(params);
             }
+        } else {
+            data = body.dump();
+            headers["Content-Type"] = "application/json";
         }
         
-        String signature = this->hmac(auth, this->secret, "sha256", "hex");
-        
-        const_cast<std::map<String, String>&>(headers)["api-expires"] = expires;
-        const_cast<std::map<String, String>&>(headers)["api-key"] = this->apiKey;
-        const_cast<std::map<String, String>&>(headers)["api-signature"] = signature;
+        auto auth = method + url.substr(url.find("/api")) + data;
+        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        headers["api-signature"] = signature;
     }
     
     return url;
-}
-
-String BitMEX::createSignature(const String& path, const String& method,
-                             const String& expires, const String& data) {
-    String message = method + path + expires + data;
-    
-    unsigned char* hmac = nullptr;
-    unsigned int hmacLen = 0;
-    
-    HMAC_CTX* ctx = HMAC_CTX_new();
-    HMAC_Init_ex(ctx, secret.c_str(), secret.length(), EVP_sha256(), nullptr);
-    HMAC_Update(ctx, (unsigned char*)message.c_str(), message.length());
-    HMAC_Final(ctx, hmac, &hmacLen);
-    HMAC_CTX_free(ctx);
-    
-    return this->toHex(hmac, hmacLen);
-}
-
-String BitMEX::getBitmexSymbol(const String& symbol) {
-    if (symbol.empty()) return symbol;
-    Market market = this->market(symbol);
-    return market.id;
-}
-
-String BitMEX::getCommonSymbol(const String& bitmexSymbol) {
-    // Convert BitMEX symbol to common format
-    // e.g., XBTUSD -> BTC/USD
-    // This is a simplified version, you might want to expand it
-    if (bitmexSymbol == "XBTUSD") return "BTC/USD";
-    return bitmexSymbol;
 }
 
 } // namespace ccxt

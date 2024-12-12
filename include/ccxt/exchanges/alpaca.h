@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ccxt/base/exchange_impl.h"
-#include "ccxt/base/exchange_registry.h"
+
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 
-class alpaca : public ExchangeImpl<alpaca> {
+class alpaca : public Exchange {
 public:
     static const std::string defaultHostname;
     static const int defaultRateLimit;
     static const bool defaultPro;
-    static ExchangeRegistry::Factory factory;
+    
 
     explicit alpaca(const Config& config = Config());
     virtual ~alpaca() = default;
@@ -44,14 +44,20 @@ protected:
     json fetchOrderTradesImpl(const std::string& id, const std::string& symbol) const override;
     json fetchBalanceImpl() const override;
 
+    virtual json parseMarkets(const json& assets) const;
+    virtual json parseTicker(const json& ticker, const std::optional<json>& market = std::nullopt) const;
+    virtual json parseOrderBook(const json& orderbook, const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    virtual json parseOHLCV(const json& ohlcv) const;
     virtual json parseOrder(const json& order, const std::optional<json>& market = std::nullopt) const;
-    virtual json parseOrders(const json& orders, const std::string& symbol,
-                         const std::optional<long long>& since = std::nullopt,
-                         const std::optional<int>& limit = std::nullopt) const;
+    virtual json parseOrders(const json& orders, const std::string& symbol = "",
+                  const std::optional<long long>& since = std::nullopt,
+                  const std::optional<int>& limit = std::nullopt) const;
     virtual json parseTrade(const json& trade, const std::optional<json>& market = std::nullopt) const;
-    virtual json parseTrades(const json& trades, const std::string& symbol,
-                         const std::optional<long long>& since = std::nullopt,
-                         const std::optional<int>& limit = std::nullopt) const;
+    virtual json parseTrades(const json& trades, const std::string& symbol = "",
+                   const std::optional<long long>& since = std::nullopt,
+                   const std::optional<int>& limit = std::nullopt) const;
+    virtual std::string parseOrderStatus(const std::string& status) const;
+    virtual std::string parseTimeInForce(const std::string& timeInForce) const;
 
 private:
     static Exchange* createInstance(const Config& config) {

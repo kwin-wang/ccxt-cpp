@@ -11,14 +11,12 @@ const std::string blockchaincom::defaultVersion = "v3";
 const int blockchaincom::defaultRateLimit = 500;
 const bool blockchaincom::defaultPro = true;
 
-ExchangeRegistry::Factory blockchaincom::factory("blockchaincom", blockchaincom::createInstance);
-
-blockchaincom::blockchaincom(const Config& config) : ExchangeImpl(config) {
+blockchaincom::blockchaincom(const Config& config) : Exchange(config) {
     init();
 }
 
 void blockchaincom::init() {
-    ExchangeImpl::init();
+    
     
     // Set exchange properties
     this->id = "blockchaincom";
@@ -107,55 +105,60 @@ std::string blockchaincom::sign(const std::string& path, const std::string& api,
     return url;
 }
 
-void blockchaincom::handleErrors(const std::string& code, const std::string& reason, const std::string& url,
-                                const std::string& method, const Json& headers, const Json& body,
-                                const Json& response, const std::string& requestHeaders,
-                                const std::string& requestBody) const {
-    if (response.is_object() && response.contains("error")) {
-        std::string message = this->safeString(response, "message", "Unknown error");
-        std::string errorCode = this->safeString(response, "error");
-        
-        if (errorCode == "UNAUTHORIZED") {
+void blockchaincom::handleErrors(const std::string& httpCode, const std::string& reason, const std::string& url,
+                            const std::string& method, const Json& headers, const Json& body,
+                            const Json& response, const std::string& requestHeaders,
+                            const std::string& requestBody) {
+    if (response.is_null()) {
+        return;
+    }
+    
+    // Check for error message in response
+    std::string message = this->safeString(response, "message");
+    if (!message.empty()) {
+        if (message == "Invalid API key") {
             throw AuthenticationError(message);
-        } else if (errorCode == "INSUFFICIENT_FUNDS") {
+        }
+        if (message == "Insufficient funds") {
             throw InsufficientFunds(message);
-        } else if (errorCode == "ORDER_NOT_FOUND") {
+        }
+        if (message == "Order not found") {
             throw OrderNotFound(message);
         }
-        
+        if (message.find("Required parameter") != std::string::npos) {
+            throw ArgumentsRequired(message);
+        }
+        // Generic exchange error
         throw ExchangeError(message);
     }
 }
 
 Json blockchaincom::fetchMarketsImpl() const {
-    Json response = this->publicGetSymbols();
+    Json response = this->fetch("/markets", "public", "GET", Json::object());
     return this->parseMarkets(response);
 }
 
 Json blockchaincom::fetchTickerImpl(const std::string& symbol) const {
     this->loadMarkets();
-    Json market = this->market(symbol);
-    Json response = this->publicGetTicker(Json::object({
-        {"symbol", market["id"]}
-    }));
-    return this->parseTicker(response, market);
+    std::string market_id = this->marketId(symbol);
+    Json response = this->fetch("/tickers/" + market_id, "public", "GET", Json::object());
+    return this->parseTicker(response, this->market(symbol));
 }
 
 Json blockchaincom::fetchTickersImpl(const std::vector<std::string>& symbols) const {
     this->loadMarkets();
-    Json response = this->publicGetTickers();
+    Json response = this->fetch("/tickers", "public", "GET", Json::object());
     return this->parseTickers(response, symbols);
 }
 
 Json blockchaincom::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
     this->loadMarkets();
-    Json request = Json::object({
-        {"symbol", this->marketId(symbol)}
-    });
-    if (limit) {
-        request["limit"] = *limit;
+    std::string market_id = this->marketId(symbol);
+    Json request;
+    if (limit.has_value()) {
+        request["depth"] = limit.value();
     }
-    Json response = this->publicGetL2OrderBook(request);
+    Json response = this->fetch("/l2/" + market_id, "public", "GET", request);
     return this->parseOrderBook(response, symbol);
 }
 
@@ -174,47 +177,23 @@ Json blockchaincom::fetchL3OrderBookImpl(const std::string& symbol, const std::o
 Json blockchaincom::createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
                                   double amount, const std::optional<double>& price) {
     this->loadMarkets();
-    Json market = this->market(symbol);
+    std::string market_id = this->marketId(symbol);
     
     Json request = Json::object({
-        {"symbol", market["id"]},
-        {"side", side.substr(0, 1).upper() + side.substr(1)},  // Capitalize first letter
-        {"orderType", type.upper()},
-        {"qty", this->amountToPrecision(symbol, amount)}
+        {"symbol", market_id},
+        {"side", side.c_str()},
+        {"orderType", type.c_str()},
+        {"quantity", this->amountToPrecision(symbol, amount)}
     });
-
+    
     if (type == "limit") {
-        if (!price) {
+        if (!price.has_value()) {
             throw ArgumentsRequired("createOrder() requires a price argument for limit orders");
         }
-        request["price"] = this->priceToPrecision(symbol, *price);
+        request["price"] = this->priceToPrecision(symbol, price.value());
     }
-
-    Json response = this->privatePostOrders(request);
-    return this->parseOrder(response);
-}
-
-Json blockchaincom::createStopOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
-                                      double amount, double price, const std::optional<Json>& params) {
-    this->loadMarkets();
-    Json market = this->market(symbol);
     
-    Json request = Json::object({
-        {"symbol", market["id"]},
-        {"side", side.substr(0, 1).upper() + side.substr(1)},
-        {"orderType", type.upper()},
-        {"qty", this->amountToPrecision(symbol, amount)},
-        {"stopPrice", this->priceToPrecision(symbol, price)}
-    });
-
-    if (type == "limit") {
-        if (!params || !params->contains("price")) {
-            throw ArgumentsRequired("createStopOrder() requires a price parameter for stop limit orders");
-        }
-        request["price"] = this->priceToPrecision(symbol, (*params)["price"].get<double>());
-    }
-
-    Json response = this->privatePostOrders(request);
+    Json response = this->fetch("/orders", "private", "POST", request);
     return this->parseOrder(response);
 }
 
@@ -223,22 +202,43 @@ Json blockchaincom::cancelOrderImpl(const std::string& id, const std::string& sy
     Json request = Json::object({
         {"orderId", id}
     });
-    return this->privateDeleteOrdersOrderId(request);
+    if (!symbol.empty()) {
+        request["symbol"] = this->marketId(symbol);
+    }
+    Json response = this->fetch("/orders/" + id, "private", "DELETE", request);
+    return this->parseOrder(response);
 }
 
-Json blockchaincom::cancelAllOrdersImpl(const std::optional<std::string>& symbol) {
+Json blockchaincom::fetchOrderImpl(const std::string& id, const std::string& symbol) const {
     this->loadMarkets();
-    Json request = Json::object();
-    if (symbol) {
-        Json market = this->market(*symbol);
-        request["symbol"] = market["id"];
+    Json request = Json::object({
+        {"orderId", id}
+    });
+    if (!symbol.empty()) {
+        request["symbol"] = this->marketId(symbol);
     }
-    return this->privateDeleteOrders(request);
+    Json response = this->fetch("/orders/" + id, "private", "GET", request);
+    return this->parseOrder(response);
+}
+
+Json blockchaincom::fetchOpenOrdersImpl(const std::optional<std::string>& symbol,
+                                      const std::optional<long long>& since,
+                                      const std::optional<int>& limit) const {
+    this->loadMarkets();
+    Json request;
+    if (symbol.has_value()) {
+        request["symbol"] = this->marketId(symbol.value());
+    }
+    if (limit.has_value()) {
+        request["limit"] = limit.value();
+    }
+    Json response = this->fetch("/orders", "private", "GET", request);
+    return this->parseOrders(response, symbol);
 }
 
 Json blockchaincom::fetchBalanceImpl() const {
     this->loadMarkets();
-    Json response = this->privateGetBalance();
+    Json response = this->fetch("/accounts", "private", "GET", Json::object());
     return this->parseBalance(response);
 }
 
@@ -246,10 +246,53 @@ Json blockchaincom::fetchDepositAddressImpl(const std::string& code, const std::
     this->loadMarkets();
     Json currency = this->currency(code);
     Json request = Json::object({
-        {"currency", currency["id"]}
+        {"currency", this->safeString(currency, "id")}
     });
-    Json response = this->privateGetDepositAddress(request);
+    
+    if (network.has_value()) {
+        request["network"] = network.value();
+    }
+    
+    Json response = this->fetch("/deposits/address", "private", "GET", request);
     return this->parseDepositAddress(response, currency);
+}
+
+Json blockchaincom::fetchDepositsImpl(const std::optional<std::string>& code,
+                                    const std::optional<long long>& since,
+                                    const std::optional<int>& limit) const {
+    this->loadMarkets();
+    Json request;
+    if (code.has_value()) {
+        Json currency = this->currency(code.value());
+        request["currency"] = this->safeString(currency, "id");
+    }
+    if (since.has_value()) {
+        request["from"] = this->iso8601(since.value());
+    }
+    if (limit.has_value()) {
+        request["limit"] = limit.value();
+    }
+    Json response = this->fetch("/deposits", "private", "GET", request);
+    return this->parseTransactions(response, code);
+}
+
+Json blockchaincom::fetchWithdrawalsImpl(const std::optional<std::string>& code,
+                                       const std::optional<long long>& since,
+                                       const std::optional<int>& limit) const {
+    this->loadMarkets();
+    Json request;
+    if (code.has_value()) {
+        Json currency = this->currency(code.value());
+        request["currency"] = this->safeString(currency, "id");
+    }
+    if (since.has_value()) {
+        request["from"] = this->iso8601(since.value());
+    }
+    if (limit.has_value()) {
+        request["limit"] = limit.value();
+    }
+    Json response = this->fetch("/withdrawals", "private", "GET", request);
+    return this->parseTransactions(response, code);
 }
 
 Json blockchaincom::withdrawImpl(const std::string& code, double amount, const std::string& address,
@@ -272,43 +315,112 @@ Json blockchaincom::withdrawImpl(const std::string& code, double amount, const s
     return this->parseTransaction(response, currency);
 }
 
+Json blockchaincom::fetchTradingFeesImpl() const {
+    this->loadMarkets();
+    Json response = this->fetch("/fees", "public", "GET", Json::object());
+    
+    Json result = Json::object();
+    result["info"] = response;
+    result["maker"] = this->safeNumber(response, "makerRate");
+    result["taker"] = this->safeNumber(response, "takerRate");
+    result["percentage"] = true;
+    result["tierBased"] = true;
+    
+    return result;
+}
+
+Json blockchaincom::parseMarket(const Json& market) const {
+    std::string id = this->safeString(market, "symbol");
+    std::string baseId = this->safeString(market, "baseCurrency");
+    std::string quoteId = this->safeString(market, "quoteCurrency");
+    std::string base = this->safeCurrencyCode(baseId);
+    std::string quote = this->safeCurrencyCode(quoteId);
+    std::string symbol = base + "/" + quote;
+    
+    return Json::object({
+        {"id", id},
+        {"symbol", symbol},
+        {"base", base},
+        {"quote", quote},
+        {"baseId", baseId},
+        {"quoteId", quoteId},
+        {"active", true},
+        {"type", "spot"},
+        {"spot", true},
+        {"precision", Json::object({
+            {"amount", this->safeInteger(market, "quantityPrecision", 8)},
+            {"price", this->safeInteger(market, "pricePrecision", 8)}
+        })},
+        {"limits", Json::object({
+            {"amount", Json::object({
+                {"min", this->safeNumber(market, "minQuantity")},
+                {"max", this->safeNumber(market, "maxQuantity")}
+            })},
+            {"price", Json::object({
+                {"min", this->safeNumber(market, "minPrice")},
+                {"max", this->safeNumber(market, "maxPrice")}
+            })}
+        })},
+        {"info", market}
+    });
+}
+
 Json blockchaincom::parseTicker(const Json& ticker, const Json& market) const {
     long long timestamp = this->milliseconds();
     std::string symbol = this->safeString(market, "symbol");
+    
     return Json::object({
         {"symbol", symbol},
         {"timestamp", timestamp},
         {"datetime", this->iso8601(timestamp)},
-        {"high", this->safeString(ticker, "high24h")},
-        {"low", this->safeString(ticker, "low24h")},
-        {"bid", this->safeString(ticker, "bid")},
-        {"ask", this->safeString(ticker, "ask")},
-        {"last", this->safeString(ticker, "last_trade_price")},
-        {"baseVolume", this->safeString(ticker, "volume24h")},
+        {"high", this->safeNumber(ticker, "high24h")},
+        {"low", this->safeNumber(ticker, "low24h")},
+        {"bid", this->safeNumber(ticker, "bid")},
+        {"bidVolume", this->safeNumber(ticker, "bidSize")},
+        {"ask", this->safeNumber(ticker, "ask")},
+        {"askVolume", this->safeNumber(ticker, "askSize")},
+        {"vwap", this->safeNumber(ticker, "volumeWeightedPrice")},
+        {"open", this->safeNumber(ticker, "open24h")},
+        {"close", this->safeNumber(ticker, "lastPrice")},
+        {"last", this->safeNumber(ticker, "lastPrice")},
+        {"previousClose", nullptr},
+        {"change", nullptr},
+        {"percentage", nullptr},
+        {"average", nullptr},
+        {"baseVolume", this->safeNumber(ticker, "volume24h")},
+        {"quoteVolume", nullptr},
         {"info", ticker}
     });
 }
 
 Json blockchaincom::parseOrder(const Json& order, const Json& market) const {
     std::string id = this->safeString(order, "orderId");
-    std::string timestamp = this->safeString(order, "timestamp");
-    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
     std::string symbol = this->safeString(market, "symbol");
-    std::string type = this->safeStringLower(order, "orderType");
+    long long timestamp = this->safeTimestamp(order, "timestamp");
     std::string side = this->safeStringLower(order, "side");
+    std::string type = this->safeStringLower(order, "orderType");
     
     return Json::object({
         {"id", id},
-        {"timestamp", this->parse8601(timestamp)},
-        {"datetime", timestamp},
-        {"status", status},
+        {"clientOrderId", this->safeString(order, "clientOrderId")},
+        {"timestamp", timestamp},
+        {"datetime", this->iso8601(timestamp)},
+        {"lastTradeTimestamp", nullptr},
         {"symbol", symbol},
         {"type", type},
+        {"timeInForce", this->safeString(order, "timeInForce")},
+        {"postOnly", this->safeValue(order, "postOnly")},
         {"side", side},
         {"price", this->safeNumber(order, "price")},
-        {"amount", this->safeNumber(order, "qty")},
-        {"filled", this->safeNumber(order, "filledQty")},
-        {"remaining", this->safeNumber(order, "remainingQty")},
+        {"stopPrice", this->safeNumber(order, "stopPrice")},
+        {"amount", this->safeNumber(order, "quantity")},
+        {"cost", nullptr},
+        {"average", this->safeNumber(order, "avgFillPrice")},
+        {"filled", this->safeNumber(order, "filledQuantity")},
+        {"remaining", nullptr},
+        {"status", this->parseOrderStatus(this->safeString(order, "status"))},
+        {"fee", nullptr},
+        {"trades", nullptr},
         {"info", order}
     });
 }

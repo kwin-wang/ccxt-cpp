@@ -296,4 +296,117 @@ json Gemini::parseOrderStatus(const String& status) {
     return statuses.contains(status) ? statuses.at(status) : status;
 }
 
+// Async Market Data API
+std::future<json> Gemini::fetchMarketsAsync(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchMarkets(params);
+    });
+}
+
+std::future<json> Gemini::fetchTickerAsync(const String& symbol, const json& params) {
+    return std::async(std::launch::async, [this, symbol, params]() {
+        return this->fetchTicker(symbol, params);
+    });
+}
+
+std::future<json> Gemini::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, limit, params]() {
+        return this->fetchOrderBook(symbol, limit, params);
+    });
+}
+
+std::future<json> Gemini::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchTrades(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Gemini::fetchOHLCVAsync(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
+        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
+    });
+}
+
+// Async Trading API
+std::future<json> Gemini::fetchBalanceAsync(const json& params) {
+    return std::async(std::launch::async, [this, params]() {
+        return this->fetchBalance(params);
+    });
+}
+
+std::future<json> Gemini::createOrderAsync(const String& symbol, const String& type, const String& side,
+                                         double amount, double price, const json& params) {
+    return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
+        return this->createOrder(symbol, type, side, amount, price, params);
+    });
+}
+
+std::future<json> Gemini::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->cancelOrder(id, symbol, params);
+    });
+}
+
+std::future<json> Gemini::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+    return std::async(std::launch::async, [this, id, symbol, params]() {
+        return this->fetchOrder(id, symbol, params);
+    });
+}
+
+std::future<json> Gemini::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOrders(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Gemini::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchOpenOrders(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Gemini::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchClosedOrders(symbol, since, limit, params);
+    });
+}
+
+// Async Gemini specific methods
+std::future<json> Gemini::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, symbol, since, limit, params]() {
+        return this->fetchMyTrades(symbol, since, limit, params);
+    });
+}
+
+std::future<json> Gemini::fetchDepositsAsync(const String& code, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, code, since, limit, params]() {
+        return this->fetchDeposits(code, since, limit, params);
+    });
+}
+
+std::future<json> Gemini::fetchWithdrawalsAsync(const String& code, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, code, since, limit, params]() {
+        return this->fetchWithdrawals(code, since, limit, params);
+    });
+}
+
+std::future<json> Gemini::fetchTransfersAsync(const String& code, int since, int limit, const json& params) {
+    return std::async(std::launch::async, [this, code, since, limit, params]() {
+        return this->fetchTransfers(code, since, limit, params);
+    });
+}
+
+std::future<json> Gemini::transferAsync(const String& code, double amount, const String& fromAccount,
+                                      const String& toAccount, const json& params) {
+    return std::async(std::launch::async, [this, code, amount, fromAccount, toAccount, params]() {
+        return this->transfer(code, amount, fromAccount, toAccount, params);
+    });
+}
+
+std::future<json> Gemini::fetchDepositAddressAsync(const String& code, const json& params) {
+    return std::async(std::launch::async, [this, code, params]() {
+        return this->fetchDepositAddress(code, params);
+    });
+}
+
 } // namespace ccxt

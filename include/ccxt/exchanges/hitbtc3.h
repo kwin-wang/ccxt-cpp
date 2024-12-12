@@ -1,7 +1,7 @@
 #ifndef CCXT_HITBTC3_H
 #define CCXT_HITBTC3_H
 
-#include "../base/exchange.h"
+#include "ccxt/base/exchange.h"
 
 namespace ccxt {
 

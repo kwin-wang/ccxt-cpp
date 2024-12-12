@@ -1,224 +1,203 @@
 #include "ccxt/exchanges/binanceusdm.h"
-#include <ctime>
+#include <chrono>
 #include <sstream>
 #include <iomanip>
 
 namespace ccxt {
 
-BinanceUsdm::BinanceUsdm() {
-    this->id = "binanceusdm";
-    this->name = "Binance USD-M";
-    this->has = {
-        {"addMargin", true},
-        {"cancelAllOrders", true},
-        {"cancelOrder", true},
-        {"createOrder", true},
-        {"fetchBalance", true},
-        {"fetchClosedOrders", true},
-        {"fetchFundingRate", true},
-        {"fetchFundingRateHistory", true},
-        {"fetchFundingRates", true},
-        {"fetchIndexOHLCV", true},
-        {"fetchLeverage", true},
-        {"fetchLeverageBrackets", true},
-        {"fetchMarkets", true},
-        {"fetchMarkOHLCV", true},
-        {"fetchMyTrades", true},
-        {"fetchOHLCV", true},
-        {"fetchOpenInterest", true},
-        {"fetchOpenInterestHistory", true},
-        {"fetchOpenOrders", true},
-        {"fetchOrder", true},
-        {"fetchOrderBook", true},
-        {"fetchPositionRisk", true},
-        {"fetchPositions", true},
-        {"fetchTicker", true},
-        {"fetchTickers", true},
-        {"fetchTrades", true},
-        {"reduceMargin", true},
-        {"setLeverage", true},
-        {"setMarginMode", true},
-        {"setPositionMode", true}
-    };
+const std::string BinanceUSDM::defaultHostname = "fapi.binance.com";
+const int BinanceUSDM::defaultRateLimit = 50;
+const bool BinanceUSDM::defaultPro = true;
 
-    this->urls = {
-        {"logo", "https://user-images.githubusercontent.com/1294454/117738721-668c8d80-b205-11eb-8c49-3fad84c4a07f.jpg"},
-        {"api", {
-            {"public", "https://fapi.binance.com"},
-            {"private", "https://fapi.binance.com"},
-            {"v2", "https://fapi.binance.com"}
-        }},
-        {"www", "https://www.binance.com"},
-        {"doc", {
-            "https://binance-docs.github.io/apidocs/futures/en/",
-            "https://binance-docs.github.io/apidocs/spot/en"
-        }}
-    };
-
-    this->api = {
-        {"public", {
-            {"GET", {
-                "ping",
-                "time",
-                "exchangeInfo",
-                "depth",
-                "trades",
-                "historicalTrades",
-                "aggTrades",
-                "premiumIndex",
-                "fundingRate",
-                "klines",
-                "continuousKlines",
-                "indexPriceKlines",
-                "markPriceKlines",
-                "ticker/24hr",
-                "ticker/price",
-                "ticker/bookTicker",
-                "openInterest",
-                "openInterestHist",
-                "topLongShortAccountRatio",
-                "topLongShortPositionRatio",
-                "globalLongShortAccountRatio"
-            }}
-        }},
-        {"private", {
-            {"GET", {
-                "positionRisk",
-                "account",
-                "balance",
-                "positionSide/dual",
-                "leverageBracket",
-                "openOrders",
-                "orders",
-                "allOrders",
-                "myTrades",
-                "income",
-                "commissionRate"
-            }},
-            {"POST", {
-                "order",
-                "order/test",
-                "batchOrders",
-                "positionSide/dual",
-                "marginType",
-                "leverage",
-                "listenKey",
-                "countdownCancelAll"
-            }},
-            {"DELETE", {
-                "order",
-                "allOpenOrders",
-                "batchOrders",
-                "listenKey"
-            }},
-            {"PUT", {
-                "listenKey"
-            }}
-        }}
-    };
+BinanceUSDM::BinanceUSDM(const Config& config) : Binance(config) {
+    init();
 }
 
-nlohmann::json BinanceUsdm::fetch_markets() {
-    auto response = this->fetch("exchangeInfo", "public");
-    auto markets = response["symbols"];
-    auto result = nlohmann::json::array();
+void BinanceUSDM::init() {
+    Binance::init();
 
-    for (const auto& market : markets) {
-        auto id = market["symbol"].get<std::string>();
-        auto baseId = market["baseAsset"].get<std::string>();
-        auto quoteId = market["quoteAsset"].get<std::string>();
-        auto base = this->safe_currency_code(baseId);
-        auto quote = this->safe_currency_code(quoteId);
-        auto symbol = base + "/" + quote;
-        
-        result.push_back({
-            {"id", id},
-            {"symbol", symbol},
-            {"base", base},
-            {"quote", quote},
-            {"settle", quote},
-            {"baseId", baseId},
-            {"quoteId", quoteId},
-            {"settleId", quoteId},
-            {"type", "future"},
-            {"spot", false},
-            {"margin", false},
-            {"swap", true},
-            {"future", true},
-            {"delivery", false},
-            {"linear", true},
-            {"inverse", false},
-            {"contract", true},
-            {"contractSize", this->safe_number(market, "contractSize", 1.0)},
-            {"active", market["status"] == "TRADING"},
-            {"expiry", 0},  // Perpetual
-            {"expiryDatetime", nullptr},
-            {"strike", nullptr},
-            {"optionType", nullptr}
-        });
+    id = "binanceusdm";
+    name = "Binance USDⓈ-M";
+
+    // Update URLs
+    urls["logo"] = "https://github.com/user-attachments/assets/871cbea7-eebb-4b28-b260-c1c91df0487a";
+    urls["api"]["public"] = "https://fapi.binance.com";
+    urls["api"]["private"] = "https://fapi.binance.com";
+    urls["api"]["v2"] = "https://fapi.binance.com";
+    urls["doc"] = {
+        "https://binance-docs.github.io/apidocs/futures/en/",
+        "https://binance-docs.github.io/apidocs/spot/en",
+        "https://developers.binance.com/en"
+    };
+
+    // Update capabilities
+    has["CORS"] = std::nullopt;
+    has["spot"] = false;
+    has["margin"] = false;
+    has["swap"] = true;
+    has["future"] = true;
+    has["option"] = std::nullopt;
+    has["createStopMarketOrder"] = true;
+
+    // Update options
+    options["fetchMarkets"] = {"linear"};
+    options["defaultSubType"] = "linear";
+    options["leverageBrackets"] = std::nullopt;
+    options["marginTypes"] = json::object();
+    options["marginModes"] = json::object();
+
+    // Add error codes
+    exceptions["exact"]["-5021"] = InvalidOrder;  // {"code":-5021,"msg":"Due to the order could not be filled immediately, the FOK order has been rejected."}
+    exceptions["exact"]["-5022"] = InvalidOrder;  // {"code":-5022,"msg":"Due to the order could not be executed, the Post Only order will be rejected."}
+    exceptions["exact"]["-5028"] = InvalidOrder;  // {"code":-5028,"msg":"Timestamp for self request is outside of the ME recvWindow."}
+}
+
+json BinanceUSDM::transferIn(const std::string& code, double amount, const json& params) {
+    // transfer from spot wallet to usdm futures wallet
+    return futuresTransfer(code, amount, 1, params);
+}
+
+json BinanceUSDM::transferOut(const std::string& code, double amount, const json& params) {
+    // transfer from usdm futures wallet to spot wallet
+    return futuresTransfer(code, amount, 2, params);
+}
+
+json BinanceUSDM::fetchMarketsImpl() const {
+    json response = Binance::fetchMarketsImpl();
+    // Add any USDⓈ-M specific market processing here
+    return response;
+}
+
+json BinanceUSDM::fetchTickerImpl(const std::string& symbol) const {
+    return Binance::fetchTickerImpl(symbol);
+}
+
+json BinanceUSDM::fetchTickersImpl(const std::vector<std::string>& symbols) const {
+    return Binance::fetchTickersImpl(symbols);
+}
+
+json BinanceUSDM::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
+    return Binance::fetchOrderBookImpl(symbol, limit);
+}
+
+json BinanceUSDM::fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since,
+                               const std::optional<int>& limit) const {
+    return Binance::fetchTradesImpl(symbol, since, limit);
+}
+
+json BinanceUSDM::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
+                              const std::optional<long long>& since, const std::optional<int>& limit) const {
+    return Binance::fetchOHLCVImpl(symbol, timeframe, since, limit);
+}
+
+json BinanceUSDM::fetchFundingRateImpl(const std::string& symbol) const {
+    Market market = this->market(symbol);
+    json request = {
+        {"symbol", market.id}
+    };
+    json response = this->publicGetPremiumIndex(request);
+    return this->parseFundingRate(response);
+}
+
+json BinanceUSDM::fetchFundingRatesImpl(const std::vector<std::string>& symbols) const {
+    json response = this->publicGetPremiumIndex({});
+    json rates;
+    for (const auto& entry : response) {
+        rates.push_back(this->parseFundingRate(entry));
     }
-    return result;
+    return rates;
 }
 
-nlohmann::json BinanceUsdm::fetch_funding_rate(const std::string& symbol) {
-    auto market = this->market(symbol);
-    auto request = {
-        {"symbol", market["id"].get<std::string>()}
-    };
-    auto response = this->fetch("premiumIndex", "public", "GET", request);
-    return this->parse_funding_rate(response);
+json BinanceUSDM::fetchFundingRateHistoryImpl(const std::string& symbol, const std::optional<long long>& since,
+                                           const std::optional<int>& limit) const {
+    return Binance::fetchFundingRateHistoryImpl(symbol, since, limit);
 }
 
-nlohmann::json BinanceUsdm::fetch_open_interest(const std::string& symbol) {
-    auto market = this->market(symbol);
-    auto request = {
-        {"symbol", market["id"].get<std::string>()}
-    };
-    return this->fetch("openInterest", "public", "GET", request);
+json BinanceUSDM::fetchBalanceImpl(const json& params) const {
+    return Binance::fetchBalanceImpl(params);
 }
 
-nlohmann::json BinanceUsdm::set_leverage(int leverage, const std::string& symbol) {
-    this->check_required_credentials();
-    auto market = this->market(symbol);
-    auto request = {
-        {"symbol", market["id"].get<std::string>()},
-        {"leverage", leverage}
-    };
-    return this->fetch("leverage", "private", "POST", request);
+json BinanceUSDM::createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
+                               double amount, double price, const json& params) {
+    return Binance::createOrderImpl(symbol, type, side, amount, price, params);
 }
 
-nlohmann::json BinanceUsdm::fetch_position_risk(const std::vector<std::string>& symbols) {
-    this->check_required_credentials();
-    auto response = this->fetch("positionRisk", "private", "GET");
-    return this->parse_positions(response, symbols);
+json BinanceUSDM::cancelOrderImpl(const std::string& id, const std::string& symbol, const json& params) {
+    return Binance::cancelOrderImpl(id, symbol, params);
 }
 
-std::string BinanceUsdm::sign(const std::string& path, const std::string& api,
-                             const std::string& method, const nlohmann::json& params,
-                             const std::map<std::string, std::string>& headers) {
-    auto url = this->urls["api"][api].get<std::string>() + "/fapi/v1/" + path;
-    auto query = this->omit(params, this->extract_params(path));
-
-    if (api == "public") {
-        if (!query.empty()) {
-            url += "?" + this->urlencode(query);
-        }
-    } else {
-        this->check_required_credentials();
-        query["timestamp"] = std::to_string(this->nonce());
-        auto queryString = this->urlencode(this->keysort(query));
-        auto signature = this->hmac(queryString, this->secret);
-        url += "?" + queryString + "&signature=" + signature;
-        
-        auto new_headers = headers;
-        new_headers["X-MBX-APIKEY"] = this->apiKey;
-    }
-
-    return url;
+json BinanceUSDM::fetchOrderImpl(const std::string& id, const std::string& symbol, const json& params) const {
+    return Binance::fetchOrderImpl(id, symbol, params);
 }
 
-std::string BinanceUsdm::get_settlement_currency() {
-    return "USDT";  // USD-M futures always settle in USDT
+json BinanceUSDM::fetchOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                               const std::optional<int>& limit, const json& params) const {
+    return Binance::fetchOrdersImpl(symbol, since, limit, params);
+}
+
+json BinanceUSDM::fetchOpenOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                                  const std::optional<int>& limit, const json& params) const {
+    return Binance::fetchOpenOrdersImpl(symbol, since, limit, params);
+}
+
+json BinanceUSDM::fetchClosedOrdersImpl(const std::string& symbol, const std::optional<long long>& since,
+                                    const std::optional<int>& limit, const json& params) const {
+    return Binance::fetchClosedOrdersImpl(symbol, since, limit, params);
+}
+
+json BinanceUSDM::fetchPositionsImpl(const std::vector<std::string>& symbols) const {
+    return Binance::fetchPositionsImpl(symbols);
+}
+
+json BinanceUSDM::fetchPositionRiskImpl(const std::vector<std::string>& symbols) const {
+    return Binance::fetchPositionRiskImpl(symbols);
+}
+
+json BinanceUSDM::setLeverageImpl(int leverage, const std::string& symbol) {
+    return Binance::setLeverageImpl(leverage, symbol);
+}
+
+json BinanceUSDM::setMarginModeImpl(const std::string& marginMode, const std::string& symbol) {
+    return Binance::setMarginModeImpl(marginMode, symbol);
+}
+
+json BinanceUSDM::setPositionModeImpl(bool hedged) {
+    return Binance::setPositionModeImpl(hedged);
+}
+
+std::string BinanceUSDM::sign(const std::string& path, const std::string& api,
+                           const std::string& method, const json& params,
+                           const std::map<std::string, std::string>& headers,
+                           const json& body) const {
+    return Binance::sign(path, api, method, params, headers, body);
+}
+
+json BinanceUSDM::parseTrade(const json& trade, const Market& market) const {
+    return Binance::parseTrade(trade, market);
+}
+
+json BinanceUSDM::parseOrder(const json& order, const Market& market) const {
+    return Binance::parseOrder(order, market);
+}
+
+json BinanceUSDM::parseTicker(const json& ticker, const Market& market) const {
+    return Binance::parseTicker(ticker, market);
+}
+
+json BinanceUSDM::parseOHLCV(const json& ohlcv, const Market& market, const std::string& timeframe) const {
+    return Binance::parseOHLCV(ohlcv, market, timeframe);
+}
+
+json BinanceUSDM::parseFundingRate(const json& fundingRate, const Market& market) const {
+    return Binance::parseFundingRate(fundingRate, market);
+}
+
+json BinanceUSDM::parsePosition(const json& position, const Market& market) const {
+    return Binance::parsePosition(position, market);
+}
+
+json BinanceUSDM::parseLeverageBrackets(const json& response, const Market& market) const {
+    return Binance::parseLeverageBrackets(response, market);
 }
 
 } // namespace ccxt

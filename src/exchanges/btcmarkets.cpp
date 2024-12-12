@@ -11,14 +11,12 @@ const std::string btcmarkets::defaultVersion = "v3";
 const int btcmarkets::defaultRateLimit = 1000;
 const bool btcmarkets::defaultPro = false;
 
-ExchangeRegistry::Factory btcmarkets::factory("btcmarkets", btcmarkets::createInstance);
-
-btcmarkets::btcmarkets(const Config& config) : ExchangeImpl(config) {
+btcmarkets::btcmarkets(const Config& config) : Exchange(config) {
     init();
 }
 
 void btcmarkets::init() {
-    ExchangeImpl::init();
+    
     
     // Set exchange properties
     this->id = "btcmarkets";
