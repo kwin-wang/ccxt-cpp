@@ -5,8 +5,9 @@
 #include <vector>
 #include <optional>
 #include <nlohmann/json.hpp>
-#include "types.h"
-#include "config.h"
+#include "ccxt/base/types.h"
+#include "ccxt/base/config.h"
+#include <boost/asio.hpp>
 
 namespace ccxt {
 
@@ -15,7 +16,7 @@ using String = std::string;
 
 class ExchangeBase {
 public:
-    ExchangeBase(const Config& config = Config()) : config(config) {}
+    ExchangeBase( boost::asio::io_context& context, const Config& config = Config()) : config_(config), context_(context) {}
     virtual ~ExchangeBase() = default;
 
     // Basic exchange properties
@@ -30,9 +31,13 @@ public:
     std::map<std::string, std::optional<bool>> has;
     std::map<std::string, std::string> timeframes;
     long long lastRestRequestTimestamp;
+    std::map<std::string, Market> markets;
+    std::map<std::string, Market> markets_by_id;
 
 protected:
-    Config config;
+    Config config_;
+    boost::asio::io_context& context_;
+    
 };
 
 } // namespace ccxt

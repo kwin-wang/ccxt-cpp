@@ -25,13 +25,13 @@ public:
     Json fetchTrades(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) override;
 
     // Async Market Data
-    std::future<Json> fetchMarketsAsync(const Json& params = Json::object()) const;
-    std::future<Json> fetchCurrenciesAsync(const Json& params = Json::object()) const;
-    std::future<Json> fetchTickerAsync(const std::string& symbol, const Json& params = Json::object()) const;
-    std::future<Json> fetchTickersAsync(const std::vector<std::string>& symbols = {}, const Json& params = Json::object()) const;
-    std::future<Json> fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
-    std::future<Json> fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
-    std::future<Json> fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchMarketsAsync(const Json& params = Json::object()) const;
+    AsyncPullType fetchCurrenciesAsync(const Json& params = Json::object()) const;
+    AsyncPullType fetchTickerAsync(const std::string& symbol, const Json& params = Json::object()) const;
+    AsyncPullType fetchTickersAsync(const std::vector<std::string>& symbols = {}, const Json& params = Json::object()) const;
+    AsyncPullType fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
 
     // Sync Trading
     Json createOrder(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt, const Json& params = Json::object()) override;
@@ -42,12 +42,12 @@ public:
     Json fetchMyTrades(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const override;
 
     // Async Trading
-    std::future<Json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt, const Json& params = Json::object());
-    std::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol, const Json& params = Json::object());
-    std::future<Json> fetchOrderAsync(const std::string& id, const std::string& symbol, const Json& params = Json::object()) const;
-    std::future<Json> fetchOpenOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
-    std::future<Json> fetchClosedOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
-    std::future<Json> fetchMyTradesAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price = std::nullopt, const Json& params = Json::object());
+    AsyncPullType cancelOrderAsync(const std::string& id, const std::string& symbol, const Json& params = Json::object());
+    AsyncPullType fetchOrderAsync(const std::string& id, const std::string& symbol, const Json& params = Json::object()) const;
+    AsyncPullType fetchOpenOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchClosedOrdersAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchMyTradesAsync(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
 
     // Sync Account
     Json fetchBalance(const Json& params = Json::object()) override;
@@ -56,10 +56,10 @@ public:
     Json fetchWithdrawals(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const override;
 
     // Async Account
-    std::future<Json> fetchBalanceAsync(const Json& params = Json::object()) const;
-    std::future<Json> fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network = std::nullopt, const Json& params = Json::object()) const;
-    std::future<Json> fetchDepositsAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
-    std::future<Json> fetchWithdrawalsAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchBalanceAsync(const Json& params = Json::object()) const;
+    AsyncPullType fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchDepositsAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
+    AsyncPullType fetchWithdrawalsAsync(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt, const Json& params = Json::object()) const;
 
 protected:
     void init() override;

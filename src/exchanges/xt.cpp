@@ -151,7 +151,7 @@ json Xt::fetchOrderBook(const String& symbol, int limit, const json& params) {
 
 // Trading Methods
 json Xt::createOrder(const String& symbol, const String& type, const String& side, 
-                    const Number& amount, const Number& price, const json& params) {
+                    const double& amount, const double& price, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -193,8 +193,8 @@ json Xt::fetchOrder(const String& id, const String& symbol, const json& params) 
     return this->parseOrder(response, market);
 }
 
-json Xt::fetchOrders(const String& symbol, const Nullable<Integer>& since,
-                    const Nullable<Integer>& limit, const json& params) {
+json Xt::fetchOrders(const String& symbol, const long* since,
+                    const long* limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -210,14 +210,14 @@ json Xt::fetchOrders(const String& symbol, const Nullable<Integer>& since,
     return this->parseOrders(response, market, since, limit);
 }
 
-json Xt::fetchOpenOrders(const String& symbol, const Nullable<Integer>& since,
-                        const Nullable<Integer>& limit, const json& params) {
+json Xt::fetchOpenOrders(const String& symbol, const long* since,
+                        const long* limit, const json& params) {
     auto request = {{"status", "NEW"}};
     return this->fetchOrders(symbol, since, limit, this->extend(request, params));
 }
 
-json Xt::fetchClosedOrders(const String& symbol, const Nullable<Integer>& since,
-                          const Nullable<Integer>& limit, const json& params) {
+json Xt::fetchClosedOrders(const String& symbol, const long* since,
+                          const long* limit, const json& params) {
     auto request = {{"status", "FILLED"}};
     return this->fetchOrders(symbol, since, limit, this->extend(request, params));
 }
@@ -229,8 +229,8 @@ json Xt::fetchBalance(const json& params) {
     return this->parseBalance(response);
 }
 
-json Xt::fetchDeposits(const Nullable<String>& code, const Nullable<Integer>& since,
-                       const Nullable<Integer>& limit, const json& params) {
+json Xt::fetchDeposits(const Nullable<String>& code, const long* since,
+                       const long* limit, const json& params) {
     this->loadMarkets();
     auto request = {};
     auto currency = nullptr;
@@ -248,8 +248,8 @@ json Xt::fetchDeposits(const Nullable<String>& code, const Nullable<Integer>& si
     return this->parseTransactions(response, currency, since, limit, {{"type", "deposit"}});
 }
 
-json Xt::fetchWithdrawals(const Nullable<String>& code, const Nullable<Integer>& since,
-                         const Nullable<Integer>& limit, const json& params) {
+json Xt::fetchWithdrawals(const Nullable<String>& code, const long* since,
+                         const long* limit, const json& params) {
     this->loadMarkets();
     auto request = {};
     auto currency = nullptr;
@@ -268,33 +268,33 @@ json Xt::fetchWithdrawals(const Nullable<String>& code, const Nullable<Integer>&
 }
 
 // Async Methods
-std::future<json> Xt::createOrderAsync(const String& symbol, const String& type, const String& side,
-                                     const Number& amount, const Number& price, const json& params) {
+AsyncPullType Xt::createOrderAsync(const String& symbol, const String& type, const String& side,
+                                     const double& amount, const double& price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-std::future<json> Xt::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Xt::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-std::future<json> Xt::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Xt::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-std::future<json> Xt::fetchOrdersAsync(const String& symbol, const Nullable<Integer>& since,
-                                     const Nullable<Integer>& limit, const json& params) {
+AsyncPullType Xt::fetchOrdersAsync(const String& symbol, const long* since,
+                                     const long* limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-std::future<json> Xt::fetchBalanceAsync(const json& params) {
+AsyncPullType Xt::fetchBalanceAsync(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return this->fetchBalance(params);
     });

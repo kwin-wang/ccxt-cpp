@@ -85,44 +85,44 @@ Json idex::describeImpl() const {
 }
 
 // Async Market Data Methods
-std::future<Json> idex::fetchMarketsAsync() const {
+AsyncPullType idex::fetchMarketsAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchMarketsImpl();
     });
 }
 
-std::future<Json> idex::fetchCurrenciesAsync() const {
+AsyncPullType idex::fetchCurrenciesAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchCurrenciesImpl();
     });
 }
 
-std::future<Json> idex::fetchTickerAsync(const std::string& symbol) const {
+AsyncPullType idex::fetchTickerAsync(const std::string& symbol) const {
     return std::async(std::launch::async, [this, symbol]() {
         return this->fetchTickerImpl(symbol);
     });
 }
 
-std::future<Json> idex::fetchTickersAsync(const std::vector<std::string>& symbols) const {
+AsyncPullType idex::fetchTickersAsync(const std::vector<std::string>& symbols) const {
     return std::async(std::launch::async, [this, symbols]() {
         return this->fetchTickersImpl(symbols);
     });
 }
 
-std::future<Json> idex::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit) const {
+AsyncPullType idex::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, limit]() {
         return this->fetchOrderBookImpl(symbol, limit);
     });
 }
 
-std::future<Json> idex::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
+AsyncPullType idex::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                       const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit]() {
         return this->fetchOHLCVImpl(symbol, timeframe, since, limit);
     });
 }
 
-std::future<Json> idex::fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since,
+AsyncPullType idex::fetchTradesAsync(const std::string& symbol, const std::optional<long long>& since,
                                        const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchTradesImpl(symbol, since, limit);
@@ -130,40 +130,40 @@ std::future<Json> idex::fetchTradesAsync(const std::string& symbol, const std::o
 }
 
 // Async Trading Methods
-std::future<Json> idex::createOrderAsync(const std::string& symbol, const std::string& type,
+AsyncPullType idex::createOrderAsync(const std::string& symbol, const std::string& type,
                                        const std::string& side, double amount, const std::optional<double>& price) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price]() {
         return this->createOrderImpl(symbol, type, side, amount, price);
     });
 }
 
-std::future<Json> idex::cancelOrderAsync(const std::string& id, const std::string& symbol) {
+AsyncPullType idex::cancelOrderAsync(const std::string& id, const std::string& symbol) {
     return std::async(std::launch::async, [this, id, symbol]() {
         return this->cancelOrderImpl(id, symbol);
     });
 }
 
-std::future<Json> idex::fetchOrderAsync(const std::string& id, const std::string& symbol) const {
+AsyncPullType idex::fetchOrderAsync(const std::string& id, const std::string& symbol) const {
     return std::async(std::launch::async, [this, id, symbol]() {
         return this->fetchOrderImpl(id, symbol);
     });
 }
 
-std::future<Json> idex::fetchOpenOrdersAsync(const std::string& symbol, const std::optional<long long>& since,
+AsyncPullType idex::fetchOpenOrdersAsync(const std::string& symbol, const std::optional<long long>& since,
                                            const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchOpenOrdersImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> idex::fetchClosedOrdersAsync(const std::string& symbol, const std::optional<long long>& since,
+AsyncPullType idex::fetchClosedOrdersAsync(const std::string& symbol, const std::optional<long long>& since,
                                              const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchClosedOrdersImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> idex::fetchMyTradesAsync(const std::string& symbol, const std::optional<long long>& since,
+AsyncPullType idex::fetchMyTradesAsync(const std::string& symbol, const std::optional<long long>& since,
                                          const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchMyTradesImpl(symbol, since, limit);
@@ -171,26 +171,26 @@ std::future<Json> idex::fetchMyTradesAsync(const std::string& symbol, const std:
 }
 
 // Async Account Methods
-std::future<Json> idex::fetchBalanceAsync() const {
+AsyncPullType idex::fetchBalanceAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchBalanceImpl();
     });
 }
 
-std::future<Json> idex::fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network) const {
+AsyncPullType idex::fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network) const {
     return std::async(std::launch::async, [this, code, network]() {
         return this->fetchDepositAddressImpl(code, network);
     });
 }
 
-std::future<Json> idex::fetchDepositsAsync(const std::optional<std::string>& code, const std::optional<long long>& since,
+AsyncPullType idex::fetchDepositsAsync(const std::optional<std::string>& code, const std::optional<long long>& since,
                                          const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, code, since, limit]() {
         return this->fetchDepositsImpl(code, since, limit);
     });
 }
 
-std::future<Json> idex::fetchWithdrawalsAsync(const std::optional<std::string>& code, const std::optional<long long>& since,
+AsyncPullType idex::fetchWithdrawalsAsync(const std::optional<std::string>& code, const std::optional<long long>& since,
                                            const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, code, since, limit]() {
         return this->fetchWithdrawalsImpl(code, since, limit);

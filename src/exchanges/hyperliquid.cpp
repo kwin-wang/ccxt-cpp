@@ -139,50 +139,50 @@ void hyperliquid::handleErrors(const std::string& code, const std::string& reaso
 }
 
 // Async implementations
-std::future<Json> hyperliquid::fetchMarketsAsync(const Json& params) {
+AsyncPullType hyperliquid::fetchMarketsAsync(const Json& params) {
     return std::async(std::launch::async, [this, params]() {
         return this->fetchMarkets(params);
     });
 }
 
-std::future<Json> hyperliquid::fetchTickerAsync(const std::string& symbol, const Json& params) {
+AsyncPullType hyperliquid::fetchTickerAsync(const std::string& symbol, const Json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchTickersAsync(const std::vector<std::string>& symbols, const Json& params) {
+AsyncPullType hyperliquid::fetchTickersAsync(const std::vector<std::string>& symbols, const Json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchOrderBookAsync(const std::string& symbol, int limit, const Json& params) {
+AsyncPullType hyperliquid::fetchOrderBookAsync(const std::string& symbol, int limit, const Json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchTradesAsync(const std::string& symbol, int since, int limit, const Json& params) {
+AsyncPullType hyperliquid::fetchTradesAsync(const std::string& symbol, int since, int limit, const Json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
+AsyncPullType hyperliquid::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                               int since, int limit, const Json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchBalanceAsync(const Json& params) {
+AsyncPullType hyperliquid::fetchBalanceAsync(const Json& params) {
     return std::async(std::launch::async, [this, params]() {
         return this->fetchBalance(params);
     });
 }
 
-std::future<Json> hyperliquid::createOrderAsync(const std::string& symbol, const std::string& type,
+AsyncPullType hyperliquid::createOrderAsync(const std::string& symbol, const std::string& type,
                                               const std::string& side, double amount,
                                               double price, const Json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
@@ -190,37 +190,37 @@ std::future<Json> hyperliquid::createOrderAsync(const std::string& symbol, const
     });
 }
 
-std::future<Json> hyperliquid::cancelOrderAsync(const std::string& id, const std::string& symbol, const Json& params) {
+AsyncPullType hyperliquid::cancelOrderAsync(const std::string& id, const std::string& symbol, const Json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchOrderAsync(const std::string& id, const std::string& symbol, const Json& params) {
+AsyncPullType hyperliquid::fetchOrderAsync(const std::string& id, const std::string& symbol, const Json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchOrdersAsync(const std::string& symbol, int since, int limit, const Json& params) {
+AsyncPullType hyperliquid::fetchOrdersAsync(const std::string& symbol, int since, int limit, const Json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const Json& params) {
+AsyncPullType hyperliquid::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const Json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const Json& params) {
+AsyncPullType hyperliquid::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const Json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
-std::future<Json> hyperliquid::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const Json& params) {
+AsyncPullType hyperliquid::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const Json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchMyTrades(symbol, since, limit, params);
     });

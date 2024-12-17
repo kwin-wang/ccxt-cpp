@@ -415,7 +415,7 @@ String MixCoin::sign(const String& path, const String& api,
 
 // Async Methods Implementation
 #define IMPLEMENT_ASYNC_METHOD(name, ...) \
-    std::future<json> MixCoin::async##name(__VA_ARGS__) { \
+    AsyncPullType MixCoin::async##name(__VA_ARGS__) { \
         return std::async(std::launch::async, [this](auto... params) { \
             return this->name(params...); \
         }, __VA_ARGS__); \

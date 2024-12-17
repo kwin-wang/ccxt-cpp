@@ -19,11 +19,11 @@ public:
                    int since = 0, int limit = 0);
 
     // Market Data Async
-    std::future<json> fetch_markets_async() override;
-    std::future<json> fetch_ticker_async(const std::string& symbol);
-    std::future<json> fetch_order_book_async(const std::string& symbol, int limit = 0);
-    std::future<json> fetch_trades_async(const std::string& symbol, int since = 0, int limit = 0);
-    std::future<json> fetch_ohlcv_async(const std::string& symbol,
+    AsyncPullType fetch_markets_async() override;
+    AsyncPullType fetch_ticker_async(const std::string& symbol);
+    AsyncPullType fetch_order_book_async(const std::string& symbol, int limit = 0);
+    AsyncPullType fetch_trades_async(const std::string& symbol, int since = 0, int limit = 0);
+    AsyncPullType fetch_ohlcv_async(const std::string& symbol,
                                      const std::string& timeframe = "1m",
                                      int since = 0,
                                      int limit = 0);
@@ -41,16 +41,16 @@ public:
     json fetch_my_trades(const std::string& symbol = "", int since = 0, int limit = 0);
 
     // Trading Async
-    std::future<json> create_order_async(const std::string& symbol, const std::string& type,
+    AsyncPullType create_order_async(const std::string& symbol, const std::string& type,
                                      const std::string& side, double amount,
                                      double price = 0);
-    std::future<json> cancel_order_async(const std::string& id, const std::string& symbol = "");
-    std::future<json> cancel_all_orders_async(const std::string& symbol = "");
-    std::future<json> fetch_order_async(const std::string& id, const std::string& symbol = "");
-    std::future<json> fetch_orders_async(const std::string& symbol = "", int since = 0, int limit = 0);
-    std::future<json> fetch_open_orders_async(const std::string& symbol = "", int since = 0, int limit = 0);
-    std::future<json> fetch_closed_orders_async(const std::string& symbol = "", int since = 0, int limit = 0);
-    std::future<json> fetch_my_trades_async(const std::string& symbol = "", int since = 0, int limit = 0);
+    AsyncPullType cancel_order_async(const std::string& id, const std::string& symbol = "");
+    AsyncPullType cancel_all_orders_async(const std::string& symbol = "");
+    AsyncPullType fetch_order_async(const std::string& id, const std::string& symbol = "");
+    AsyncPullType fetch_orders_async(const std::string& symbol = "", int since = 0, int limit = 0);
+    AsyncPullType fetch_open_orders_async(const std::string& symbol = "", int since = 0, int limit = 0);
+    AsyncPullType fetch_closed_orders_async(const std::string& symbol = "", int since = 0, int limit = 0);
+    AsyncPullType fetch_my_trades_async(const std::string& symbol = "", int since = 0, int limit = 0);
 
     // Account
     json fetch_balance();
@@ -61,11 +61,11 @@ public:
                 const std::string& tag = "", const json& params = json::object());
 
     // Account Async
-    std::future<json> fetch_balance_async();
-    std::future<json> fetch_deposit_address_async(const std::string& code);
-    std::future<json> fetch_deposits_async(const std::string& code = "", int since = 0, int limit = 0);
-    std::future<json> fetch_withdrawals_async(const std::string& code = "", int since = 0, int limit = 0);
-    std::future<json> withdraw_async(const std::string& code,
+    AsyncPullType fetch_balance_async();
+    AsyncPullType fetch_deposit_address_async(const std::string& code);
+    AsyncPullType fetch_deposits_async(const std::string& code = "", int since = 0, int limit = 0);
+    AsyncPullType fetch_withdrawals_async(const std::string& code = "", int since = 0, int limit = 0);
+    AsyncPullType withdraw_async(const std::string& code,
                                  double amount,
                                  const std::string& address,
                                  const std::string& tag = "",
@@ -80,16 +80,16 @@ public:
     json repay_margin(const std::string& code, double amount, const std::string& symbol = "");
 
     // Margin Trading Async
-    std::future<json> fetch_margin_balance_async();
-    std::future<json> create_margin_order_async(const std::string& symbol,
+    AsyncPullType fetch_margin_balance_async();
+    AsyncPullType create_margin_order_async(const std::string& symbol,
                                             const std::string& type,
                                             const std::string& side,
                                             double amount,
                                             double price = 0);
-    std::future<json> borrow_margin_async(const std::string& code,
+    AsyncPullType borrow_margin_async(const std::string& code,
                                       double amount,
                                       const std::string& symbol = "");
-    std::future<json> repay_margin_async(const std::string& code,
+    AsyncPullType repay_margin_async(const std::string& code,
                                      double amount,
                                      const std::string& symbol = "");
 
@@ -99,7 +99,7 @@ protected:
                    const std::map<std::string, std::string>& headers = {}) override;
 
     // Async HTTP methods
-    std::future<json> fetch_async(const std::string& url,
+    AsyncPullType fetch_async(const std::string& url,
                                const std::string& method = "GET",
                                const std::map<std::string, std::string>& headers = {},
                                const std::string& body = "") override;

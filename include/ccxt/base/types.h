@@ -9,6 +9,7 @@ namespace ccxt {
 
 using json = nlohmann::json;
 using String = std::string;
+using AsyncPullType = boost::coroutines2::coroutine<json>::pull_type;
 
 struct Fee {
     String type;

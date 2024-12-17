@@ -11,7 +11,6 @@ HitBTC::HitBTC() {
     this->id = "hitbtc";
     this->name = "HitBTC";
     this->countries = {"HK"};  // Hong Kong
-    this->version = "3";
     this->rateLimit = 3.333;  // 300 requests per second for trading
     this->has = {
         {"CORS", false},
@@ -54,18 +53,23 @@ HitBTC::HitBTC() {
         {"1M", "1M"}
     };
 
+    this->options = {
+        {"version", "3"} // 1, 2, or 3
+    };
+
     this->urls = {
         {"logo", "https://user-images.githubusercontent.com/1294454/27766555-8eaec20e-5edc-11e7-9c5b-6dc69fc42f5e.jpg"},
         {"api", {
-            {"public", "https://api.hitbtc.com/api/3/public"},
-            {"private", "https://api.hitbtc.com/api/3"},
-            {"spot", "https://api.hitbtc.com/api/3/spot"},
-            {"margin", "https://api.hitbtc.com/api/3/margin"},
-            {"futures", "https://api.hitbtc.com/api/3/futures"}
+            {"v1", "https://api.hitbtc.com"},
+            {"v2", "https://api.hitbtc.com/api/2"},
+            {"v3", "https://api.hitbtc.com/api/3"}
         }},
         {"www", "https://hitbtc.com"},
-        {"doc", {"https://api.hitbtc.com"}},
-        {"fees", {"https://hitbtc.com/fees-and-limits"}}
+        {"doc", {
+            "https://api.hitbtc.com",
+            "https://api.hitbtc.com/v2",
+            "https://api.hitbtc.com/v3"
+        }}
     };
 
     this->api = {
@@ -123,6 +127,23 @@ HitBTC::HitBTC() {
             }}
         }}
     };
+}
+
+std::string HitBTC::getApiVersion() {
+    return this->safeString(this->options, "version", "3");
+}
+
+std::string HitBTC::getEndpoint(const std::string& path) {
+    auto version = this->getApiVersion();
+    auto urls = this->urls["api"];
+    
+    if (version == "1") {
+        return urls["v1"] + path;
+    } else if (version == "2") {
+        return urls["v2"] + path;
+    } else {
+        return urls["v3"] + path;
+    }
 }
 
 nlohmann::json HitBTC::fetch_markets() {
@@ -204,7 +225,7 @@ nlohmann::json HitBTC::fetch_balance() {
 std::string HitBTC::sign(const std::string& path, const std::string& api,
                         const std::string& method, const nlohmann::json& params,
                         const std::map<std::string, std::string>& headers) {
-    auto url = this->urls["api"][api].get<std::string>() + "/" + this->implode_params(path, params);
+    auto url = this->getEndpoint(path);
     auto query = this->omit(params, this->extract_params(path));
 
     if (api == "private") {

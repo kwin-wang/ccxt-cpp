@@ -28,12 +28,12 @@ protected:
     Json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
 
     // Async Market Data
-    std::future<Json> fetchMarketsAsync() const;
-    std::future<Json> fetchCurrenciesAsync() const;
-    std::future<Json> fetchTickerAsync(const std::string& symbol) const;
-    std::future<Json> fetchTickersAsync(const std::vector<std::string>& symbols = {}) const;
-    std::future<Json> fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
-    std::future<Json> fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
+    AsyncPullType fetchMarketsAsync() const;
+    AsyncPullType fetchCurrenciesAsync() const;
+    AsyncPullType fetchTickerAsync(const std::string& symbol) const;
+    AsyncPullType fetchTickersAsync(const std::vector<std::string>& symbols = {}) const;
+    AsyncPullType fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const;
+    AsyncPullType fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                      const std::optional<long long>& since = std::nullopt,
                                      const std::optional<int>& limit = std::nullopt) const;
 
@@ -46,18 +46,18 @@ protected:
     Json fetchMyTradesImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
 
     // Async Trading
-    std::future<Json> createOrderAsync(const std::string& symbol, const std::string& type,
+    AsyncPullType createOrderAsync(const std::string& symbol, const std::string& type,
                                      const std::string& side, double amount,
                                      const std::optional<double>& price = std::nullopt);
-    std::future<Json> cancelOrderAsync(const std::string& id, const std::string& symbol);
-    std::future<Json> fetchOrderAsync(const std::string& id, const std::string& symbol) const;
-    std::future<Json> fetchOpenOrdersAsync(const std::string& symbol = "",
+    AsyncPullType cancelOrderAsync(const std::string& id, const std::string& symbol);
+    AsyncPullType fetchOrderAsync(const std::string& id, const std::string& symbol) const;
+    AsyncPullType fetchOpenOrdersAsync(const std::string& symbol = "",
                                          const std::optional<long long>& since = std::nullopt,
                                          const std::optional<int>& limit = std::nullopt) const;
-    std::future<Json> fetchClosedOrdersAsync(const std::string& symbol = "",
+    AsyncPullType fetchClosedOrdersAsync(const std::string& symbol = "",
                                            const std::optional<long long>& since = std::nullopt,
                                            const std::optional<int>& limit = std::nullopt) const;
-    std::future<Json> fetchMyTradesAsync(const std::string& symbol = "",
+    AsyncPullType fetchMyTradesAsync(const std::string& symbol = "",
                                         const std::optional<long long>& since = std::nullopt,
                                         const std::optional<int>& limit = std::nullopt) const;
 
@@ -68,13 +68,13 @@ protected:
     Json fetchWithdrawalsImpl(const std::optional<std::string>& code = std::nullopt, const std::optional<long long>& since = std::nullopt, const std::optional<int>& limit = std::nullopt) const override;
 
     // Async Account
-    std::future<Json> fetchBalanceAsync() const;
-    std::future<Json> fetchDepositAddressAsync(const std::string& code,
+    AsyncPullType fetchBalanceAsync() const;
+    AsyncPullType fetchDepositAddressAsync(const std::string& code,
                                              const std::optional<std::string>& network = std::nullopt) const;
-    std::future<Json> fetchDepositsAsync(const std::optional<std::string>& code = std::nullopt,
+    AsyncPullType fetchDepositsAsync(const std::optional<std::string>& code = std::nullopt,
                                         const std::optional<long long>& since = std::nullopt,
                                         const std::optional<int>& limit = std::nullopt) const;
-    std::future<Json> fetchWithdrawalsAsync(const std::optional<std::string>& code = std::nullopt,
+    AsyncPullType fetchWithdrawalsAsync(const std::optional<std::string>& code = std::nullopt,
                                           const std::optional<long long>& since = std::nullopt,
                                           const std::optional<int>& limit = std::nullopt) const;
 

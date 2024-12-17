@@ -487,29 +487,29 @@ void poloniexfutures::handleErrors(const std::string& code, const std::string& r
 }
 
 // Async implementations for market data
-std::future<Json> poloniexfutures::fetchMarketsAsync() const {
+AsyncPullType poloniexfutures::fetchMarketsAsync() const {
     return std::async(std::launch::async, [this]() { return fetchMarketsImpl(); });
 }
 
-std::future<Json> poloniexfutures::fetchTimeAsync() const {
+AsyncPullType poloniexfutures::fetchTimeAsync() const {
     return std::async(std::launch::async, [this]() { return fetchTimeImpl(); });
 }
 
-std::future<Json> poloniexfutures::fetchTickerAsync(const std::string& symbol) const {
+AsyncPullType poloniexfutures::fetchTickerAsync(const std::string& symbol) const {
     return std::async(std::launch::async, [this, symbol]() { return fetchTickerImpl(symbol); });
 }
 
-std::future<Json> poloniexfutures::fetchTickersAsync(const std::vector<std::string>& symbols) const {
+AsyncPullType poloniexfutures::fetchTickersAsync(const std::vector<std::string>& symbols) const {
     return std::async(std::launch::async, [this, symbols]() { return fetchTickersImpl(symbols); });
 }
 
-std::future<Json> poloniexfutures::fetchOrderBookAsync(const std::string& symbol,
+AsyncPullType poloniexfutures::fetchOrderBookAsync(const std::string& symbol,
                                                      const std::optional<int>& limit) const {
     return std::async(std::launch::async,
                      [this, symbol, limit]() { return fetchOrderBookImpl(symbol, limit); });
 }
 
-std::future<Json> poloniexfutures::fetchOHLCVAsync(const std::string& symbol,
+AsyncPullType poloniexfutures::fetchOHLCVAsync(const std::string& symbol,
                                                   const std::string& timeframe,
                                                   const std::optional<long long>& since,
                                                   const std::optional<int>& limit) const {
@@ -519,7 +519,7 @@ std::future<Json> poloniexfutures::fetchOHLCVAsync(const std::string& symbol,
                      });
 }
 
-std::future<Json> poloniexfutures::fetchTradesAsync(const std::string& symbol,
+AsyncPullType poloniexfutures::fetchTradesAsync(const std::string& symbol,
                                                    const std::optional<int>& limit,
                                                    const std::optional<long long>& since) const {
     return std::async(std::launch::async,

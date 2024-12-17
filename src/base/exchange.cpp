@@ -15,10 +15,22 @@
 #include <optional>
 #include <stdexcept>
 #include <future>
+#include <boost/beast/version.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/coroutine2/coroutine.hpp>
+
 
 namespace ccxt {
 
-Exchange::Exchange(const Config& config) : config_(config), rateLimit(2000), pro(false), certified(false), lastRestRequestTimestamp(0) {
+Exchange::Exchange(boost::asio::io_context& context, const Config& config) : ExchangeBase(context, config) {
+    rateLimit= 2000;
+    pro = false;
+    certified = false;
+    lastRestRequestTimestamp = 0;
     init();
 }
 
@@ -28,6 +40,47 @@ void Exchange::init() {
 
 json Exchange::describe() const {
     return json::object();
+}
+
+AsyncPullType Exchange::performHttpRequest(const std::string& host, const std::string& target, const std::string& method) {
+            return AsyncPullType(
+            [this, host, target, method](boost::coroutines2::coroutine<json>::push_type& yield) {
+                try {
+                    boost::asio::ip::tcp::resolver resolver(context_);
+                    boost::beast::tcp_stream stream(context_);
+
+                    auto const results = resolver.resolve(host, "443");
+                    stream.connect(results);
+
+                    boost::beast::http::request<boost::beast::http::string_body> req{
+                        boost::beast::http::string_to_verb(method), target, 11};
+                    req.set(boost::beast::http::field::host, host);
+                    req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+                    boost::beast::http::write(stream, req);
+
+                    boost::beast::flat_buffer buffer;
+                    boost::beast::http::response<boost::beast::http::dynamic_body> res;
+
+                    boost::beast::http::read(stream, buffer, res);
+
+                    auto body = boost::beast::buffers_to_string(res.body().data());
+                    json response = json::parse(body);
+
+                    yield(response);
+
+                    boost::beast::error_code ec;
+                    stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+
+                    if (ec && ec != boost::beast::errc::not_connected)
+                        throw boost::beast::system_error{ec};
+
+                } catch (const std::exception& e) {
+                    // Handle exceptions
+                    throw;
+                }
+            });
+           
 }
 
 // Synchronous REST API methods
@@ -86,84 +139,188 @@ json Exchange::fetchClosedOrders(const String& symbol, int since, int limit, con
 }
 
 // Asynchronous REST API methods
-std::future<json> Exchange::fetchMarketsAsync(const json& params) {
-    return std::async(std::launch::deferred, [this, params]() { 
-        return this->fetchMarkets(params); 
-    });
+AsyncPullType Exchange::fetchMarketsAsync(const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchTickerAsync(const String& symbol, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, params]() {
-        return this->fetchTicker(symbol, params);
-    });
+AsyncPullType Exchange::fetchTickerAsync(const String& symbol, const json& params) {
+    return AsyncPullType(
+        [this, symbol, params](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
-    return std::async(std::launch::deferred, [this, symbols, params]() {
-        return this->fetchTickers(symbols, params);
-    });
+AsyncPullType Exchange::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, limit, params]() {
-        return this->fetchOrderBook(symbol, limit, params);
-    });
+AsyncPullType Exchange::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
-        return this->fetchTrades(symbol, since, limit, params);
-    });
+AsyncPullType Exchange::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+AsyncPullType Exchange::fetchOHLCVAsync(const String& symbol, const String& timeframe,
                                          int since, int limit, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, timeframe, since, limit, params]() {
-        return this->fetchOHLCV(symbol, timeframe, since, limit, params);
-    });
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchBalanceAsync(const json& params) {
-    return std::async(std::launch::deferred, [this, params]() {
-        return this->fetchBalance(params);
-    });
+AsyncPullType Exchange::fetchBalanceAsync(const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::createOrderAsync(const String& symbol, const String& type, const String& side,
+AsyncPullType Exchange::createOrderAsync(const String& symbol, const String& type, const String& side,
                                          double amount, double price, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, type, side, amount, price, params]() {
-        return this->createOrder(symbol, type, side, amount, price, params);
-    });
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
-    return std::async(std::launch::deferred, [this, id, symbol, params]() {
-        return this->cancelOrder(id, symbol, params);
-    });
+AsyncPullType Exchange::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
-    return std::async(std::launch::deferred, [this, id, symbol, params]() {
-        return this->fetchOrder(id, symbol, params);
-    });
+AsyncPullType Exchange::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
-        return this->fetchOrders(symbol, since, limit, params);
-    });
+AsyncPullType Exchange::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+    return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
-        return this->fetchOpenOrders(symbol, since, limit, params);
-    });
+AsyncPullType Exchange::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+     return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
-std::future<json> Exchange::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
-    return std::async(std::launch::deferred, [this, symbol, since, limit, params]() {
-        return this->fetchClosedOrders(symbol, since, limit, params);
-    });
+AsyncPullType Exchange::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+   return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
 // HTTP methods
@@ -173,12 +330,20 @@ json Exchange::fetch(const String& url, const String& method,
     return json::object();
 }
 
-std::future<json> Exchange::fetchAsync(const String& url, const String& method,
+AsyncPullType Exchange::fetchAsync(const String& url, const String& method,
                                    const std::map<String, String>& headers,
                                    const String& body) {
-    return std::async(std::launch::deferred, [this, url, method, headers, body]() {
-        return this->fetch(url, method, headers, body);
-    });
+     return AsyncPullType(
+        [this](boost::coroutines2::coroutine<json>::push_type& yield) {
+            try {
+                // Call the synchronous fetchOrder method
+                
+                yield(json::object()); // Yield the result to the caller
+            } catch (const std::exception& e) {
+                // Handle exceptions and yield an error response if needed
+                throw; // or yield an error response
+            }
+        });
 }
 
 // Utility methods

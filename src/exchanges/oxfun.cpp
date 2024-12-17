@@ -185,97 +185,97 @@ void oxfun::handleErrors(const std::string& code, const std::string& reason, con
     // Implementation for handling errors
 }
 
-std::future<Json> oxfun::fetchMarketsAsync() const {
+AsyncPullType oxfun::fetchMarketsAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchMarketsImpl();
     });
 }
 
-std::future<Json> oxfun::fetchCurrenciesAsync() const {
+AsyncPullType oxfun::fetchCurrenciesAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchCurrenciesImpl();
     });
 }
 
-std::future<Json> oxfun::fetchTickerAsync(const std::string& symbol) const {
+AsyncPullType oxfun::fetchTickerAsync(const std::string& symbol) const {
     return std::async(std::launch::async, [this, symbol]() {
         return this->fetchTickerImpl(symbol);
     });
 }
 
-std::future<Json> oxfun::fetchTickersAsync(const std::vector<std::string>& symbols) const {
+AsyncPullType oxfun::fetchTickersAsync(const std::vector<std::string>& symbols) const {
     return std::async(std::launch::async, [this, symbols]() {
         return this->fetchTickersImpl(symbols);
     });
 }
 
-std::future<Json> oxfun::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit) const {
+AsyncPullType oxfun::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, limit]() {
         return this->fetchOrderBookImpl(symbol, limit);
     });
 }
 
-std::future<Json> oxfun::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType oxfun::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit]() {
         return this->fetchOHLCVImpl(symbol, timeframe, since, limit);
     });
 }
 
-std::future<Json> oxfun::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price) {
+AsyncPullType oxfun::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price]() {
         return this->createOrderImpl(symbol, type, side, amount, price);
     });
 }
 
-std::future<Json> oxfun::cancelOrderAsync(const std::string& id, const std::string& symbol) {
+AsyncPullType oxfun::cancelOrderAsync(const std::string& id, const std::string& symbol) {
     return std::async(std::launch::async, [this, id, symbol]() {
         return this->cancelOrderImpl(id, symbol);
     });
 }
 
-std::future<Json> oxfun::fetchOrderAsync(const std::string& id, const std::string& symbol) const {
+AsyncPullType oxfun::fetchOrderAsync(const std::string& id, const std::string& symbol) const {
     return std::async(std::launch::async, [this, id, symbol]() {
         return this->fetchOrderImpl(id, symbol);
     });
 }
 
-std::future<Json> oxfun::fetchOpenOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType oxfun::fetchOpenOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchOpenOrdersImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> oxfun::fetchClosedOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType oxfun::fetchClosedOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchClosedOrdersImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> oxfun::fetchMyTradesAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType oxfun::fetchMyTradesAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchMyTradesImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> oxfun::fetchBalanceAsync() const {
+AsyncPullType oxfun::fetchBalanceAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchBalanceImpl();
     });
 }
 
-std::future<Json> oxfun::fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network) const {
+AsyncPullType oxfun::fetchDepositAddressAsync(const std::string& code, const std::optional<std::string>& network) const {
     return std::async(std::launch::async, [this, code, network]() {
         return this->fetchDepositAddressImpl(code, network);
     });
 }
 
-std::future<Json> oxfun::fetchDepositsAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType oxfun::fetchDepositsAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, code, since, limit]() {
         return this->fetchDepositsImpl(code, since, limit);
     });
 }
 
-std::future<Json> oxfun::fetchWithdrawalsAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType oxfun::fetchWithdrawalsAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, code, since, limit]() {
         return this->fetchWithdrawalsImpl(code, since, limit);
     });

@@ -320,31 +320,31 @@ json Woo::fetchTrades(const String& symbol, int since, int limit, const json& pa
 }
 
 // Market Data Methods - Async
-std::future<json> Woo::fetchMarketsAsync(const json& params) {
+AsyncPullType Woo::fetchMarketsAsync(const json& params) {
     return async(&Woo::fetchMarkets, params);
 }
 
-std::future<json> Woo::fetchCurrenciesAsync(const json& params) {
+AsyncPullType Woo::fetchCurrenciesAsync(const json& params) {
     return async(&Woo::fetchCurrencies, params);
 }
 
-std::future<json> Woo::fetchTimeAsync(const json& params) {
+AsyncPullType Woo::fetchTimeAsync(const json& params) {
     return async(&Woo::fetchTime, params);
 }
 
-std::future<json> Woo::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType Woo::fetchTickerAsync(const String& symbol, const json& params) {
     return async(&Woo::fetchTicker, symbol, params);
 }
 
-std::future<json> Woo::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Woo::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
     return async(&Woo::fetchTickers, symbols, params);
 }
 
-std::future<json> Woo::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+AsyncPullType Woo::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
     return async(&Woo::fetchOrderBook, symbol, limit, params);
 }
 
-std::future<json> Woo::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Woo::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
     return async(&Woo::fetchTrades, symbol, since, limit, params);
 }
 
@@ -436,29 +436,29 @@ json Woo::fetchWithdrawals(const String& code, int since, int limit, const json&
 }
 
 // Account Methods - Async
-std::future<json> Woo::fetchAccountsAsync(const json& params) {
+AsyncPullType Woo::fetchAccountsAsync(const json& params) {
     return async(&Woo::fetchAccounts, params);
 }
 
-std::future<json> Woo::fetchBalanceAsync(const json& params) {
+AsyncPullType Woo::fetchBalanceAsync(const json& params) {
     return async(&Woo::fetchBalance, params);
 }
 
-std::future<json> Woo::fetchLedgerAsync(const String& code, int since, int limit,
+AsyncPullType Woo::fetchLedgerAsync(const String& code, int since, int limit,
                                       const json& params) {
     return async(&Woo::fetchLedger, code, since, limit, params);
 }
 
-std::future<json> Woo::fetchDepositAddressAsync(const String& code, const json& params) {
+AsyncPullType Woo::fetchDepositAddressAsync(const String& code, const json& params) {
     return async(&Woo::fetchDepositAddress, code, params);
 }
 
-std::future<json> Woo::fetchDepositsAsync(const String& code, int since, int limit,
+AsyncPullType Woo::fetchDepositsAsync(const String& code, int since, int limit,
                                         const json& params) {
     return async(&Woo::fetchDeposits, code, since, limit, params);
 }
 
-std::future<json> Woo::fetchWithdrawalsAsync(const String& code, int since, int limit,
+AsyncPullType Woo::fetchWithdrawalsAsync(const String& code, int since, int limit,
                                            const json& params) {
     return async(&Woo::fetchWithdrawals, code, since, limit, params);
 }

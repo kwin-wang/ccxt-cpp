@@ -1,4 +1,4 @@
-#include "coinbase.h"
+#include "ccxt/exchanges/coinbase.h"
 #include <chrono>
 #include <sstream>
 #include <iomanip>
@@ -63,6 +63,53 @@ void Coinbase::initializeApiEndpoints() {
             }}
         }}
     };
+}
+
+void Coinbase::describe() {
+    this->set("id", "coinbase");
+    this->set("name", "Coinbase");
+    
+    // Add version and region options
+    this->set("options", {
+        {"version", "advanced"}, // basic, advanced
+        {"region", "US"}, // US, international
+        {"apiKey", nullptr},
+        {"secret", nullptr}
+    });
+
+    // Add endpoints for all versions and regions
+    this->set("urls", {
+        {"logo", "https://user-images.githubusercontent.com/1294454/40811661-b6eceae2-653a-11e8-829e-10bfadb078cf.jpg"},
+        {"api", {
+            {"basic", {
+                {"US", "https://api.coinbase.com"},
+                {"international", "https://api.coinbase.com"}
+            }},
+            {"advanced", {
+                {"US", "https://api.exchange.coinbase.com"},
+                {"international", "https://api.exchange.coinbase.com"}
+            }}
+        }},
+        {"www", "https://www.coinbase.com"},
+        {"doc", {
+            "https://docs.cloud.coinbase.com",
+            "https://docs.cloud.coinbase.com/advanced-trade-api",
+            "https://docs.cloud.coinbase.com/sign-in-with-coinbase"
+        }}
+    });
+}
+
+std::pair<String, String> Coinbase::getVersionAndRegion() {
+    auto version = this->safeString(this->options, "version", "advanced");
+    auto region = this->safeString(this->options, "region", "US");
+    return {version, region};
+}
+
+String Coinbase::getEndpoint(const String& path) {
+    auto [version, region] = this->getVersionAndRegion();
+    auto urls = this->urls["api"];
+    
+    return urls[version][region] + path;
 }
 
 json Coinbase::fetchMarkets(const json& params) {
@@ -154,7 +201,7 @@ String Coinbase::sign(const String& path, const String& api,
                      const String& method, const json& params,
                      const std::map<String, String>& headers,
                      const json& body) {
-    String url = baseUrl + path;
+    String url = getEndpoint(path);
     
     if (api == "private") {
         String timestamp = getTimestamp();

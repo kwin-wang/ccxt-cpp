@@ -377,37 +377,37 @@ json Lbank::fetchOHLCV(const String& symbol, const String& timeframe, int since,
 }
 
 // Async Market Data API Implementation
-std::future<json> Lbank::asyncFetchMarkets(const json& params) {
+AsyncPullType Lbank::asyncFetchMarkets(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchMarkets(params);
     });
 }
 
-std::future<json> Lbank::asyncFetchTicker(const String& symbol, const json& params) {
+AsyncPullType Lbank::asyncFetchTicker(const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return fetchTicker(symbol, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchTickers(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Lbank::asyncFetchTickers(const std::vector<String>& symbols, const json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return fetchTickers(symbols, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchOrderBook(const String& symbol, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOrderBook(const String& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return fetchOrderBook(symbol, limit, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchTrades(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchTrades(symbol, since, limit, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return fetchOHLCV(symbol, timeframe, since, limit, params);
     });
@@ -494,44 +494,44 @@ json Lbank::fetchClosedOrders(const String& symbol, int since, int limit, const 
 }
 
 // Async Trading API Implementation
-std::future<json> Lbank::asyncFetchBalance(const json& params) {
+AsyncPullType Lbank::asyncFetchBalance(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchBalance(params);
     });
 }
 
-std::future<json> Lbank::asyncCreateOrder(const String& symbol, const String& type, const String& side,
+AsyncPullType Lbank::asyncCreateOrder(const String& symbol, const String& type, const String& side,
                                       double amount, double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-std::future<json> Lbank::asyncCancelOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Lbank::asyncCancelOrder(const String& id, const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return cancelOrder(id, symbol, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Lbank::asyncFetchOrder(const String& id, const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return fetchOrder(id, symbol, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOrders(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOrders(symbol, since, limit, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchClosedOrders(symbol, since, limit, params);
     });
@@ -622,31 +622,31 @@ json Lbank::withdraw(const String& code, double amount, const String& address, c
 }
 
 // Async Account API Implementation
-std::future<json> Lbank::asyncFetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchMyTrades(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchMyTrades(symbol, since, limit, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchDeposits(const String& code, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchDeposits(const String& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return fetchDeposits(code, since, limit, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchWithdrawals(const String& code, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchWithdrawals(const String& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return fetchWithdrawals(code, since, limit, params);
     });
 }
 
-std::future<json> Lbank::asyncFetchDepositAddress(const String& code, const json& params) {
+AsyncPullType Lbank::asyncFetchDepositAddress(const String& code, const json& params) {
     return std::async(std::launch::async, [this, code, params]() {
         return fetchDepositAddress(code, params);
     });
 }
 
-std::future<json> Lbank::asyncWithdraw(const String& code, double amount, const String& address, const String& tag, const json& params) {
+AsyncPullType Lbank::asyncWithdraw(const String& code, double amount, const String& address, const String& tag, const json& params) {
     return std::async(std::launch::async, [this, code, amount, address, tag, params]() {
         return withdraw(code, amount, address, tag, params);
     });
@@ -686,37 +686,37 @@ json Lbank::fetchTime(const json& params) {
 }
 
 // Async Additional Features Implementation
-std::future<json> Lbank::asyncFetchCurrencies(const json& params) {
+AsyncPullType Lbank::asyncFetchCurrencies(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchCurrencies(params);
     });
 }
 
-std::future<json> Lbank::asyncFetchTradingFees(const json& params) {
+AsyncPullType Lbank::asyncFetchTradingFees(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchTradingFees(params);
     });
 }
 
-std::future<json> Lbank::asyncFetchFundingFees(const json& params) {
+AsyncPullType Lbank::asyncFetchFundingFees(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchFundingFees(params);
     });
 }
 
-std::future<json> Lbank::asyncFetchTransactionFees(const json& params) {
+AsyncPullType Lbank::asyncFetchTransactionFees(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchTransactionFees(params);
     });
 }
 
-std::future<json> Lbank::asyncFetchSystemStatus(const json& params) {
+AsyncPullType Lbank::asyncFetchSystemStatus(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchSystemStatus(params);
     });
 }
 
-std::future<json> Lbank::asyncFetchTime(const json& params) {
+AsyncPullType Lbank::asyncFetchTime(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchTime(params);
     });

@@ -176,7 +176,7 @@ std::future<std::string> HTX::getSignatureAsync(const std::string& path, const s
     });
 }
 
-std::future<json> HTX::signRequestAsync(const std::string& path, const std::string& api,
+AsyncPullType HTX::signRequestAsync(const std::string& path, const std::string& api,
                                       const std::string& method, const Params& params,
                                       const json& headers, const std::string& body) {
     return std::async(std::launch::async, [this, path, api, method, params, headers, body]() {

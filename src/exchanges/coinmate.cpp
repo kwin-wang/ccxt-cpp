@@ -252,93 +252,93 @@ Json coinmate::fetchDepositsWithdrawalsImpl(const std::optional<std::string>& co
 
 // Async Methods
 // Market Data
-std::future<Json> coinmate::fetchMarketsAsync() const {
+AsyncPullType coinmate::fetchMarketsAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchMarketsImpl();
     });
 }
 
-std::future<Json> coinmate::fetchTickerAsync(const std::string& symbol) const {
+AsyncPullType coinmate::fetchTickerAsync(const std::string& symbol) const {
     return std::async(std::launch::async, [this, symbol]() {
         return this->fetchTickerImpl(symbol);
     });
 }
 
-std::future<Json> coinmate::fetchTickersAsync(const std::vector<std::string>& symbols) const {
+AsyncPullType coinmate::fetchTickersAsync(const std::vector<std::string>& symbols) const {
     return std::async(std::launch::async, [this, symbols]() {
         return this->fetchTickersImpl(symbols);
     });
 }
 
-std::future<Json> coinmate::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchOrderBookAsync(const std::string& symbol, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, limit]() {
         return this->fetchOrderBookImpl(symbol, limit);
     });
 }
 
-std::future<Json> coinmate::fetchTradesAsync(const std::string& symbol, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchTradesAsync(const std::string& symbol, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, limit]() {
         return this->fetchTradesImpl(symbol, limit);
     });
 }
 
-std::future<Json> coinmate::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit]() {
         return this->fetchOHLCVImpl(symbol, timeframe, since, limit);
     });
 }
 
 // Trading
-std::future<Json> coinmate::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price) {
+AsyncPullType coinmate::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side, double amount, const std::optional<double>& price) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price]() {
         return this->createOrderImpl(symbol, type, side, amount, price);
     });
 }
 
-std::future<Json> coinmate::cancelOrderAsync(const std::string& id, const std::string& symbol) {
+AsyncPullType coinmate::cancelOrderAsync(const std::string& id, const std::string& symbol) {
     return std::async(std::launch::async, [this, id, symbol]() {
         return this->cancelOrderImpl(id, symbol);
     });
 }
 
-std::future<Json> coinmate::fetchOrderAsync(const std::string& id, const std::string& symbol) const {
+AsyncPullType coinmate::fetchOrderAsync(const std::string& id, const std::string& symbol) const {
     return std::async(std::launch::async, [this, id, symbol]() {
         return this->fetchOrderImpl(id, symbol);
     });
 }
 
-std::future<Json> coinmate::fetchOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchOrdersImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> coinmate::fetchOpenOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchOpenOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchOpenOrdersImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> coinmate::fetchClosedOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchClosedOrdersAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchClosedOrdersImpl(symbol, since, limit);
     });
 }
 
-std::future<Json> coinmate::fetchMyTradesAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchMyTradesAsync(const std::string& symbol, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, symbol, since, limit]() {
         return this->fetchMyTradesImpl(symbol, since, limit);
     });
 }
 
 // Account
-std::future<Json> coinmate::fetchBalanceAsync() const {
+AsyncPullType coinmate::fetchBalanceAsync() const {
     return std::async(std::launch::async, [this]() {
         return this->fetchBalanceImpl();
     });
 }
 
-std::future<Json> coinmate::fetchDepositsWithdrawalsAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
+AsyncPullType coinmate::fetchDepositsWithdrawalsAsync(const std::optional<std::string>& code, const std::optional<long long>& since, const std::optional<int>& limit) const {
     return std::async(std::launch::async, [this, code, since, limit]() {
         return this->fetchDepositsWithdrawalsImpl(code, since, limit);
     });

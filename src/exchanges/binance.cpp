@@ -223,6 +223,67 @@ void Binance::init() {
     };
 }
 
+void Binance::describe() {
+    this->set("id", "binance");
+    this->set("name", "Binance");
+    
+    // Add market type options
+    this->set("options", {
+        {"defaultType", "spot"}, // spot, margin, future, delivery
+        {"types", {"spot", "margin", "future", "delivery"}},
+        {"accountsByType", {
+            {"spot", "SPOT"},
+            {"margin", "MARGIN"},
+            {"future", "USDM"},
+            {"delivery", "COINM"}
+        }}
+    });
+
+    // Add all endpoints for different market types
+    this->set("urls", {
+        {"logo", "https://user-images.githubusercontent.com/1294454/29604020-d5483cdc-87ee-11e7-94c7-d1a8d9169293.jpg"},
+        {"api", {
+            {"spot", "https://api.binance.com"},
+            {"usdm", "https://fapi.binance.com"},
+            {"coinm", "https://dapi.binance.com"},
+            {"margin", "https://api.binance.com"}
+        }},
+        {"www", "https://www.binance.com"},
+        {"doc", {
+            "https://binance-docs.github.io/apidocs/spot/en",
+            "https://binance-docs.github.io/apidocs/futures/en",
+            "https://binance-docs.github.io/apidocs/delivery/en"
+        }},
+        {"api_management", "https://www.binance.com/en/usercenter/settings/api-management"},
+        {"referral", {
+            "url": "https://www.binance.com/en/register?ref=D7YA7CLY",
+            "discount": 0.1
+        }}
+    });
+}
+
+std::string Binance::getMarketType(const std::string& symbol) {
+    auto marketType = this->safeString(this->options, "defaultType", "spot");
+    auto market = this->market(symbol);
+    if (market.has("type")) {
+        marketType = market["type"];
+    }
+    return marketType;
+}
+
+std::string Binance::getEndpoint(const std::string& path, const std::string& type) {
+    auto marketType = type.empty() ? this->safeString(this->options, "defaultType", "spot") : type;
+    auto urls = this->urls["api"];
+    
+    if (marketType == "future") {
+        return urls["usdm"] + path;
+    } else if (marketType == "delivery") {
+        return urls["coinm"] + path;
+    } else {
+        return urls["spot"] + path;
+    }
+}
+
 // Market Data API
 json Binance::fetchMarketsImpl() const {
     json response = this->publicGetExchangeInfo();
@@ -374,7 +435,7 @@ std::string Binance::sign(const std::string& path, const std::string& api,
                        const std::string& method, const json& params,
                        const std::map<std::string, std::string>& headers,
                        const json& body) const {
-    std::string url = this->urls["api"][api] + "/" + this->version + "/" + path;
+    std::string url = this->getEndpoint(path, api);
     
     if (api == "private" || api == "sapi" || api == "fapi") {
         this->checkRequiredCredentials();

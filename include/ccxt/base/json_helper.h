@@ -1,7 +1,7 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
-#include "types.h"
+#include "ccxt/base/types.h"
 
 namespace ccxt {
 

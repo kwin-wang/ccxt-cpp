@@ -209,37 +209,37 @@ json Luno::fetchOHLCV(const String& symbol, const String& timeframe, int since, 
 }
 
 // Async Market Data API Implementation
-std::future<json> Luno::asyncFetchMarkets(const json& params) {
+AsyncPullType Luno::asyncFetchMarkets(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchMarkets(params);
     });
 }
 
-std::future<json> Luno::asyncFetchTicker(const String& symbol, const json& params) {
+AsyncPullType Luno::asyncFetchTicker(const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return fetchTicker(symbol, params);
     });
 }
 
-std::future<json> Luno::asyncFetchTickers(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Luno::asyncFetchTickers(const std::vector<String>& symbols, const json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return fetchTickers(symbols, params);
     });
 }
 
-std::future<json> Luno::asyncFetchOrderBook(const String& symbol, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOrderBook(const String& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return fetchOrderBook(symbol, limit, params);
     });
 }
 
-std::future<json> Luno::asyncFetchTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchTrades(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchTrades(symbol, since, limit, params);
     });
 }
 
-std::future<json> Luno::asyncFetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return fetchOHLCV(symbol, timeframe, since, limit, params);
     });
@@ -582,69 +582,69 @@ String Luno::getAccountId(const String& type, const String& currency) {
 }
 
 // Async Account API Implementation
-std::future<json> Luno::asyncFetchAccounts(const json& params) {
+AsyncPullType Luno::asyncFetchAccounts(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchAccounts(params);
     });
 }
 
-std::future<json> Luno::asyncFetchLedger(const String& code, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchLedger(const String& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return fetchLedger(code, since, limit, params);
     });
 }
 
-std::future<json> Luno::asyncFetchTradingFee(const String& symbol, const json& params) {
+AsyncPullType Luno::asyncFetchTradingFee(const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return fetchTradingFee(symbol, params);
     });
 }
 
 // Async Trading API Implementation
-std::future<json> Luno::asyncFetchBalance(const json& params) {
+AsyncPullType Luno::asyncFetchBalance(const json& params) {
     return std::async(std::launch::async, [this, params]() {
         return fetchBalance(params);
     });
 }
 
-std::future<json> Luno::asyncCreateOrder(const String& symbol, const String& type, const String& side,
+AsyncPullType Luno::asyncCreateOrder(const String& symbol, const String& type, const String& side,
                                        double amount, double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-std::future<json> Luno::asyncCancelOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Luno::asyncCancelOrder(const String& id, const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return cancelOrder(id, symbol, params);
     });
 }
 
-std::future<json> Luno::asyncFetchOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Luno::asyncFetchOrder(const String& id, const String& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return fetchOrder(id, symbol, params);
     });
 }
 
-std::future<json> Luno::asyncFetchOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOrders(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOrders(symbol, since, limit, params);
     });
 }
 
-std::future<json> Luno::asyncFetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-std::future<json> Luno::asyncFetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
-std::future<json> Luno::asyncFetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchMyTrades(const String& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchMyTrades(symbol, since, limit, params);
     });

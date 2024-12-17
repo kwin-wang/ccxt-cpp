@@ -46,40 +46,40 @@ public:
                          const json& params = json::object()) override;
 
     // Market Data Methods - Async
-    std::future<json> fetchMarketsAsync(const json& params = json::object());
-    std::future<json> fetchCurrenciesAsync(const json& params = json::object());
-    std::future<json> fetchTickerAsync(const String& symbol, const json& params = json::object());
-    std::future<json> fetchTickersAsync(const std::vector<String>& symbols = {},
+    AsyncPullType fetchMarketsAsync(const json& params = json::object());
+    AsyncPullType fetchCurrenciesAsync(const json& params = json::object());
+    AsyncPullType fetchTickerAsync(const String& symbol, const json& params = json::object());
+    AsyncPullType fetchTickersAsync(const std::vector<String>& symbols = {},
                                       const json& params = json::object());
-    std::future<json> fetchOrderBookAsync(const String& symbol, int limit = 0,
+    AsyncPullType fetchOrderBookAsync(const String& symbol, int limit = 0,
                                         const json& params = json::object());
-    std::future<json> fetchTradesAsync(const String& symbol, int since = 0, int limit = 0,
+    AsyncPullType fetchTradesAsync(const String& symbol, int since = 0, int limit = 0,
                                      const json& params = json::object());
-    std::future<json> fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+    AsyncPullType fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
                                     int since = 0, int limit = 0, const json& params = json::object());
 
     // Trading Methods - Async
-    std::future<json> createOrderAsync(const String& symbol, const String& type,
+    AsyncPullType createOrderAsync(const String& symbol, const String& type,
                                      const String& side, double amount, double price = 0,
                                      const json& params = json::object());
-    std::future<json> cancelOrderAsync(const String& id, const String& symbol = "",
+    AsyncPullType cancelOrderAsync(const String& id, const String& symbol = "",
                                      const json& params = json::object());
-    std::future<json> fetchOrderAsync(const String& id, const String& symbol = "",
+    AsyncPullType fetchOrderAsync(const String& id, const String& symbol = "",
                                     const json& params = json::object());
-    std::future<json> fetchOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
                                      const json& params = json::object());
-    std::future<json> fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
                                          const json& params = json::object());
-    std::future<json> fetchClosedOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchClosedOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
                                            const json& params = json::object());
-    std::future<json> fetchMyTradesAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchMyTradesAsync(const String& symbol = "", int since = 0, int limit = 0,
                                        const json& params = json::object());
 
     // Account Methods - Async
-    std::future<json> fetchBalanceAsync(const json& params = json::object());
-    std::future<json> fetchDepositsAsync(const String& code = "", int since = 0, int limit = 0,
+    AsyncPullType fetchBalanceAsync(const json& params = json::object());
+    AsyncPullType fetchDepositsAsync(const String& code = "", int since = 0, int limit = 0,
                                        const json& params = json::object());
-    std::future<json> fetchWithdrawalsAsync(const String& code = "", int since = 0, int limit = 0,
+    AsyncPullType fetchWithdrawalsAsync(const String& code = "", int since = 0, int limit = 0,
                                           const json& params = json::object());
 
 protected:
@@ -100,7 +100,7 @@ protected:
 private:
     // Async helper methods
     template<typename Func, typename... Args>
-    std::future<json> async(Func&& func, Args&&... args) {
+    AsyncPullType async(Func&& func, Args&&... args) {
         return std::async(std::launch::async,
                          std::forward<Func>(func),
                          this,

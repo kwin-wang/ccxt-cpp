@@ -684,7 +684,7 @@ Json poloniex::parseTrade(const Json& trade, const Json& market) const {
 }
 
 // Async implementations for trading API
-std::future<Json> poloniex::createOrderAsync(const std::string& symbol,
+AsyncPullType poloniex::createOrderAsync(const std::string& symbol,
                                            const std::string& type,
                                            const std::string& side,
                                            double amount,
