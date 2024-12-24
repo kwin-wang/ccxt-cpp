@@ -1,0 +1,556 @@
+{
+  "id": "alpaca",
+  "name": "Alpaca",
+  "countries": [
+    "US"
+  ],
+  "enableRateLimit": true,
+  "rateLimit": 333,
+  "timeout": 10000,
+  "certified": false,
+  "pro": true,
+  "alias": false,
+  "dex": false,
+  "has": {
+    "publicAPI": true,
+    "privateAPI": true,
+    "CORS": false,
+    "sandbox": true,
+    "spot": true,
+    "margin": false,
+    "swap": false,
+    "future": false,
+    "option": false,
+    "addMargin": null,
+    "borrowCrossMargin": null,
+    "borrowIsolatedMargin": null,
+    "borrowMargin": null,
+    "cancelAllOrders": true,
+    "cancelAllOrdersWs": null,
+    "cancelOrder": true,
+    "cancelOrderWs": null,
+    "cancelOrders": null,
+    "cancelOrdersWs": null,
+    "closeAllPositions": false,
+    "closePosition": false,
+    "createDepositAddress": null,
+    "createLimitBuyOrder": null,
+    "createLimitBuyOrderWs": null,
+    "createLimitOrder": true,
+    "createLimitOrderWs": null,
+    "createLimitSellOrder": null,
+    "createLimitSellOrderWs": null,
+    "createMarketBuyOrder": null,
+    "createMarketBuyOrderWs": null,
+    "createMarketBuyOrderWithCost": null,
+    "createMarketBuyOrderWithCostWs": null,
+    "createMarketOrder": true,
+    "createMarketOrderWs": true,
+    "createMarketOrderWithCost": null,
+    "createMarketOrderWithCostWs": null,
+    "createMarketSellOrder": null,
+    "createMarketSellOrderWs": null,
+    "createMarketSellOrderWithCost": null,
+    "createMarketSellOrderWithCostWs": null,
+    "createOrder": true,
+    "createOrderWs": null,
+    "createOrders": null,
+    "createOrderWithTakeProfitAndStopLoss": null,
+    "createOrderWithTakeProfitAndStopLossWs": null,
+    "createPostOnlyOrder": null,
+    "createPostOnlyOrderWs": null,
+    "createReduceOnlyOrder": null,
+    "createReduceOnlyOrderWs": null,
+    "createStopLimitOrder": null,
+    "createStopLimitOrderWs": null,
+    "createStopLossOrder": null,
+    "createStopLossOrderWs": null,
+    "createStopMarketOrder": null,
+    "createStopMarketOrderWs": null,
+    "createStopOrder": null,
+    "createStopOrderWs": null,
+    "createTakeProfitOrder": null,
+    "createTakeProfitOrderWs": null,
+    "createTrailingAmountOrder": null,
+    "createTrailingAmountOrderWs": null,
+    "createTrailingPercentOrder": null,
+    "createTrailingPercentOrderWs": null,
+    "createTriggerOrder": null,
+    "createTriggerOrderWs": null,
+    "deposit": null,
+    "editOrder": "emulated",
+    "editOrderWs": null,
+    "fetchAccounts": null,
+    "fetchBalance": false,
+    "fetchBalanceWs": null,
+    "fetchBidsAsks": false,
+    "fetchBorrowInterest": null,
+    "fetchBorrowRate": null,
+    "fetchBorrowRateHistories": null,
+    "fetchBorrowRateHistory": null,
+    "fetchBorrowRates": null,
+    "fetchBorrowRatesPerSymbol": null,
+    "fetchCanceledAndClosedOrders": null,
+    "fetchCanceledOrders": null,
+    "fetchClosedOrder": null,
+    "fetchClosedOrders": true,
+    "fetchClosedOrdersWs": null,
+    "fetchConvertCurrencies": null,
+    "fetchConvertQuote": null,
+    "fetchConvertTrade": null,
+    "fetchConvertTradeHistory": null,
+    "fetchCrossBorrowRate": null,
+    "fetchCrossBorrowRates": null,
+    "fetchCurrencies": false,
+    "fetchCurrenciesWs": "emulated",
+    "fetchDeposit": null,
+    "fetchDepositAddress": false,
+    "fetchDepositAddresses": null,
+    "fetchDepositAddressesByNetwork": false,
+    "fetchDeposits": false,
+    "fetchDepositsWithdrawals": false,
+    "fetchDepositsWs": null,
+    "fetchDepositWithdrawFee": null,
+    "fetchDepositWithdrawFees": null,
+    "fetchFundingHistory": false,
+    "fetchFundingRate": false,
+    "fetchFundingRateHistory": null,
+    "fetchFundingInterval": null,
+    "fetchFundingIntervals": null,
+    "fetchFundingRates": false,
+    "fetchGreeks": null,
+    "fetchIndexOHLCV": null,
+    "fetchIsolatedBorrowRate": null,
+    "fetchIsolatedBorrowRates": null,
+    "fetchMarginAdjustmentHistory": null,
+    "fetchIsolatedPositions": null,
+    "fetchL2OrderBook": false,
+    "fetchL3OrderBook": null,
+    "fetchLastPrices": null,
+    "fetchLedger": null,
+    "fetchLedgerEntry": null,
+    "fetchLeverage": null,
+    "fetchLeverages": null,
+    "fetchLeverageTiers": null,
+    "fetchLiquidations": null,
+    "fetchMarginMode": null,
+    "fetchMarginModes": null,
+    "fetchMarketLeverageTiers": null,
+    "fetchMarkets": true,
+    "fetchMarketsWs": null,
+    "fetchMarkOHLCV": null,
+    "fetchMyLiquidations": null,
+    "fetchMySettlementHistory": null,
+    "fetchMyTrades": false,
+    "fetchMyTradesWs": null,
+    "fetchOHLCV": true,
+    "fetchOHLCVWs": null,
+    "fetchOpenInterest": null,
+    "fetchOpenInterestHistory": null,
+    "fetchOpenOrder": false,
+    "fetchOpenOrders": true,
+    "fetchOpenOrdersWs": null,
+    "fetchOption": null,
+    "fetchOptionChain": null,
+    "fetchOrder": true,
+    "fetchOrderBook": true,
+    "fetchOrderBooks": null,
+    "fetchOrderBookWs": null,
+    "fetchOrders": true,
+    "fetchOrdersByStatus": null,
+    "fetchOrdersWs": null,
+    "fetchOrderTrades": null,
+    "fetchOrderWs": null,
+    "fetchPosition": false,
+    "fetchPositionHistory": false,
+    "fetchPositionsHistory": false,
+    "fetchPositionWs": null,
+    "fetchPositionMode": false,
+    "fetchPositions": false,
+    "fetchPositionsWs": null,
+    "fetchPositionsForSymbol": false,
+    "fetchPositionsForSymbolWs": null,
+    "fetchPositionsRisk": false,
+    "fetchPremiumIndexOHLCV": null,
+    "fetchSettlementHistory": null,
+    "fetchStatus": false,
+    "fetchTicker": false,
+    "fetchTickerWs": null,
+    "fetchTickers": false,
+    "fetchMarkPrices": null,
+    "fetchTickersWs": null,
+    "fetchTime": true,
+    "fetchTrades": true,
+    "fetchTradesWs": null,
+    "fetchTradingFee": false,
+    "fetchTradingFees": false,
+    "fetchTradingFeesWs": null,
+    "fetchTradingLimits": null,
+    "fetchTransactionFee": null,
+    "fetchTransactionFees": false,
+    "fetchTransactions": false,
+    "fetchTransfer": null,
+    "fetchTransfers": false,
+    "fetchUnderlyingAssets": null,
+    "fetchVolatilityHistory": null,
+    "fetchWithdrawAddresses": null,
+    "fetchWithdrawal": null,
+    "fetchWithdrawals": false,
+    "fetchWithdrawalsWs": null,
+    "fetchWithdrawalWhitelist": null,
+    "reduceMargin": null,
+    "repayCrossMargin": null,
+    "repayIsolatedMargin": null,
+    "setLeverage": false,
+    "setMargin": null,
+    "setMarginMode": false,
+    "setPositionMode": null,
+    "signIn": null,
+    "transfer": false,
+    "watchBalance": false,
+    "watchMyTrades": true,
+    "watchOHLCV": true,
+    "watchOHLCVForSymbols": null,
+    "watchOrderBook": true,
+    "watchOrderBookForSymbols": null,
+    "watchOrders": true,
+    "watchOrdersForSymbols": null,
+    "watchPosition": false,
+    "watchPositions": null,
+    "watchStatus": null,
+    "watchTicker": true,
+    "watchTickers": false,
+    "watchTrades": true,
+    "watchTradesForSymbols": null,
+    "watchLiquidations": null,
+    "watchLiquidationsForSymbols": null,
+    "watchMyLiquidations": null,
+    "watchMyLiquidationsForSymbols": null,
+    "withdraw": false,
+    "ws": true,
+    "fetchL1OrderBook": true
+  },
+  "urls": {
+    "logo": "https://user-images.githubusercontent.com/1294454/187234005-b864db3d-f1e3-447a-aaf9-a9fc7b955d07.jpg",
+    "api": {
+      "broker": "https://broker-api.{hostname}",
+      "trader": "https://api.{hostname}",
+      "market": "https://data.{hostname}",
+      "ws": {
+        "crypto": "wss://stream.data.alpaca.markets/v1beta2/crypto",
+        "trading": "wss://api.alpaca.markets/stream"
+      }
+    },
+    "www": "https://alpaca.markets",
+    "doc": "https://alpaca.markets/docs/",
+    "fees": "https://docs.alpaca.markets/docs/crypto-fees",
+    "test": {
+      "broker": "https://broker-api.sandbox.{hostname}",
+      "trader": "https://paper-api.{hostname}",
+      "market": "https://data.sandbox.{hostname}",
+      "ws": {
+        "crypto": "wss://stream.data.alpaca.markets/v1beta2/crypto",
+        "trading": "wss://paper-api.alpaca.markets/stream"
+      }
+    }
+  },
+  "api": {
+    "broker": {},
+    "trader": {
+      "private": {
+        "get": [
+          "v2/account",
+          "v2/orders",
+          "v2/orders/{order_id}",
+          "v2/positions",
+          "v2/positions/{symbol_or_asset_id}",
+          "v2/account/portfolio/history",
+          "v2/watchlists",
+          "v2/watchlists/{watchlist_id}",
+          "v2/watchlists:by_name",
+          "v2/account/configurations",
+          "v2/account/activities",
+          "v2/account/activities/{activity_type}",
+          "v2/calendar",
+          "v2/clock",
+          "v2/assets",
+          "v2/assets/{symbol_or_asset_id}",
+          "v2/corporate_actions/announcements/{id}",
+          "v2/corporate_actions/announcements"
+        ],
+        "post": [
+          "v2/orders",
+          "v2/watchlists",
+          "v2/watchlists/{watchlist_id}",
+          "v2/watchlists:by_name"
+        ],
+        "put": [
+          "v2/watchlists/{watchlist_id}",
+          "v2/watchlists:by_name"
+        ],
+        "patch": [
+          "v2/orders/{order_id}",
+          "v2/account/configurations"
+        ],
+        "delete": [
+          "v2/orders",
+          "v2/orders/{order_id}",
+          "v2/positions",
+          "v2/positions/{symbol_or_asset_id}",
+          "v2/watchlists/{watchlist_id}",
+          "v2/watchlists:by_name",
+          "v2/watchlists/{watchlist_id}/{symbol}"
+        ]
+      }
+    },
+    "market": {
+      "public": {
+        "get": [
+          "v1beta3/crypto/{loc}/bars",
+          "v1beta3/crypto/{loc}/latest/bars",
+          "v1beta3/crypto/{loc}/latest/orderbooks",
+          "v1beta3/crypto/{loc}/latest/quotes",
+          "v1beta3/crypto/{loc}/latest/trades",
+          "v1beta3/crypto/{loc}/quotes",
+          "v1beta3/crypto/{loc}/snapshots",
+          "v1beta3/crypto/{loc}/trades"
+        ]
+      },
+      "private": {
+        "get": [
+          "v1beta1/corporate-actions",
+          "v1beta1/forex/latest/rates",
+          "v1beta1/forex/rates",
+          "v1beta1/logos/{symbol}",
+          "v1beta1/news",
+          "v1beta1/screener/stocks/most-actives",
+          "v1beta1/screener/{market_type}/movers",
+          "v2/stocks/auctions",
+          "v2/stocks/bars",
+          "v2/stocks/bars/latest",
+          "v2/stocks/meta/conditions/{ticktype}",
+          "v2/stocks/meta/exchanges",
+          "v2/stocks/quotes",
+          "v2/stocks/quotes/latest",
+          "v2/stocks/snapshots",
+          "v2/stocks/trades",
+          "v2/stocks/trades/latest",
+          "v2/stocks/{symbol}/auctions",
+          "v2/stocks/{symbol}/bars",
+          "v2/stocks/{symbol}/bars/latest",
+          "v2/stocks/{symbol}/quotes",
+          "v2/stocks/{symbol}/quotes/latest",
+          "v2/stocks/{symbol}/snapshot",
+          "v2/stocks/{symbol}/trades",
+          "v2/stocks/{symbol}/trades/latest"
+        ]
+      }
+    }
+  },
+  "requiredCredentials": {
+    "apiKey": true,
+    "secret": true,
+    "uid": false,
+    "accountId": false,
+    "login": false,
+    "password": false,
+    "twofa": false,
+    "privateKey": false,
+    "walletAddress": false,
+    "token": false
+  },
+  "markets": null,
+  "currencies": {},
+  "timeframes": {
+    "1m": "1min",
+    "3m": "3min",
+    "5m": "5min",
+    "15m": "15min",
+    "30m": "30min",
+    "1h": "1H",
+    "2h": "2H",
+    "4h": "4H",
+    "6h": "6H",
+    "8h": "8H",
+    "12h": "12H",
+    "1d": "1D",
+    "3d": "3D",
+    "1w": "1W",
+    "1M": "1M"
+  },
+  "fees": {
+    "trading": {
+      "tierBased": true,
+      "percentage": true,
+      "taker": 0.0025,
+      "maker": 0.0015,
+      "tiers": {
+        "taker": [
+          [
+            0.0,
+            0.0025
+          ],
+          [
+            100000.0,
+            0.0022
+          ],
+          [
+            500000.0,
+            0.002
+          ],
+          [
+            1000000.0,
+            0.0018
+          ],
+          [
+            10000000.0,
+            0.0015
+          ],
+          [
+            25000000.0,
+            0.0013
+          ],
+          [
+            50000000.0,
+            0.0012
+          ],
+          [
+            100000000.0,
+            0.001
+          ]
+        ],
+        "maker": [
+          [
+            0.0,
+            0.0015
+          ],
+          [
+            100000.0,
+            0.0012
+          ],
+          [
+            500000.0,
+            0.001
+          ],
+          [
+            1000000.0,
+            0.0008
+          ],
+          [
+            10000000.0,
+            0.0005
+          ],
+          [
+            25000000.0,
+            0.0002
+          ],
+          [
+            50000000.0,
+            0.0002
+          ],
+          [
+            100000000.0,
+            0.0
+          ]
+        ]
+      }
+    },
+    "funding": {
+      "tierBased": null,
+      "percentage": null,
+      "withdraw": {},
+      "deposit": {}
+    }
+  },
+  "status": {
+    "status": "ok",
+    "updated": null,
+    "eta": null,
+    "url": null
+  },
+  "exceptions": {
+    "exact": {
+      "forbidden.": "ccxt.base.errors.PermissionDenied",
+      "40410000": "ccxt.base.errors.InvalidOrder",
+      "40010001": "ccxt.base.errors.BadRequest",
+      "40110000": "ccxt.base.errors.PermissionDenied",
+      "40310000": "ccxt.base.errors.InsufficientFunds",
+      "42910000": "ccxt.base.errors.RateLimitExceeded"
+    },
+    "broad": {
+      "Invalid format for parameter": "ccxt.base.errors.BadRequest",
+      "Invalid symbol": "ccxt.base.errors.BadSymbol"
+    },
+    "ws": {
+      "exact": {}
+    }
+  },
+  "httpExceptions": {
+    "422": "ccxt.base.errors.ExchangeError",
+    "418": "ccxt.base.errors.DDoSProtection",
+    "429": "ccxt.base.errors.RateLimitExceeded",
+    "404": "ccxt.base.errors.ExchangeNotAvailable",
+    "409": "ccxt.base.errors.ExchangeNotAvailable",
+    "410": "ccxt.base.errors.ExchangeNotAvailable",
+    "451": "ccxt.base.errors.ExchangeNotAvailable",
+    "500": "ccxt.base.errors.ExchangeNotAvailable",
+    "501": "ccxt.base.errors.ExchangeNotAvailable",
+    "502": "ccxt.base.errors.ExchangeNotAvailable",
+    "520": "ccxt.base.errors.ExchangeNotAvailable",
+    "521": "ccxt.base.errors.ExchangeNotAvailable",
+    "522": "ccxt.base.errors.ExchangeNotAvailable",
+    "525": "ccxt.base.errors.ExchangeNotAvailable",
+    "526": "ccxt.base.errors.ExchangeNotAvailable",
+    "400": "ccxt.base.errors.ExchangeNotAvailable",
+    "403": "ccxt.base.errors.ExchangeNotAvailable",
+    "405": "ccxt.base.errors.ExchangeNotAvailable",
+    "503": "ccxt.base.errors.ExchangeNotAvailable",
+    "530": "ccxt.base.errors.ExchangeNotAvailable",
+    "408": "ccxt.base.errors.RequestTimeout",
+    "504": "ccxt.base.errors.RequestTimeout",
+    "401": "ccxt.base.errors.AuthenticationError",
+    "407": "ccxt.base.errors.AuthenticationError",
+    "511": "ccxt.base.errors.AuthenticationError"
+  },
+  "commonCurrencies": {
+    "XBT": "BTC",
+    "BCC": "BCH",
+    "BCHSV": "BSV"
+  },
+  "precisionMode": 4,
+  "paddingMode": 5,
+  "limits": {
+    "leverage": {
+      "min": null,
+      "max": null
+    },
+    "amount": {
+      "min": null,
+      "max": null
+    },
+    "price": {
+      "min": null,
+      "max": null
+    },
+    "cost": {
+      "min": null,
+      "max": null
+    }
+  },
+  "hostname": "alpaca.markets",
+  "headers": {
+    "APCA-PARTNER-ID": "ccxt"
+  },
+  "options": {
+    "defaultExchange": "CBSE",
+    "exchanges": [
+      "CBSE",
+      "FTX",
+      "GNSS",
+      "ERSX"
+    ],
+    "defaultTimeInForce": "gtc",
+    "clientOrderId": "ccxt_{id}"
+  },
+  "streaming": {}
+}

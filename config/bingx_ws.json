@@ -1,0 +1,765 @@
+{
+  "id": "bingx",
+  "name": "BingX",
+  "countries": [
+    "US"
+  ],
+  "enableRateLimit": true,
+  "rateLimit": 100,
+  "timeout": 10000,
+  "certified": true,
+  "pro": true,
+  "alias": false,
+  "dex": false,
+  "has": {
+    "publicAPI": true,
+    "privateAPI": true,
+    "CORS": null,
+    "sandbox": true,
+    "spot": true,
+    "margin": false,
+    "swap": true,
+    "future": false,
+    "option": false,
+    "addMargin": true,
+    "borrowCrossMargin": null,
+    "borrowIsolatedMargin": null,
+    "borrowMargin": null,
+    "cancelAllOrders": true,
+    "cancelAllOrdersWs": null,
+    "cancelOrder": true,
+    "cancelOrderWs": null,
+    "cancelOrders": true,
+    "cancelOrdersWs": null,
+    "closeAllPositions": true,
+    "closePosition": true,
+    "createDepositAddress": null,
+    "createLimitBuyOrder": null,
+    "createLimitBuyOrderWs": null,
+    "createLimitOrder": true,
+    "createLimitOrderWs": null,
+    "createLimitSellOrder": null,
+    "createLimitSellOrderWs": null,
+    "createMarketBuyOrder": null,
+    "createMarketBuyOrderWs": null,
+    "createMarketBuyOrderWithCost": true,
+    "createMarketBuyOrderWithCostWs": null,
+    "createMarketOrder": true,
+    "createMarketOrderWs": true,
+    "createMarketOrderWithCost": true,
+    "createMarketOrderWithCostWs": null,
+    "createMarketSellOrder": null,
+    "createMarketSellOrderWs": null,
+    "createMarketSellOrderWithCost": true,
+    "createMarketSellOrderWithCostWs": null,
+    "createOrder": true,
+    "createOrderWs": null,
+    "createOrders": true,
+    "createOrderWithTakeProfitAndStopLoss": true,
+    "createOrderWithTakeProfitAndStopLossWs": null,
+    "createPostOnlyOrder": null,
+    "createPostOnlyOrderWs": null,
+    "createReduceOnlyOrder": null,
+    "createReduceOnlyOrderWs": null,
+    "createStopLimitOrder": null,
+    "createStopLimitOrderWs": null,
+    "createStopLossOrder": true,
+    "createStopLossOrderWs": null,
+    "createStopMarketOrder": null,
+    "createStopMarketOrderWs": null,
+    "createStopOrder": null,
+    "createStopOrderWs": null,
+    "createTakeProfitOrder": true,
+    "createTakeProfitOrderWs": null,
+    "createTrailingAmountOrder": true,
+    "createTrailingAmountOrderWs": null,
+    "createTrailingPercentOrder": true,
+    "createTrailingPercentOrderWs": null,
+    "createTriggerOrder": true,
+    "createTriggerOrderWs": null,
+    "deposit": null,
+    "editOrder": "emulated",
+    "editOrderWs": null,
+    "fetchAccounts": null,
+    "fetchBalance": true,
+    "fetchBalanceWs": null,
+    "fetchBidsAsks": null,
+    "fetchBorrowInterest": null,
+    "fetchBorrowRate": null,
+    "fetchBorrowRateHistories": null,
+    "fetchBorrowRateHistory": null,
+    "fetchBorrowRates": null,
+    "fetchBorrowRatesPerSymbol": null,
+    "fetchCanceledAndClosedOrders": null,
+    "fetchCanceledOrders": true,
+    "fetchClosedOrder": null,
+    "fetchClosedOrders": true,
+    "fetchClosedOrdersWs": null,
+    "fetchConvertCurrencies": null,
+    "fetchConvertQuote": null,
+    "fetchConvertTrade": null,
+    "fetchConvertTradeHistory": null,
+    "fetchCrossBorrowRate": null,
+    "fetchCrossBorrowRates": null,
+    "fetchCurrencies": true,
+    "fetchCurrenciesWs": "emulated",
+    "fetchDeposit": null,
+    "fetchDepositAddress": true,
+    "fetchDepositAddresses": false,
+    "fetchDepositAddressesByNetwork": true,
+    "fetchDeposits": true,
+    "fetchDepositsWithdrawals": null,
+    "fetchDepositsWs": null,
+    "fetchDepositWithdrawFee": "emulated",
+    "fetchDepositWithdrawFees": true,
+    "fetchFundingHistory": null,
+    "fetchFundingRate": true,
+    "fetchFundingRateHistory": true,
+    "fetchFundingInterval": null,
+    "fetchFundingIntervals": null,
+    "fetchFundingRates": true,
+    "fetchGreeks": null,
+    "fetchIndexOHLCV": null,
+    "fetchIsolatedBorrowRate": null,
+    "fetchIsolatedBorrowRates": null,
+    "fetchMarginAdjustmentHistory": false,
+    "fetchIsolatedPositions": null,
+    "fetchL2OrderBook": true,
+    "fetchL3OrderBook": null,
+    "fetchLastPrices": null,
+    "fetchLedger": null,
+    "fetchLedgerEntry": null,
+    "fetchLeverage": true,
+    "fetchLeverages": null,
+    "fetchLeverageTiers": null,
+    "fetchLiquidations": false,
+    "fetchMarginMode": true,
+    "fetchMarginModes": null,
+    "fetchMarketLeverageTiers": null,
+    "fetchMarkets": true,
+    "fetchMarketsWs": null,
+    "fetchMarkOHLCV": true,
+    "fetchMyLiquidations": true,
+    "fetchMySettlementHistory": null,
+    "fetchMyTrades": null,
+    "fetchMyTradesWs": null,
+    "fetchOHLCV": true,
+    "fetchOHLCVWs": null,
+    "fetchOpenInterest": true,
+    "fetchOpenInterestHistory": null,
+    "fetchOpenOrder": null,
+    "fetchOpenOrders": true,
+    "fetchOpenOrdersWs": null,
+    "fetchOption": null,
+    "fetchOptionChain": null,
+    "fetchOrder": true,
+    "fetchOrderBook": true,
+    "fetchOrderBooks": null,
+    "fetchOrderBookWs": null,
+    "fetchOrders": true,
+    "fetchOrdersByStatus": null,
+    "fetchOrdersWs": null,
+    "fetchOrderTrades": null,
+    "fetchOrderWs": null,
+    "fetchPosition": true,
+    "fetchPositionHistory": false,
+    "fetchPositionsHistory": false,
+    "fetchPositionWs": null,
+    "fetchPositionMode": true,
+    "fetchPositions": true,
+    "fetchPositionsWs": null,
+    "fetchPositionsForSymbol": null,
+    "fetchPositionsForSymbolWs": null,
+    "fetchPositionsRisk": null,
+    "fetchPremiumIndexOHLCV": null,
+    "fetchSettlementHistory": null,
+    "fetchStatus": null,
+    "fetchTicker": true,
+    "fetchTickerWs": null,
+    "fetchTickers": true,
+    "fetchMarkPrices": true,
+    "fetchTickersWs": null,
+    "fetchTime": true,
+    "fetchTrades": true,
+    "fetchTradesWs": null,
+    "fetchTradingFee": true,
+    "fetchTradingFees": null,
+    "fetchTradingFeesWs": null,
+    "fetchTradingLimits": null,
+    "fetchTransactionFee": null,
+    "fetchTransactionFees": null,
+    "fetchTransactions": null,
+    "fetchTransfer": null,
+    "fetchTransfers": true,
+    "fetchUnderlyingAssets": null,
+    "fetchVolatilityHistory": null,
+    "fetchWithdrawAddresses": null,
+    "fetchWithdrawal": null,
+    "fetchWithdrawals": true,
+    "fetchWithdrawalsWs": null,
+    "fetchWithdrawalWhitelist": null,
+    "reduceMargin": true,
+    "repayCrossMargin": null,
+    "repayIsolatedMargin": null,
+    "setLeverage": true,
+    "setMargin": true,
+    "setMarginMode": true,
+    "setPositionMode": true,
+    "signIn": null,
+    "transfer": true,
+    "watchBalance": true,
+    "watchMyTrades": true,
+    "watchOHLCV": true,
+    "watchOHLCVForSymbols": true,
+    "watchOrderBook": true,
+    "watchOrderBookForSymbols": true,
+    "watchOrders": true,
+    "watchOrdersForSymbols": null,
+    "watchPosition": null,
+    "watchPositions": null,
+    "watchStatus": null,
+    "watchTicker": true,
+    "watchTickers": true,
+    "watchTrades": true,
+    "watchTradesForSymbols": false,
+    "watchLiquidations": null,
+    "watchLiquidationsForSymbols": null,
+    "watchMyLiquidations": null,
+    "watchMyLiquidationsForSymbols": null,
+    "withdraw": null,
+    "ws": true,
+    "cancelAllOrdersAfter": true,
+    "fetchMarkPrice": true
+  },
+  "urls": {
+    "logo": "https://github-production-user-asset-6210df.s3.amazonaws.com/1294454/253675376-6983b72e-4999-4549-b177-33b374c195e3.jpg",
+    "api": {
+      "spot": "https://open-api.{hostname}/openApi",
+      "swap": "https://open-api.{hostname}/openApi",
+      "contract": "https://open-api.{hostname}/openApi",
+      "wallets": "https://open-api.{hostname}/openApi",
+      "user": "https://open-api.{hostname}/openApi",
+      "subAccount": "https://open-api.{hostname}/openApi",
+      "account": "https://open-api.{hostname}/openApi",
+      "copyTrading": "https://open-api.{hostname}/openApi",
+      "cswap": "https://open-api.{hostname}/openApi",
+      "ws": {
+        "spot": "wss://open-api-ws.bingx.com/market",
+        "linear": "wss://open-api-swap.bingx.com/swap-market",
+        "inverse": "wss://open-api-cswap-ws.bingx.com/market"
+      }
+    },
+    "www": "https://bingx.com/",
+    "doc": "https://bingx-api.github.io/docs/",
+    "fees": null,
+    "test": {
+      "swap": "https://open-api-vst.{hostname}/openApi"
+    },
+    "referral": "https://bingx.com/invite/OHETOM"
+  },
+  "api": {
+    "spot": {
+      "v1": {
+        "public": {
+          "get": {
+            "server/time": 1,
+            "common/symbols": 1,
+            "market/trades": 1,
+            "market/depth": 1,
+            "market/kline": 1,
+            "ticker/24hr": 1,
+            "ticker/price": 1,
+            "ticker/bookTicker": 1
+          }
+        },
+        "private": {
+          "get": {
+            "trade/query": 1,
+            "trade/openOrders": 1,
+            "trade/historyOrders": 1,
+            "trade/myTrades": 2,
+            "user/commissionRate": 5,
+            "account/balance": 2
+          },
+          "post": {
+            "trade/order": 2,
+            "trade/cancel": 2,
+            "trade/batchOrders": 5,
+            "trade/order/cancelReplace": 5,
+            "trade/cancelOrders": 5,
+            "trade/cancelOpenOrders": 5,
+            "trade/cancelAllAfter": 5
+          }
+        }
+      },
+      "v2": {
+        "public": {
+          "get": {
+            "market/depth": 1,
+            "market/kline": 1
+          }
+        }
+      },
+      "v3": {
+        "private": {
+          "get": {
+            "get/asset/transfer": 1,
+            "asset/transfer": 1,
+            "capital/deposit/hisrec": 1,
+            "capital/withdraw/history": 1
+          },
+          "post": {
+            "post/asset/transfer": 5
+          }
+        }
+      }
+    },
+    "swap": {
+      "v1": {
+        "public": {
+          "get": {
+            "ticker/price": 1,
+            "market/historicalTrades": 1
+          }
+        },
+        "private": {
+          "get": {
+            "positionSide/dual": 5,
+            "market/markPriceKlines": 1,
+            "trade/batchCancelReplace": 5,
+            "trade/fullOrder": 2
+          },
+          "post": {
+            "trade/cancelReplace": 2,
+            "positionSide/dual": 5,
+            "trade/closePosition": 2
+          }
+        }
+      },
+      "v2": {
+        "public": {
+          "get": {
+            "server/time": 1,
+            "quote/contracts": 1,
+            "quote/price": 1,
+            "quote/depth": 1,
+            "quote/trades": 1,
+            "quote/premiumIndex": 1,
+            "quote/fundingRate": 1,
+            "quote/klines": 1,
+            "quote/openInterest": 1,
+            "quote/ticker": 1,
+            "quote/bookTicker": 1
+          }
+        },
+        "private": {
+          "get": {
+            "user/balance": 2,
+            "user/positions": 2,
+            "user/income": 2,
+            "trade/openOrders": 2,
+            "trade/openOrder": 2,
+            "trade/order": 2,
+            "trade/marginType": 5,
+            "trade/leverage": 2,
+            "trade/forceOrders": 1,
+            "trade/allOrders": 2,
+            "trade/allFillOrders": 2,
+            "user/income/export": 2,
+            "user/commissionRate": 2,
+            "quote/bookTicker": 1
+          },
+          "post": {
+            "trade/order": 2,
+            "trade/batchOrders": 2,
+            "trade/closeAllPositions": 2,
+            "trade/cancelAllAfter": 5,
+            "trade/marginType": 5,
+            "trade/leverage": 5,
+            "trade/positionMargin": 5,
+            "trade/order/test": 2
+          },
+          "delete": {
+            "trade/order": 2,
+            "trade/batchOrders": 2,
+            "trade/allOpenOrders": 2
+          }
+        }
+      },
+      "v3": {
+        "public": {
+          "get": {
+            "quote/klines": 1
+          }
+        }
+      }
+    },
+    "cswap": {
+      "v1": {
+        "public": {
+          "get": {
+            "market/contracts": 1,
+            "market/premiumIndex": 1,
+            "market/openInterest": 1,
+            "market/klines": 1,
+            "market/depth": 1,
+            "market/ticker": 1
+          }
+        },
+        "private": {
+          "get": {
+            "trade/leverage": 2,
+            "trade/forceOrders": 2,
+            "trade/allFillOrders": 2,
+            "trade/openOrders": 2,
+            "trade/orderDetail": 2,
+            "trade/orderHistory": 2,
+            "trade/marginType": 2,
+            "user/commissionRate": 2,
+            "user/positions": 2,
+            "user/balance": 2
+          },
+          "post": {
+            "trade/order": 2,
+            "trade/leverage": 2,
+            "trade/closeAllPositions": 2,
+            "trade/marginType": 2,
+            "trade/positionMargin": 2
+          },
+          "delete": {
+            "trade/allOpenOrders": 2,
+            "trade/cancelOrder": 2
+          }
+        }
+      }
+    },
+    "contract": {
+      "v1": {
+        "private": {
+          "get": {
+            "allPosition": 2,
+            "allOrders": 2,
+            "balance": 2
+          }
+        }
+      }
+    },
+    "wallets": {
+      "v1": {
+        "private": {
+          "get": {
+            "capital/config/getall": 5,
+            "capital/deposit/address": 5,
+            "capital/innerTransfer/records": 1,
+            "capital/subAccount/deposit/address": 5,
+            "capital/deposit/subHisrec": 2,
+            "capital/subAccount/innerTransfer/records": 1,
+            "capital/deposit/riskRecords": 5
+          },
+          "post": {
+            "capital/withdraw/apply": 5,
+            "capital/innerTransfer/apply": 5,
+            "capital/subAccountInnerTransfer/apply": 2,
+            "capital/deposit/createSubAddress": 2
+          }
+        }
+      }
+    },
+    "subAccount": {
+      "v1": {
+        "private": {
+          "get": {
+            "list": 10,
+            "assets": 2
+          },
+          "post": {
+            "create": 10,
+            "apiKey/create": 2,
+            "apiKey/edit": 2,
+            "apiKey/del": 2,
+            "updateStatus": 10
+          }
+        }
+      }
+    },
+    "account": {
+      "v1": {
+        "private": {
+          "get": {
+            "uid": 1,
+            "apiKey/query": 2
+          },
+          "post": {
+            "innerTransfer/authorizeSubAccount": 1
+          }
+        }
+      }
+    },
+    "user": {
+      "auth": {
+        "private": {
+          "post": {
+            "userDataStream": 2
+          },
+          "put": {
+            "userDataStream": 2
+          },
+          "delete": {
+            "userDataStream": 2
+          }
+        }
+      }
+    },
+    "copyTrading": {
+      "v1": {
+        "private": {
+          "get": {
+            "swap/trace/currentTrack": 2
+          },
+          "post": {
+            "swap/trace/closeTrackOrder": 2,
+            "swap/trace/setTPSL": 2,
+            "spot/trader/sellOrder": 10
+          }
+        }
+      }
+    },
+    "api": {
+      "v3": {
+        "private": {
+          "get": {
+            "asset/transfer": 1,
+            "capital/deposit/hisrec": 1,
+            "capital/withdraw/history": 1
+          },
+          "post": {
+            "post/asset/transfer": 1
+          }
+        }
+      }
+    }
+  },
+  "requiredCredentials": {
+    "apiKey": true,
+    "secret": true,
+    "uid": false,
+    "accountId": false,
+    "login": false,
+    "password": false,
+    "twofa": false,
+    "privateKey": false,
+    "walletAddress": false,
+    "token": false
+  },
+  "markets": null,
+  "currencies": {},
+  "timeframes": {
+    "1m": "1m",
+    "3m": "3m",
+    "5m": "5m",
+    "15m": "15m",
+    "30m": "30m",
+    "1h": "1h",
+    "2h": "2h",
+    "4h": "4h",
+    "6h": "6h",
+    "12h": "12h",
+    "1d": "1d",
+    "3d": "3d",
+    "1w": "1w",
+    "1M": "1M"
+  },
+  "fees": {
+    "trading": {
+      "tierBased": null,
+      "percentage": null,
+      "taker": null,
+      "maker": null
+    },
+    "funding": {
+      "tierBased": null,
+      "percentage": null,
+      "withdraw": {},
+      "deposit": {}
+    },
+    "tierBased": true,
+    "spot": {
+      "feeSide": "get",
+      "maker": 0.001,
+      "taker": 0.001
+    },
+    "swap": {
+      "feeSide": "quote",
+      "maker": 0.0002,
+      "taker": 0.0005
+    }
+  },
+  "status": {
+    "status": "ok",
+    "updated": null,
+    "eta": null,
+    "url": null
+  },
+  "exceptions": {
+    "exact": {
+      "400": "ccxt.base.errors.BadRequest",
+      "401": "ccxt.base.errors.AuthenticationError",
+      "403": "ccxt.base.errors.PermissionDenied",
+      "404": "ccxt.base.errors.BadRequest",
+      "429": "ccxt.base.errors.DDoSProtection",
+      "418": "ccxt.base.errors.PermissionDenied",
+      "500": "ccxt.base.errors.ExchangeError",
+      "504": "ccxt.base.errors.ExchangeError",
+      "100001": "ccxt.base.errors.AuthenticationError",
+      "100412": "ccxt.base.errors.AuthenticationError",
+      "100202": "ccxt.base.errors.InsufficientFunds",
+      "100204": "ccxt.base.errors.BadRequest",
+      "100400": "ccxt.base.errors.BadRequest",
+      "100410": "ccxt.base.errors.OperationFailed",
+      "100421": "ccxt.base.errors.BadSymbol",
+      "100440": "ccxt.base.errors.ExchangeError",
+      "100500": "ccxt.base.errors.OperationFailed",
+      "100503": "ccxt.base.errors.ExchangeError",
+      "80001": "ccxt.base.errors.BadRequest",
+      "80012": "ccxt.base.errors.InsufficientFunds",
+      "80014": "ccxt.base.errors.BadRequest",
+      "80016": "ccxt.base.errors.OrderNotFound",
+      "80017": "ccxt.base.errors.OrderNotFound",
+      "100414": "ccxt.base.errors.AccountSuspended",
+      "100419": "ccxt.base.errors.PermissionDenied",
+      "100437": "ccxt.base.errors.BadRequest",
+      "101204": "ccxt.base.errors.InsufficientFunds",
+      "110425": "ccxt.base.errors.InvalidOrder"
+    },
+    "broad": {}
+  },
+  "httpExceptions": {
+    "422": "ccxt.base.errors.ExchangeError",
+    "418": "ccxt.base.errors.DDoSProtection",
+    "429": "ccxt.base.errors.RateLimitExceeded",
+    "404": "ccxt.base.errors.ExchangeNotAvailable",
+    "409": "ccxt.base.errors.ExchangeNotAvailable",
+    "410": "ccxt.base.errors.ExchangeNotAvailable",
+    "451": "ccxt.base.errors.ExchangeNotAvailable",
+    "500": "ccxt.base.errors.ExchangeNotAvailable",
+    "501": "ccxt.base.errors.ExchangeNotAvailable",
+    "502": "ccxt.base.errors.ExchangeNotAvailable",
+    "520": "ccxt.base.errors.ExchangeNotAvailable",
+    "521": "ccxt.base.errors.ExchangeNotAvailable",
+    "522": "ccxt.base.errors.ExchangeNotAvailable",
+    "525": "ccxt.base.errors.ExchangeNotAvailable",
+    "526": "ccxt.base.errors.ExchangeNotAvailable",
+    "400": "ccxt.base.errors.ExchangeNotAvailable",
+    "403": "ccxt.base.errors.ExchangeNotAvailable",
+    "405": "ccxt.base.errors.ExchangeNotAvailable",
+    "503": "ccxt.base.errors.ExchangeNotAvailable",
+    "530": "ccxt.base.errors.ExchangeNotAvailable",
+    "408": "ccxt.base.errors.RequestTimeout",
+    "504": "ccxt.base.errors.RequestTimeout",
+    "401": "ccxt.base.errors.AuthenticationError",
+    "407": "ccxt.base.errors.AuthenticationError",
+    "511": "ccxt.base.errors.AuthenticationError"
+  },
+  "commonCurrencies": {
+    "XBT": "BTC",
+    "BCC": "BCH",
+    "BCHSV": "BSV",
+    "SNOW": "Snowman",
+    "OMNI": "OmniCat",
+    "NAP": "$NAP"
+  },
+  "precisionMode": 4,
+  "paddingMode": 5,
+  "limits": {
+    "leverage": {
+      "min": null,
+      "max": null
+    },
+    "amount": {
+      "min": null,
+      "max": null
+    },
+    "price": {
+      "min": null,
+      "max": null
+    },
+    "cost": {
+      "min": null,
+      "max": null
+    }
+  },
+  "version": "v1",
+  "hostname": "bingx.com",
+  "options": {
+    "defaultType": "spot",
+    "accountsByType": {
+      "spot": "FUND",
+      "swap": "PFUTURES",
+      "future": "SFUTURES"
+    },
+    "accountsById": {
+      "FUND": "spot",
+      "PFUTURES": "swap",
+      "SFUTURES": "future"
+    },
+    "recvWindow": 5000,
+    "broker": "CCXT",
+    "defaultNetworks": {
+      "ETH": "ETH",
+      "USDT": "ERC20",
+      "USDC": "ERC20",
+      "BTC": "BTC",
+      "LTC": "LTC"
+    },
+    "networks": {
+      "ARB": "ARBITRUM"
+    },
+    "listenKeyRefreshRate": 3540000,
+    "ws": {
+      "gunzip": true
+    },
+    "swap": {
+      "timeframes": {
+        "1m": "1m",
+        "3m": "3m",
+        "5m": "5m",
+        "15m": "15m",
+        "30m": "30m",
+        "1h": "1h",
+        "2h": "2h",
+        "4h": "4h",
+        "6h": "6h",
+        "12h": "12h",
+        "1d": "1d",
+        "3d": "3d",
+        "1w": "1w",
+        "1M": "1M"
+      }
+    },
+    "spot": {
+      "timeframes": {
+        "1m": "1min",
+        "5m": "5min",
+        "15m": "15min",
+        "30m": "30min",
+        "1h": "60min",
+        "1d": "1day"
+      }
+    },
+    "watchBalance": {
+      "fetchBalanceSnapshot": true,
+      "awaitBalanceSnapshot": false
+    },
+    "watchOrderBook": {
+      "depth": 100,
+      "interval": 500
+    },
+    "watchOrderBookForSymbols": {
+      "depth": 100,
+      "interval": 500
+    }
+  },
+  "streaming": {
+    "keepAlive": 1800000
+  }
+}
