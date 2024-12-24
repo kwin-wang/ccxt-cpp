@@ -1,0 +1,629 @@
+{
+  "id": "coinbase",
+  "name": "Coinbase Advanced",
+  "countries": [
+    "US"
+  ],
+  "enableRateLimit": true,
+  "rateLimit": 34,
+  "timeout": 10000,
+  "certified": true,
+  "pro": true,
+  "alias": false,
+  "dex": false,
+  "has": {
+    "publicAPI": true,
+    "privateAPI": true,
+    "CORS": true,
+    "sandbox": null,
+    "spot": true,
+    "margin": false,
+    "swap": false,
+    "future": false,
+    "option": false,
+    "addMargin": false,
+    "borrowCrossMargin": null,
+    "borrowIsolatedMargin": null,
+    "borrowMargin": null,
+    "cancelAllOrders": null,
+    "cancelAllOrdersWs": null,
+    "cancelOrder": true,
+    "cancelOrderWs": null,
+    "cancelOrders": true,
+    "cancelOrdersWs": null,
+    "closeAllPositions": false,
+    "closePosition": true,
+    "createDepositAddress": true,
+    "createLimitBuyOrder": true,
+    "createLimitBuyOrderWs": null,
+    "createLimitOrder": true,
+    "createLimitOrderWs": null,
+    "createLimitSellOrder": true,
+    "createLimitSellOrderWs": null,
+    "createMarketBuyOrder": true,
+    "createMarketBuyOrderWs": null,
+    "createMarketBuyOrderWithCost": true,
+    "createMarketBuyOrderWithCostWs": null,
+    "createMarketOrder": true,
+    "createMarketOrderWs": true,
+    "createMarketOrderWithCost": false,
+    "createMarketOrderWithCostWs": null,
+    "createMarketSellOrder": true,
+    "createMarketSellOrderWs": null,
+    "createMarketSellOrderWithCost": false,
+    "createMarketSellOrderWithCostWs": null,
+    "createOrder": true,
+    "createOrderWs": null,
+    "createOrders": null,
+    "createOrderWithTakeProfitAndStopLoss": null,
+    "createOrderWithTakeProfitAndStopLossWs": null,
+    "createPostOnlyOrder": true,
+    "createPostOnlyOrderWs": null,
+    "createReduceOnlyOrder": false,
+    "createReduceOnlyOrderWs": null,
+    "createStopLimitOrder": true,
+    "createStopLimitOrderWs": null,
+    "createStopLossOrder": null,
+    "createStopLossOrderWs": null,
+    "createStopMarketOrder": false,
+    "createStopMarketOrderWs": null,
+    "createStopOrder": true,
+    "createStopOrderWs": null,
+    "createTakeProfitOrder": null,
+    "createTakeProfitOrderWs": null,
+    "createTrailingAmountOrder": null,
+    "createTrailingAmountOrderWs": null,
+    "createTrailingPercentOrder": null,
+    "createTrailingPercentOrderWs": null,
+    "createTriggerOrder": null,
+    "createTriggerOrderWs": null,
+    "deposit": true,
+    "editOrder": true,
+    "editOrderWs": null,
+    "fetchAccounts": true,
+    "fetchBalance": true,
+    "fetchBalanceWs": null,
+    "fetchBidsAsks": true,
+    "fetchBorrowInterest": null,
+    "fetchBorrowRate": null,
+    "fetchBorrowRateHistories": false,
+    "fetchBorrowRateHistory": false,
+    "fetchBorrowRates": null,
+    "fetchBorrowRatesPerSymbol": null,
+    "fetchCanceledAndClosedOrders": null,
+    "fetchCanceledOrders": true,
+    "fetchClosedOrder": null,
+    "fetchClosedOrders": true,
+    "fetchClosedOrdersWs": null,
+    "fetchConvertCurrencies": null,
+    "fetchConvertQuote": true,
+    "fetchConvertTrade": true,
+    "fetchConvertTradeHistory": false,
+    "fetchCrossBorrowRate": false,
+    "fetchCrossBorrowRates": false,
+    "fetchCurrencies": true,
+    "fetchCurrenciesWs": "emulated",
+    "fetchDeposit": true,
+    "fetchDepositAddress": "emulated",
+    "fetchDepositAddresses": false,
+    "fetchDepositAddressesByNetwork": true,
+    "fetchDeposits": true,
+    "fetchDepositsWithdrawals": null,
+    "fetchDepositsWs": null,
+    "fetchDepositWithdrawFee": null,
+    "fetchDepositWithdrawFees": null,
+    "fetchFundingHistory": false,
+    "fetchFundingRate": false,
+    "fetchFundingRateHistory": false,
+    "fetchFundingInterval": null,
+    "fetchFundingIntervals": null,
+    "fetchFundingRates": false,
+    "fetchGreeks": null,
+    "fetchIndexOHLCV": false,
+    "fetchIsolatedBorrowRate": false,
+    "fetchIsolatedBorrowRates": false,
+    "fetchMarginAdjustmentHistory": null,
+    "fetchIsolatedPositions": null,
+    "fetchL2OrderBook": false,
+    "fetchL3OrderBook": null,
+    "fetchLastPrices": null,
+    "fetchLedger": true,
+    "fetchLedgerEntry": null,
+    "fetchLeverage": false,
+    "fetchLeverages": null,
+    "fetchLeverageTiers": false,
+    "fetchLiquidations": null,
+    "fetchMarginMode": false,
+    "fetchMarginModes": null,
+    "fetchMarketLeverageTiers": null,
+    "fetchMarkets": true,
+    "fetchMarketsWs": null,
+    "fetchMarkOHLCV": false,
+    "fetchMyLiquidations": null,
+    "fetchMySettlementHistory": null,
+    "fetchMyTrades": true,
+    "fetchMyTradesWs": null,
+    "fetchOHLCV": true,
+    "fetchOHLCVWs": null,
+    "fetchOpenInterest": null,
+    "fetchOpenInterestHistory": false,
+    "fetchOpenOrder": null,
+    "fetchOpenOrders": true,
+    "fetchOpenOrdersWs": null,
+    "fetchOption": null,
+    "fetchOptionChain": null,
+    "fetchOrder": true,
+    "fetchOrderBook": true,
+    "fetchOrderBooks": null,
+    "fetchOrderBookWs": null,
+    "fetchOrders": true,
+    "fetchOrdersByStatus": null,
+    "fetchOrdersWs": null,
+    "fetchOrderTrades": null,
+    "fetchOrderWs": null,
+    "fetchPosition": true,
+    "fetchPositionHistory": null,
+    "fetchPositionsHistory": null,
+    "fetchPositionWs": null,
+    "fetchPositionMode": false,
+    "fetchPositions": true,
+    "fetchPositionsWs": null,
+    "fetchPositionsForSymbol": null,
+    "fetchPositionsForSymbolWs": null,
+    "fetchPositionsRisk": false,
+    "fetchPremiumIndexOHLCV": false,
+    "fetchSettlementHistory": null,
+    "fetchStatus": null,
+    "fetchTicker": true,
+    "fetchTickerWs": null,
+    "fetchTickers": true,
+    "fetchMarkPrices": null,
+    "fetchTickersWs": null,
+    "fetchTime": true,
+    "fetchTrades": true,
+    "fetchTradesWs": null,
+    "fetchTradingFee": "emulated",
+    "fetchTradingFees": true,
+    "fetchTradingFeesWs": null,
+    "fetchTradingLimits": null,
+    "fetchTransactionFee": null,
+    "fetchTransactionFees": null,
+    "fetchTransactions": null,
+    "fetchTransfer": null,
+    "fetchTransfers": null,
+    "fetchUnderlyingAssets": null,
+    "fetchVolatilityHistory": null,
+    "fetchWithdrawAddresses": null,
+    "fetchWithdrawal": null,
+    "fetchWithdrawals": true,
+    "fetchWithdrawalsWs": null,
+    "fetchWithdrawalWhitelist": null,
+    "reduceMargin": false,
+    "repayCrossMargin": null,
+    "repayIsolatedMargin": null,
+    "setLeverage": false,
+    "setMargin": null,
+    "setMarginMode": false,
+    "setPositionMode": false,
+    "signIn": null,
+    "transfer": null,
+    "watchBalance": null,
+    "watchMyTrades": null,
+    "watchOHLCV": null,
+    "watchOHLCVForSymbols": null,
+    "watchOrderBook": null,
+    "watchOrderBookForSymbols": null,
+    "watchOrders": null,
+    "watchOrdersForSymbols": null,
+    "watchPosition": null,
+    "watchPositions": null,
+    "watchStatus": null,
+    "watchTicker": null,
+    "watchTickers": null,
+    "watchTrades": null,
+    "watchTradesForSymbols": null,
+    "watchLiquidations": null,
+    "watchLiquidationsForSymbols": null,
+    "watchMyLiquidations": null,
+    "watchMyLiquidationsForSymbols": null,
+    "withdraw": true,
+    "ws": null,
+    "createConvertTrade": true,
+    "fetchMyBuys": true,
+    "fetchMySells": true
+  },
+  "urls": {
+    "logo": "https://user-images.githubusercontent.com/1294454/40811661-b6eceae2-653a-11e8-829e-10bfadb078cf.jpg",
+    "api": {
+      "rest": "https://api.coinbase.com"
+    },
+    "www": "https://www.coinbase.com",
+    "doc": [
+      "https://developers.coinbase.com/api/v2",
+      "https://docs.cloud.coinbase.com/advanced-trade/docs/welcome"
+    ],
+    "fees": [
+      "https://support.coinbase.com/customer/portal/articles/2109597-buy-sell-bank-transfer-fees",
+      "https://www.coinbase.com/advanced-fees"
+    ],
+    "referral": "https://www.coinbase.com/join/58cbe25a355148797479dbd2"
+  },
+  "api": {
+    "v2": {
+      "public": {
+        "get": {
+          "currencies": 10.6,
+          "currencies/crypto": 10.6,
+          "time": 10.6,
+          "exchange-rates": 10.6,
+          "users/{user_id}": 10.6,
+          "prices/{symbol}/buy": 10.6,
+          "prices/{symbol}/sell": 10.6,
+          "prices/{symbol}/spot": 10.6
+        }
+      },
+      "private": {
+        "get": {
+          "accounts": 10.6,
+          "accounts/{account_id}": 10.6,
+          "accounts/{account_id}/addresses": 10.6,
+          "accounts/{account_id}/addresses/{address_id}": 10.6,
+          "accounts/{account_id}/addresses/{address_id}/transactions": 10.6,
+          "accounts/{account_id}/transactions": 10.6,
+          "accounts/{account_id}/transactions/{transaction_id}": 10.6,
+          "accounts/{account_id}/buys": 10.6,
+          "accounts/{account_id}/buys/{buy_id}": 10.6,
+          "accounts/{account_id}/sells": 10.6,
+          "accounts/{account_id}/sells/{sell_id}": 10.6,
+          "accounts/{account_id}/deposits": 10.6,
+          "accounts/{account_id}/deposits/{deposit_id}": 10.6,
+          "accounts/{account_id}/withdrawals": 10.6,
+          "accounts/{account_id}/withdrawals/{withdrawal_id}": 10.6,
+          "payment-methods": 10.6,
+          "payment-methods/{payment_method_id}": 10.6,
+          "user": 10.6,
+          "user/auth": 10.6
+        },
+        "post": {
+          "accounts": 10.6,
+          "accounts/{account_id}/primary": 10.6,
+          "accounts/{account_id}/addresses": 10.6,
+          "accounts/{account_id}/transactions": 10.6,
+          "accounts/{account_id}/transactions/{transaction_id}/complete": 10.6,
+          "accounts/{account_id}/transactions/{transaction_id}/resend": 10.6,
+          "accounts/{account_id}/buys": 10.6,
+          "accounts/{account_id}/buys/{buy_id}/commit": 10.6,
+          "accounts/{account_id}/sells": 10.6,
+          "accounts/{account_id}/sells/{sell_id}/commit": 10.6,
+          "accounts/{account_id}/deposits": 10.6,
+          "accounts/{account_id}/deposits/{deposit_id}/commit": 10.6,
+          "accounts/{account_id}/withdrawals": 10.6,
+          "accounts/{account_id}/withdrawals/{withdrawal_id}/commit": 10.6
+        },
+        "put": {
+          "accounts/{account_id}": 10.6,
+          "user": 10.6
+        },
+        "delete": {
+          "accounts/{id}": 10.6,
+          "accounts/{account_id}/transactions/{transaction_id}": 10.6
+        }
+      }
+    },
+    "v3": {
+      "public": {
+        "get": {
+          "brokerage/time": 3,
+          "brokerage/market/product_book": 3,
+          "brokerage/market/products": 3,
+          "brokerage/market/products/{product_id}": 3,
+          "brokerage/market/products/{product_id}/candles": 3,
+          "brokerage/market/products/{product_id}/ticker": 3
+        }
+      },
+      "private": {
+        "get": {
+          "brokerage/accounts": 1,
+          "brokerage/accounts/{account_uuid}": 1,
+          "brokerage/orders/historical/batch": 1,
+          "brokerage/orders/historical/fills": 1,
+          "brokerage/orders/historical/{order_id}": 1,
+          "brokerage/products": 3,
+          "brokerage/products/{product_id}": 3,
+          "brokerage/products/{product_id}/candles": 3,
+          "brokerage/products/{product_id}/ticker": 3,
+          "brokerage/best_bid_ask": 3,
+          "brokerage/product_book": 3,
+          "brokerage/transaction_summary": 3,
+          "brokerage/portfolios": 1,
+          "brokerage/portfolios/{portfolio_uuid}": 1,
+          "brokerage/convert/trade/{trade_id}": 1,
+          "brokerage/cfm/balance_summary": 1,
+          "brokerage/cfm/positions": 1,
+          "brokerage/cfm/positions/{product_id}": 1,
+          "brokerage/cfm/sweeps": 1,
+          "brokerage/intx/portfolio/{portfolio_uuid}": 1,
+          "brokerage/intx/positions/{portfolio_uuid}": 1,
+          "brokerage/intx/positions/{portfolio_uuid}/{symbol}": 1,
+          "brokerage/payment_methods": 1,
+          "brokerage/payment_methods/{payment_method_id}": 1
+        },
+        "post": {
+          "brokerage/orders": 1,
+          "brokerage/orders/batch_cancel": 1,
+          "brokerage/orders/edit": 1,
+          "brokerage/orders/edit_preview": 1,
+          "brokerage/orders/preview": 1,
+          "brokerage/portfolios": 1,
+          "brokerage/portfolios/move_funds": 1,
+          "brokerage/convert/quote": 1,
+          "brokerage/convert/trade/{trade_id}": 1,
+          "brokerage/cfm/sweeps/schedule": 1,
+          "brokerage/intx/allocate": 1,
+          "brokerage/orders/close_position": 1
+        },
+        "put": {
+          "brokerage/portfolios/{portfolio_uuid}": 1
+        },
+        "delete": {
+          "brokerage/portfolios/{portfolio_uuid}": 1,
+          "brokerage/cfm/sweeps": 1
+        }
+      }
+    }
+  },
+  "requiredCredentials": {
+    "apiKey": true,
+    "secret": true,
+    "uid": false,
+    "accountId": false,
+    "login": false,
+    "password": false,
+    "twofa": false,
+    "privateKey": false,
+    "walletAddress": false,
+    "token": false
+  },
+  "markets": null,
+  "currencies": {},
+  "timeframes": {
+    "1m": "ONE_MINUTE",
+    "5m": "FIVE_MINUTE",
+    "15m": "FIFTEEN_MINUTE",
+    "30m": "THIRTY_MINUTE",
+    "1h": "ONE_HOUR",
+    "2h": "TWO_HOUR",
+    "6h": "SIX_HOUR",
+    "1d": "ONE_DAY"
+  },
+  "fees": {
+    "trading": {
+      "tierBased": true,
+      "percentage": true,
+      "taker": 0.012,
+      "maker": 0.006,
+      "tiers": {
+        "taker": [
+          [
+            0.0,
+            0.006
+          ],
+          [
+            10000.0,
+            0.004
+          ],
+          [
+            50000.0,
+            0.0025
+          ],
+          [
+            100000.0,
+            0.002
+          ],
+          [
+            1000000.0,
+            0.0018
+          ],
+          [
+            15000000.0,
+            0.0016
+          ],
+          [
+            75000000.0,
+            0.0012
+          ],
+          [
+            250000000.0,
+            0.0008
+          ],
+          [
+            400000000.0,
+            0.0005
+          ]
+        ],
+        "maker": [
+          [
+            0.0,
+            0.004
+          ],
+          [
+            10000.0,
+            0.0025
+          ],
+          [
+            50000.0,
+            0.0015
+          ],
+          [
+            100000.0,
+            0.001
+          ],
+          [
+            1000000.0,
+            0.0008
+          ],
+          [
+            15000000.0,
+            0.0006
+          ],
+          [
+            75000000.0,
+            0.0003
+          ],
+          [
+            250000000.0,
+            0.0
+          ],
+          [
+            400000000.0,
+            0.0
+          ]
+        ]
+      }
+    },
+    "funding": {
+      "tierBased": null,
+      "percentage": null,
+      "withdraw": {},
+      "deposit": {}
+    }
+  },
+  "status": {
+    "status": "ok",
+    "updated": null,
+    "eta": null,
+    "url": null
+  },
+  "exceptions": {
+    "exact": {
+      "two_factor_required": "ccxt.base.errors.AuthenticationError",
+      "param_required": "ccxt.base.errors.ExchangeError",
+      "validation_error": "ccxt.base.errors.ExchangeError",
+      "invalid_request": "ccxt.base.errors.ExchangeError",
+      "personal_details_required": "ccxt.base.errors.AuthenticationError",
+      "identity_verification_required": "ccxt.base.errors.AuthenticationError",
+      "jumio_verification_required": "ccxt.base.errors.AuthenticationError",
+      "jumio_face_match_verification_required": "ccxt.base.errors.AuthenticationError",
+      "unverified_email": "ccxt.base.errors.AuthenticationError",
+      "authentication_error": "ccxt.base.errors.AuthenticationError",
+      "invalid_authentication_method": "ccxt.base.errors.AuthenticationError",
+      "invalid_token": "ccxt.base.errors.AuthenticationError",
+      "revoked_token": "ccxt.base.errors.AuthenticationError",
+      "expired_token": "ccxt.base.errors.AuthenticationError",
+      "invalid_scope": "ccxt.base.errors.AuthenticationError",
+      "not_found": "ccxt.base.errors.ExchangeError",
+      "rate_limit_exceeded": "ccxt.base.errors.RateLimitExceeded",
+      "internal_server_error": "ccxt.base.errors.ExchangeError",
+      "UNSUPPORTED_ORDER_CONFIGURATION": "ccxt.base.errors.BadRequest",
+      "INSUFFICIENT_FUND": "ccxt.base.errors.BadRequest",
+      "PERMISSION_DENIED": "ccxt.base.errors.PermissionDenied",
+      "INVALID_ARGUMENT": "ccxt.base.errors.BadRequest"
+    },
+    "broad": {
+      "request timestamp expired": "ccxt.base.errors.InvalidNonce",
+      "order with self orderID was not found": "ccxt.base.errors.OrderNotFound"
+    }
+  },
+  "httpExceptions": {
+    "422": "ccxt.base.errors.ExchangeError",
+    "418": "ccxt.base.errors.DDoSProtection",
+    "429": "ccxt.base.errors.RateLimitExceeded",
+    "404": "ccxt.base.errors.ExchangeNotAvailable",
+    "409": "ccxt.base.errors.ExchangeNotAvailable",
+    "410": "ccxt.base.errors.ExchangeNotAvailable",
+    "451": "ccxt.base.errors.ExchangeNotAvailable",
+    "500": "ccxt.base.errors.ExchangeNotAvailable",
+    "501": "ccxt.base.errors.ExchangeNotAvailable",
+    "502": "ccxt.base.errors.ExchangeNotAvailable",
+    "520": "ccxt.base.errors.ExchangeNotAvailable",
+    "521": "ccxt.base.errors.ExchangeNotAvailable",
+    "522": "ccxt.base.errors.ExchangeNotAvailable",
+    "525": "ccxt.base.errors.ExchangeNotAvailable",
+    "526": "ccxt.base.errors.ExchangeNotAvailable",
+    "400": "ccxt.base.errors.ExchangeNotAvailable",
+    "403": "ccxt.base.errors.ExchangeNotAvailable",
+    "405": "ccxt.base.errors.ExchangeNotAvailable",
+    "503": "ccxt.base.errors.ExchangeNotAvailable",
+    "530": "ccxt.base.errors.ExchangeNotAvailable",
+    "408": "ccxt.base.errors.RequestTimeout",
+    "504": "ccxt.base.errors.RequestTimeout",
+    "401": "ccxt.base.errors.AuthenticationError",
+    "407": "ccxt.base.errors.AuthenticationError",
+    "511": "ccxt.base.errors.AuthenticationError"
+  },
+  "commonCurrencies": {
+    "XBT": "BTC",
+    "BCC": "BCH",
+    "BCHSV": "BSV",
+    "CGLD": "CELO"
+  },
+  "precisionMode": 4,
+  "paddingMode": 5,
+  "limits": {
+    "leverage": {
+      "min": null,
+      "max": null
+    },
+    "amount": {
+      "min": null,
+      "max": null
+    },
+    "price": {
+      "min": null,
+      "max": null
+    },
+    "cost": {
+      "min": null,
+      "max": null
+    }
+  },
+  "version": "v2",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36",
+  "headers": {
+    "CB-VERSION": "2018-05-30"
+  },
+  "options": {
+    "usePrivate": false,
+    "brokerId": "ccxt",
+    "stablePairs": [
+      "BUSD-USD",
+      "CBETH-ETH",
+      "DAI-USD",
+      "GUSD-USD",
+      "GYEN-USD",
+      "PAX-USD",
+      "PAX-USDT",
+      "USDC-EUR",
+      "USDC-GBP",
+      "USDT-EUR",
+      "USDT-GBP",
+      "USDT-USD",
+      "USDT-USDC",
+      "WBTC-BTC"
+    ],
+    "fetchCurrencies": {
+      "expires": 5000
+    },
+    "accounts": [
+      "wallet",
+      "fiat"
+    ],
+    "v3Accounts": [
+      "ACCOUNT_TYPE_CRYPTO",
+      "ACCOUNT_TYPE_FIAT"
+    ],
+    "networks": {
+      "ERC20": "ethereum",
+      "XLM": "stellar"
+    },
+    "createMarketBuyOrderRequiresPrice": true,
+    "advanced": true,
+    "fetchMarkets": "fetchMarketsV3",
+    "fetchTicker": "fetchTickerV3",
+    "fetchTickers": "fetchTickersV3",
+    "fetchAccounts": "fetchAccountsV3",
+    "fetchBalance": "v2PrivateGetAccounts",
+    "fetchTime": "v2PublicGetTime",
+    "user_native_currency": "USD"
+  }
+}

@@ -8,6 +8,7 @@
 #include "ccxt/base/types.h"
 #include "ccxt/base/config.h"
 #include <boost/asio.hpp>
+#include <curl/curl.h>
 
 namespace ccxt {
 
@@ -37,6 +38,7 @@ public:
 protected:
     Config config_;
     boost::asio::io_context& context_;
+    CURL* curl_ = nullptr;
     
 };
 

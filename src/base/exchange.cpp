@@ -31,6 +31,7 @@ Exchange::Exchange(boost::asio::io_context& context, const Config& config) : Exc
     pro = false;
     certified = false;
     lastRestRequestTimestamp = 0;
+    curl_ = curl_easy_init();
     init();
 }
 
@@ -529,7 +530,44 @@ void Exchange::loadMarkets(bool reload) {
 std::string Exchange::marketId(const std::string& symbol) {
     return market(symbol).id;
 }
+json Exchange::fetch(const String& url, const String& method,
+                    const std::map<String, String>& headers,
+                    const String& body) {
 
+    
+    if(curl) {
+        struct curl_slist* headers = nullptr;
+        for (const auto& [key, value] : headers) {
+            headers = curl_slist_append(headers, (key + ": " + value).c_str());
+        }
+        curl_easy_setopt(curl, CURLOP_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        res = curl_easy_perform(curl);
+        long httpCode = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+
+        if(res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        } else if (httpCode != 200) {
+            std::cerr << "HTTP request failed with code: " << httpCode << std::endl;
+        } else {
+            try {
+                auto jsonResponse = nlohmann::json::parse(readBuffer);
+                // Process the JSON response (e.g., check order status)
+                std::cout << jsonResponse.dump(4) << std::endl;
+                return jsonResponse; // Pretty print
+            } catch (const nlohmann::json::parse_error& e) {
+                std::cerr << "JSON parse error: " << e.what() << std::endl;
+            }
+        }
+        curl_easy_cleanup(curl);
+    }
+    return json::object();
+}
 std::string Exchange::symbol(const std::string& marketId) {
     if (markets_by_id.find(marketId) == markets_by_id.end()) {
         throw ExchangeError("Market ID '" + marketId + "' does not exist");
