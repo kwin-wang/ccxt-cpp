@@ -1,6 +1,10 @@
 #pragma once
 
-#include "ccxt/base/exchange.h"
+#include <ccxt/base/exchange.h>
+#include <boost/beast/ssl.hpp>
+#include <boost/asio/ssl.hpp>
+#include <openssl/evp.h>
+#include <openssl/params.h>
 
 namespace ccxt {
 
@@ -11,12 +15,16 @@ public:
     static const bool defaultPro;
     
 
-    explicit Binance(const Config& config = Config());
+    explicit Binance(boost::asio::io_context& context, const Config& config = Config());
     virtual ~Binance() = default;
 
     void init() override;
+    void describe() const override;
 
 protected:
+    std::string getMarketType(const std::string& symbol) const;
+    std::string getEndpoint(const std::string& path, const std::string& type) const;
+
     // Market Data API
     json fetchMarketsImpl() const override;
     json fetchTickerImpl(const std::string& symbol) const override;

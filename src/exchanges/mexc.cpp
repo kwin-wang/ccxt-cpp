@@ -230,10 +230,10 @@ String Mexc::sign(const String& path, const String& api,
             query += "&" + this->urlencode(this->keysort(params));
         }
         
-        String signature = this->hmac(query, this->secret, "sha256", "hex");
+        String signature = this->hmac(query, this->config_.secret, "sha256", "hex");
         url += "?" + query + "&signature=" + signature;
         
-        const_cast<std::map<String, String>&>(headers)["X-MEXC-APIKEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-MEXC-APIKEY"] = this->config_.apiKey;
         
         if (method == "POST") {
             const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
@@ -515,7 +515,7 @@ String Mexc::createSignature(const String& timestamp, const String& method,
         message += body;
     }
     
-    unsigned char* digest = HMAC(EVP_sha256(), this->secret.c_str(), this->secret.length(),
+    unsigned char* digest = HMAC(EVP_sha256(), this->config_.secret.c_str(), this->config_.secret.length(),
                                 (unsigned char*)message.c_str(), message.length(), NULL, NULL);
     
     std::stringstream ss;

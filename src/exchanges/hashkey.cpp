@@ -189,8 +189,8 @@ std::string Hashkey::sign(const std::string& path, const std::string& api,
             url += "?" + this->urlencode(query);
         }
 
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
-        headers["HK-API-KEY"] = this->apiKey;
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
+        headers["HK-API-KEY"] = this->config_.apiKey;
         headers["HK-API-SIGNATURE"] = signature;
         headers["HK-API-TIMESTAMP"] = nonce;
     }

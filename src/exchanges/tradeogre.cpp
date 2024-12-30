@@ -163,7 +163,7 @@ std::string TradeOgre::sign(const std::string& path, const std::string& api,
 
     if (api == "private") {
         this->check_required_credentials();
-        auto auth = this->string_to_base64(this->apiKey + ":" + this->secret);
+        auto auth = this->string_to_base64(this->config_.apiKey + ":" + this->config_.secret);
         auto new_headers = headers;
         new_headers["Authorization"] = "Basic " + auth;
         

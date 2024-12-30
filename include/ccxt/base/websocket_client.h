@@ -3,6 +3,8 @@
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
+#include <boost/beast/websocket/ssl.hpp>
+#include <boost/beast/ssl.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -26,10 +28,11 @@ public:
     void close();
 
     void setMessageHandler(MessageHandler handler);
-
+protected:
+    virtual void handleMessage(const std::string& message) {}
 private:
     void onResolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results);
-    void onConnect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type endpoint);
+    void onConnect(const boost::system::error_code& ec, const boost::asio::ip::tcp::endpoint& endpoint);
     void onHandshake(boost::beast::error_code ec);
     void onWrite(boost::beast::error_code ec, std::size_t bytes_transferred);
     void onRead(boost::beast::error_code ec, std::size_t bytes_transferred);

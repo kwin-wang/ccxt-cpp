@@ -219,9 +219,9 @@ std::string Fmfwio::sign(const std::string& path, const std::string& api,
             auth += this->urlencode(this->keysort(query));
         }
 
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         auto new_headers = headers;
-        new_headers["FW-API-KEY"] = this->apiKey;
+        new_headers["FW-API-KEY"] = this->config_.apiKey;
         new_headers["FW-API-TIMESTAMP"] = timestamp;
         new_headers["FW-API-SIGNATURE"] = signature;
 
@@ -323,7 +323,7 @@ std::string Fmfwio::get_signature(const std::string& path, const std::string& me
         auth += this->urlencode(this->keysort(params));
     }
 
-    return this->hmac(auth, this->secret, "sha256", "hex");
+    return this->hmac(auth, this->config_.secret, "sha256", "hex");
 }
 
 nlohmann::json Fmfwio::parse_order(const nlohmann::json& order, const nlohmann::json& market) {

@@ -364,9 +364,9 @@ String Xt::sign(const String& path, const String& api, const String& method,
             }
         }
 
-        auto signature = this->hmac(this->encode(auth), this->encode(this->secret));
+        auto signature = this->hmac(this->encode(auth), this->encode(this->config_.secret));
         auto newHeaders = {
-            {"xt-validate-appkey", this->apiKey},
+            {"xt-validate-appkey", this->config_.apiKey},
             {"xt-validate-timestamp", timestamp},
             {"xt-validate-signature", signature},
             {"Content-Type", "application/json"}

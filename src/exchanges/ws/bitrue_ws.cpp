@@ -144,12 +144,12 @@ void bitrue_ws::authenticate(const Dict& params) {
     }
     
     int64_t timestamp = std::chrono::system_clock::now().time_since_epoch().count() / 1000000;
-    std::string signature = this->hmac(std::to_string(timestamp), this->secret, "sha256");
+    std::string signature = this->hmac(std::to_string(timestamp), this->config_.secret, "sha256");
     
     json request = {
         {"method", "LOGIN"},
         {"params", {
-            {"apiKey", this->apiKey},
+            {"apiKey", this->config_.apiKey},
             {"timestamp", timestamp},
             {"signature", signature}
         }},

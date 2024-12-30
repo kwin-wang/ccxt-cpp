@@ -56,6 +56,24 @@ struct Market {
         if (j.contains("option")) option = j["option"].get<String>();
         return *this;
     }
+
+    const String& operator[](const String& key) const {
+        if (key == "id") return id;
+        if (key == "symbol") return symbol;
+        if (key == "base") return base;
+        if (key == "quote") return quote;
+        if (key == "baseId") return baseId;
+        if (key == "quoteId") return quoteId;
+        if (key == "type") return type;
+        if (key == "spot") return spot;
+        if (key == "margin") return margin;
+        if (key == "swap") return swap;
+        if (key == "future") return future;
+        if (key == "option") return option;
+        if (key == "active") return active;
+        static const String empty;
+        return empty;
+    }
 };
 
 struct Currency {
@@ -73,6 +91,8 @@ struct Balance {
     double free;
     double used;
     double total;
+    uint64_t timestamp;
+    String currency;
 };
 
 struct Order {
@@ -110,7 +130,9 @@ struct Trade {
     double price;
     double amount;
     double cost;
-    Fee fee;
+    double fee;
+    String feeCurrency;
+    String orderId;
 };
 
 struct OHLCV {
@@ -133,6 +155,7 @@ struct Ticker {
     double ask;
     double askVolume;
     double vwap;
+    double volume;
     double open;
     double close;
     double last;
@@ -142,6 +165,20 @@ struct Ticker {
     double average;
     double baseVolume;
     double quoteVolume;
+    double markPrice;
+    double indexPrice;
+    double priceChange;
+    double priceChangePercent;
+    double previousClosePrice;
+    double lastPrice;
+    double lastQuantity;
+    double previousDayClose;
+    double currentDayClose;
+    double currentDayCloseChange;
+    double currentDayCloseChangePercent;
+    double currentDayClosePrice;
+    double currentDayCloseQuantity;
+    double currentDayCloseAverage;
     std::map<String, String> info;
 };
 
@@ -152,6 +189,40 @@ struct OrderBook {
     int nonce;
     std::vector<std::vector<double>> bids;
     std::vector<std::vector<double>> asks;
+};
+
+struct Position {
+    String symbol;
+    String type;
+    String side;
+    String marginType;
+    double notional;
+    double leverage;
+    double unrealizedPnl;
+    double contracts;
+    double contractSize;
+    double entryPrice;
+    double markPrice;
+    double collateral;
+    double initialMargin;
+    double maintenanceMargin;
+    long long timestamp;
+    String datetime;
+    std::map<String, String> info;
+    String amount;
+};
+
+struct MarkPrice {
+    String symbol;
+    double markPrice;
+    double indexPrice;
+    double estimatedSettlePrice;
+    double lastFundingRate;
+    long long nextFundingTime;
+    long long timestamp;
+    double fundingRate;
+    String datetime;
+    std::map<String, String> info;
 };
 
 } // namespace ccxt

@@ -247,11 +247,11 @@ String Gemini::sign(const String& path, const String& api,
         
         String payload = this->json(body);
         String base64_payload = this->base64Encode(payload);
-        String signature = this->hmac(base64_payload, this->base64ToBinary(this->secret),
+        String signature = this->hmac(base64_payload, this->base64ToBinary(this->config_.secret),
                                     "sha384", "hex");
         
         const_cast<std::map<String, String>&>(headers)["Content-Type"] = "text/plain";
-        const_cast<std::map<String, String>&>(headers)["X-GEMINI-APIKEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-GEMINI-APIKEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["X-GEMINI-PAYLOAD"] = base64_payload;
         const_cast<std::map<String, String>&>(headers)["X-GEMINI-SIGNATURE"] = signature;
         const_cast<std::map<String, String>&>(headers)["Cache-Control"] = "no-cache";

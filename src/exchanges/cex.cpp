@@ -273,11 +273,11 @@ String cex::sign(const String& path, const String& api, const String& method,
     } else {
         this->checkRequiredCredentials();
         long nonce = this->nonce();
-        String auth = std::to_string(nonce) + this->apiKey;
-        String signature = this->hmac(auth, this->secret, "sha256", "hex");
+        String auth = std::to_string(nonce) + this->config_.apiKey;
+        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
         json request = this->extend({
-            {"key", this->apiKey},
+            {"key", this->config_.apiKey},
             {"signature", signature},
             {"nonce", nonce}
         }, query);

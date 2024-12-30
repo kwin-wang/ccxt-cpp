@@ -248,10 +248,10 @@ String OKCoin::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->base64ToBinary(this->secret),
+        String signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
                                     "sha256", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["OK-ACCESS-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["OK-ACCESS-KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["OK-ACCESS-SIGN"] = signature;
         const_cast<std::map<String, String>&>(headers)["OK-ACCESS-TIMESTAMP"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["OK-ACCESS-PASSPHRASE"] = this->password;

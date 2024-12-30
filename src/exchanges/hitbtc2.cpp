@@ -201,7 +201,7 @@ std::string HitBTC2::sign(const std::string& path, const std::string& api,
         }
     } else {
         this->check_required_credentials();
-        auto auth = this->apiKey + ":" + this->secret;
+        auto auth = this->config_.apiKey + ":" + this->config_.secret;
         auto auth_base64 = this->string_to_base64(auth);
         auto headers_map = headers;
         headers_map["Authorization"] = "Basic " + auth_base64;

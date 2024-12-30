@@ -248,9 +248,9 @@ String Bitget::sign(const String& path, const String& api,
         }
         
         String auth = timestamp + method + path + query;
-        String signature = this->hmac(auth, this->secret, "sha256", "base64");
+        String signature = this->hmac(auth, this->config_.secret, "sha256", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["ACCESS-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["ACCESS-KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["ACCESS-SIGN"] = signature;
         const_cast<std::map<String, String>&>(headers)["ACCESS-TIMESTAMP"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["ACCESS-PASSPHRASE"] = this->password;

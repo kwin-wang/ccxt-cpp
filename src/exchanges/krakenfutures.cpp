@@ -132,7 +132,7 @@ std::string KrakenFutures::getSignature(const std::string& path, const std::stri
     if (!body.empty()) {
         message += body;
     }
-    return hmac_sha512(message, this->secret);
+    return hmac_sha512(message, this->config_.secret);
 }
 
 void KrakenFutures::handleErrors(const json& response) {

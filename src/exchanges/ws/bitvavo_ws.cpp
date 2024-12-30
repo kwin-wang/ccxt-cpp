@@ -139,7 +139,7 @@ void bitvavo_ws::authenticate(const Dict& params) {
     
     json request = {
         {"action", "authenticate"},
-        {"key", this->apiKey},
+        {"key", this->config_.apiKey},
         {"signature", signature},
         {"timestamp", timestamp},
         {"window", this->window}
@@ -154,7 +154,7 @@ std::string bitvavo_ws::getSignature(const std::string& timestamp, const std::st
     if (!body.empty()) {
         message += body;
     }
-    return this->hmac(message, this->secret, "sha256");
+    return this->hmac(message, this->config_.secret, "sha256");
 }
 
 std::string bitvavo_ws::getSymbolId(const std::string& symbol) {

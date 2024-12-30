@@ -101,7 +101,7 @@ std::string bitbay::get_uuid() {
 std::string bitbay::sign(const std::string& path, const std::string& method,
                       const std::string& body,
                       const std::map<std::string, std::string>& headers) {
-    if (this->api_key.empty() || this->secret.empty()) {
+    if (this->api_key.empty() || this->config_.secret.empty()) {
         return body;
     }
 
@@ -111,7 +111,7 @@ std::string bitbay::sign(const std::string& path, const std::string& method,
         data += body;
     }
 
-    std::string signature = hmac_sha512(this->secret, data);
+    std::string signature = hmac_sha512(this->config_.secret, data);
     auto h = headers;
     h["API-Key"] = this->api_key;
     h["API-Hash"] = signature;

@@ -247,9 +247,9 @@ void hitbtc3::sign(Request& request, const std::string& path,
             }
         }
 
-        auto signature = this->hmac(auth, this->decode(this->secret), "sha256", "hex");
+        auto signature = this->hmac(auth, this->decode(this->config_.secret), "sha256", "hex");
         
-        request.headers["Authorization"] = "HS256 " + this->apiKey + ":" + signature;
+        request.headers["Authorization"] = "HS256 " + this->config_.apiKey + ":" + signature;
         request.headers["Content-Type"] = "application/json";
     }
 
@@ -282,7 +282,7 @@ json hitbtc3::parse_ticker(const json& ticker, const json& market) {
 std::string hitbtc3::get_signature(const std::string& timestamp, const std::string& method,
                                  const std::string& path, const std::string& body) {
     auto what = timestamp + method + path + body;
-    return this->hmac(what, this->decode(this->secret), "sha256", "hex");
+    return this->hmac(what, this->decode(this->config_.secret), "sha256", "hex");
 }
 
 } // namespace ccxt

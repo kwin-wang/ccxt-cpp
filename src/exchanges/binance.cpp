@@ -1,117 +1,89 @@
-#include "binance.h"
+#include <ccxt/exchanges/binance.h>
 #include <chrono>
 #include <sstream>
 #include <iomanip>
 #include <openssl/hmac.h>
+#include <openssl/evp.h>
+#include <openssl/params.h>
+#include <boost/algorithm/string.hpp>
 
 namespace ccxt {
-
-const std::string Binance::defaultHostname = "api.binance.com";
-const int Binance::defaultRateLimit = 50;
-const bool Binance::defaultPro = true;
-
-Binance::Binance(const Config& config) : Exchange(config) {
-    id = "binance";
-    name = "Binance";
-    countries = {"JP", "MT"}; // Japan, Malta
-    version = "v3";
-    certified = true;
-    pro = true;
-    
+Binance::Binance(boost::asio::io_context& context, const Config& config)
+    : Exchange(context, config) {
+    config_.loadRest("config/binance_rest.json");
+    config_.loadWs("config/binance_ws.json");
+  
     // Initialize capabilities
-    has = {
-        {"CORS", nullptr},
-        {"spot", true},
-        {"margin", true},
-        {"swap", true},
-        {"future", true},
-        {"option", true},
-        {"addMargin", true},
-        {"borrowCrossMargin", true},
-        {"borrowIsolatedMargin", true},
-        {"cancelAllOrders", true},
-        {"cancelOrder", true},
-        {"cancelOrders", true}, // contract only
-        {"closeAllPositions", false},
-        {"closePosition", false}, // exchange specific closePosition parameter for binance createOrder is not synonymous with how CCXT uses closePositions
-        {"createOrder", true},
-        {"createReduceOnlyOrder", true},
-        {"fetchBalance", true},
-        {"fetchBidsAsks", true},
-        {"fetchClosedOrders", true},
-        {"fetchCurrencies", true},
-        {"fetchDeposits", true},
-        {"fetchFundingRate", true},
-        {"fetchFundingRateHistory", true},
-        {"fetchFundingRates", true},
-        {"fetchIndexOHLCV", true},
-        {"fetchMarkets", true},
-        {"fetchMarkOHLCV", true},
-        {"fetchMyTrades", true},
-        {"fetchOHLCV", true},
-        {"fetchOpenOrders", true},
-        {"fetchOrder", true},
-        {"fetchOrders", true},
-        {"fetchOrderBook", true},
-        {"fetchPositions", true},
-        {"fetchPremiumIndexOHLCV", true},
-        {"fetchStatus", true},
-        {"fetchTicker", true},
-        {"fetchTickers", true},
-        {"fetchTime", true},
-        {"fetchTrades", true},
-        {"fetchTradingFee", true},
-        {"fetchTradingFees", true},
-        {"fetchTransactionFees", true},
-        {"fetchTransfers", true},
-        {"fetchWithdrawals", true},
-        {"setLeverage", true},
-        {"setMarginMode", true},
-        {"transfer", true},
-        {"withdraw", true}
-    };
+    /*
+    this->has.emplace("CORS", true);
+    this->has.emplace("spot", true);
+    this->has.emplace("margin", true);
+    this->has.emplace("swap", true);
+    this->has.emplace("future", true);
+    this->has.emplace("option", false);
+    this->has.emplace("addMargin", true);
+    this->has.emplace("borrowCrossMargin", true);
+    this->has.emplace("borrowIsolatedMargin", true);
+    this->has.emplace("cancelAllOrders", true);
+    this->has.emplace("cancelOrder", true);
+    this->has.emplace("cancelOrders", true); // contract only
+    this->has.emplace("closeAllPositions", false);
+    this->has.emplace("closePosition", false); // exchange specific closePosition parameter for binance createOrder is not synonymous with how CCXT uses closePositions
+    this->has.emplace("createOrder", true);
+    this->has.emplace("createReduceOnlyOrder", true);
+    this->has.emplace("fetchBalance", true);
+    this->has.emplace("fetchBidsAsks", true);
+    this->has.emplace("fetchClosedOrders", true);
+    this->has.emplace("fetchCurrencies", true);
+    this->has.emplace("fetchDeposits", true);
+    this->has.emplace("fetchFundingRate", true);
+    this->has.emplace("fetchFundingRateHistory", true);
+    this->has.emplace("fetchFundingRates", true);
+    this->has.emplace("fetchIndexOHLCV", true);
+    this->has.emplace("fetchMarkets", true);
+    this->has.emplace("fetchMarkOHLCV", true);
+    this->has.emplace("fetchMyTrades", true);
+    this->has.emplace("fetchOHLCV", true);
+    this->has.emplace("fetchOpenOrders", true);
+    this->has.emplace("fetchOrder", true);
+    this->has.emplace("fetchOrders", true);
+    this->has.emplace("fetchOrderBook", true);
+    this->has.emplace("fetchPositions", true);
+    this->has.emplace("fetchPremiumIndexOHLCV", true);
+    this->has.emplace("fetchStatus", true);
+    this->has.emplace("fetchTicker", true);
+    this->has.emplace("fetchTickers", true);
+    this->has.emplace("fetchTime", true);
+    this->has.emplace("fetchTrades", true);
+    this->has.emplace("fetchTradingFee", true);
+    this->has.emplace("fetchTradingFees", true);
+    this->has.emplace("fetchTransactionFees", true);
+    this->has.emplace("fetchTransfers", true);
+    this->has.emplace("fetchWithdrawals", true);
+    this->has.emplace("setLeverage", true);
+    this->has.emplace("setMarginMode", true);
+    this->has.emplace("transfer", true);
+    this->has.emplace("withdraw", true);
+    */
 }
 
 void Binance::init() {
-    Exchange::init();
+    std::string defaultHostname = "api.binance.com";
+    std::string hostname = config_.hostname.empty() ? defaultHostname : config_.hostname;
     
-    // Initialize timeframes
-    timeframes = {
-        {"1m", "1m"},
-        {"3m", "3m"},
-        {"5m", "5m"},
-        {"15m", "15m"},
-        {"30m", "30m"},
-        {"1h", "1h"},
-        {"2h", "2h"},
-        {"4h", "4h"},
-        {"6h", "6h"},
-        {"8h", "8h"},
-        {"12h", "12h"},
-        {"1d", "1d"},
-        {"3d", "3d"},
-        {"1w", "1w"},
-        {"1M", "1M"}
-    };
-
-    // Initialize URLs
-    hostname = this->extractParam<std::string>(config, "hostname", defaultHostname);
-    urls["api"] = {
+    
+    //this->urls["logo"] = "https://user-images.githubusercontent.com/1294454/29604020-d5483cdc-87ee-11e7-94c7-d1a8d9169293.jpg";
+    /*this->urls["api"] = {
         {"public", "https://" + hostname},
         {"private", "https://" + hostname},
-        {"v3", "https://" + hostname},
-        {"v1", "https://" + hostname}
-    };
-    urls["logo"] = "https://user-images.githubusercontent.com/1294454/29604020-d5483cdc-87ee-11e7-94c7-d1a8d9169293.jpg";
-    urls["www"] = "https://www.binance.com";
-    urls["doc"] = {
-        "https://binance-docs.github.io/apidocs/spot/en"
-    };
-    urls["fees"] = "https://www.binance.com/en/fee/schedule";
-    urls["referral"] = "https://www.binance.com/en/register?ref=D7YA7CLY";
+        {"v3", "https://" + hostname + "/api/v3"},
+        {"web", "https://" + hostname + "/api/web/v3"}
+    };*/
 
+    
     // Initialize API endpoints
-    api = {
+    /*
+    this->api = {
         {"public", {
             {"GET", {
                 "ping",
@@ -221,9 +193,11 @@ void Binance::init() {
             }}
         }}
     };
+    */
 }
 
-void Binance::describe() {
+void Binance::describe() const {
+    /*
     this->set("id", "binance");
     this->set("name", "Binance");
     
@@ -260,173 +234,177 @@ void Binance::describe() {
             "discount": 0.1
         }}
     });
+    */
 }
 
-std::string Binance::getMarketType(const std::string& symbol) {
-    auto marketType = this->safeString(this->options, "defaultType", "spot");
-    auto market = this->market(symbol);
-    if (market.has("type")) {
-        marketType = market["type"];
-    }
-    return marketType;
+std::string Binance::getMarketType(const std::string& symbol) const {
+    //auto marketType = this->safeString(this->config_.options, "defaultType", "spot");
+    //auto market = this->markets[symbol];
+   
+    //return market["type"];
+    return "spot";
 }
 
-std::string Binance::getEndpoint(const std::string& path, const std::string& type) {
-    auto marketType = type.empty() ? this->safeString(this->options, "defaultType", "spot") : type;
-    auto urls = this->urls["api"];
+std::string Binance::getEndpoint(const std::string& path, const std::string& type) const {
+    auto marketType = type.empty() ? this->safeString(this->config_.options, "defaultType", "spot") : type;
+    auto& urls = this->config_.json_rest["api"];
     
     if (marketType == "future") {
-        return urls["usdm"] + path;
+        return this->safeString(urls, "usdm", "") + path;
     } else if (marketType == "delivery") {
-        return urls["coinm"] + path;
+        return this->safeString(urls, "coinm", "") + path;
     } else {
-        return urls["spot"] + path;
+        return this->safeString(urls, "spot", "") + path;
     }
 }
 
 // Market Data API
 json Binance::fetchMarketsImpl() const {
-    json response = this->publicGetExchangeInfo();
-    json markets = json::array();
+    json response ;//= this->publicGetExchangeInfo();
+    json markets = response["symbols"];
+    json result = json::array();
     
-    for (const auto& market : response["symbols"]) {
-        if (market["status"] == "TRADING") {
-            markets.push_back({
-                {"id", market["symbol"]},
-                {"symbol", market["baseAsset"] + "/" + market["quoteAsset"]},
-                {"base", market["baseAsset"]},
-                {"quote", market["quoteAsset"]},
-                {"baseId", market["baseAsset"]},
-                {"quoteId", market["quoteAsset"]},
-                {"active", true},
-                {"precision", {
-                    {"amount", market["baseAssetPrecision"]},
-                    {"price", market["quotePrecision"]}
+    for (const auto& market : markets) {
+        result.push_back({
+            {"id", market["symbol"]},
+            {"symbol", market["baseAsset"].get<std::string>() + "/" + market["quoteAsset"].get<std::string>()},
+            {"base", market["baseAsset"]},
+            {"quote", market["quoteAsset"]},
+            {"baseId", market["baseAsset"]},
+            {"quoteId", market["quoteAsset"]},
+            {"active", true},
+            {"precision", {
+                {"amount", market["baseAssetPrecision"]},
+                {"price", market["quotePrecision"]}
+            }},
+            {"limits", {
+                {"amount", {
+                    {"min", market["filters"][2]["minQty"].get<std::string>()},
+                    {"max", market["filters"][2]["maxQty"].get<std::string>()}
                 }},
-                {"limits", {
-                    {"amount", {
-                        {"min", std::stod(market["filters"][2]["minQty"])},
-                        {"max", std::stod(market["filters"][2]["maxQty"])}
-                    }},
-                    {"price", {
-                        {"min", std::stod(market["filters"][0]["minPrice"])},
-                        {"max", std::stod(market["filters"][0]["maxPrice"])}
-                    }},
-                    {"cost", {
-                        {"min", std::stod(market["filters"][3]["minNotional"])}
-                    }}
+                {"price", {
+                    {"min", market["filters"][0]["minPrice"].get<std::string>()},
+                    {"max", market["filters"][0]["maxPrice"].get<std::string>()}
                 }},
-                {"info", market}
-            });
-        }
+                {"cost", {
+                    {"min", market["filters"][3]["minNotional"].get<std::string>()}
+                }}
+            }},
+            {"info", market}
+        });
     }
-    
-    return markets;
+    return result;
 }
 
 json Binance::fetchTickerImpl(const std::string& symbol) const {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {{"symbol", market["id"]}};
-    json response = this->publicGetTicker24hr(request);
+    //this->loadMarkets();
+    Market market;// = markets[symbol];;
+    json request = json::object();
+    request["symbol"] = market["id"];
+    json response ;//= this->publicGetTicker24hr(request);
     return this->parseTicker(response, market);
 }
 
 json Binance::fetchTickersImpl(const std::vector<std::string>& symbols) const {
-    this->loadMarkets();
-    json response = this->publicGetTicker24hr();
-    return this->parseTickers(response, symbols);
+    //this->loadMarkets();
+    json response ;//= this->publicGetTicker24hr();
+    return response;//this->parseTickers(response, symbols);
 }
 
 json Binance::fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit) const {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {{"symbol", market["id"]}};
+    //this->loadMarkets();
+    Market market;// = markets[symbol];;
+    json request = json::object();
+    request["symbol"] = market["id"];
     if (limit) {
         request["limit"] = *limit;
     }
-    json response = this->publicGetDepth(request);
+    json response ;//= this->publicGetDepth(request);
     return this->parseOrderBook(response, symbol);
 }
 
 json Binance::fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since,
                            const std::optional<int>& limit) const {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {{"symbol", market["id"]}};
+    //this->loadMarkets();
+    Market market;// = markets[symbol];;
+    json request = json::object();
+    request["symbol"] = market["id"];
     if (limit) {
         request["limit"] = *limit;
     }
-    json response = this->publicGetTrades(request);
-    return this->parseTrades(response, market, since, limit);
+    json response ;//= this->publicGetTrades(request);
+    return response;//this->parseTrades(response, market, since, limit);
 }
 
 json Binance::fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe,
                           const std::optional<long long>& since,
                           const std::optional<int>& limit) const {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {
-        {"symbol", market["id"]},
-        {"interval", timeframes[timeframe]}
-    };
+    ////this->loadMarkets();
+    Market market;// = markets[symbol];;
+    
+    json request = json::object();
+    request["symbol"] = market["id"];
+    request["interval"] = "";//timeframes[timeframe];
+    
     if (since) {
         request["startTime"] = *since;
     }
     if (limit) {
         request["limit"] = *limit;
     }
-    json response = this->publicGetKlines(request);
-    return this->parseOHLCVs(response, market, timeframe, since, limit);
+    
+    json response;// = this->publicGetKlines(request);
+    return response;//this->parseOHLCV(response, market, timeframe, since, limit);
 }
 
 // Trading API
 json Binance::createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
                           double amount, const std::optional<double>& price) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
+    //this->loadMarkets();
+    Market market;// = markets[symbol];;
     
-    json request = {
-        {"symbol", market["id"]},
-        {"side", side.toUpperCase()},
-        {"type", type.toUpperCase()},
-        {"quantity", this->amountToPrecision(symbol, amount)}
-    };
+    json request = json::object();
+    request["symbol"] = market["id"];
+    request["side"] = boost::algorithm::to_upper_copy(side);
+    request["type"] = boost::algorithm::to_upper_copy(type);
+    request["quantity"] = this->amountToPrecision(symbol, amount);
     
     if (type == "LIMIT" && price) {
         request["price"] = this->priceToPrecision(symbol, *price);
         request["timeInForce"] = "GTC";
     }
     
-    json response = this->privatePostOrder(request);
+    json response;// = this->privatePostOrder(request);
     return this->parseOrder(response, market);
 }
 
 json Binance::cancelOrderImpl(const std::string& id, const std::string& symbol) {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {
-        {"symbol", market["id"]},
-        {"orderId", id}
-    };
-    json response = this->privateDeleteOrder(request);
+    //this->loadMarkets();
+    Market market;// = markets[symbol];;
+    
+    json request = json::object();
+    request["symbol"] = market["id"];
+    request["orderId"] = id;
+    
+    json response ;//= this->privateDeleteOrder(request);
     return this->parseOrder(response, market);
 }
 
 json Binance::fetchOrderImpl(const std::string& id, const std::string& symbol) const {
-    this->loadMarkets();
-    Market market = this->market(symbol);
-    json request = {
-        {"symbol", market["id"]},
-        {"orderId", id}
-    };
-    json response = this->privateGetOrder(request);
+    ////this->loadMarkets();
+    Market market;// = markets[symbol];;
+    
+    json request = json::object();
+    request["symbol"] = market["id"];
+    request["orderId"] = id;
+    
+    json response ;//= this->privateGetOrder(request);
     return this->parseOrder(response, market);
 }
 
 json Binance::fetchBalanceImpl() const {
-    this->loadMarkets();
-    json response = this->privateGetAccount();
+    ////this->loadMarkets();
+    json response ;//= this->privateGetAccount();
     return this->parseBalance(response);
 }
 
@@ -435,7 +413,7 @@ std::string Binance::sign(const std::string& path, const std::string& api,
                        const std::string& method, const json& params,
                        const std::map<std::string, std::string>& headers,
                        const json& body) const {
-    std::string url = this->getEndpoint(path, api);
+    /*std::string url = this->getEndpoint(path, api);
     
     if (api == "private" || api == "sapi" || api == "fapi") {
         this->checkRequiredCredentials();
@@ -444,52 +422,63 @@ std::string Binance::sign(const std::string& path, const std::string& api,
         
         if (method == "POST" || method == "PUT" || method == "DELETE") {
             if (!params.empty()) {
-                body = params;
+                //body = params;
             }
         } else {
             if (!params.empty()) {
-                url += "?" + this->urlencode(params);
+                //url += "?" + this->urlencode(params);
             }
         }
         
-        std::string signature = this->hmac(queryString, this->encode(this->secret),
-                                       "sha256", "hex");
+        std::string signature = this->createSignature(queryString);
         
-        const_cast<std::map<std::string, std::string>&>(headers)["X-MBX-APIKEY"] = this->apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-MBX-APIKEY"] = this->config_.apiKey;
         
         if (method == "POST" || method == "PUT" || method == "DELETE") {
             const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
         
-        url += (url.find('?') != std::string::npos ? "&" : "?") + "signature=" + signature;
+        if (!params.empty()) {
+            url += url.find('?') != std::string::npos ? "&" : "?";
+            url += "signature=" + signature;
+        }
     } else {
         if (!params.empty()) {
-            url += "?" + this->urlencode(params);
+            //url += "?" + this->urlencode(params);
         }
     }
     
-    return url;
+    return url;*/
+    return "";
 }
 
 std::string Binance::getTimestamp() const {
-    return std::to_string(this->milliseconds());
+    return std::to_string(milliseconds());
 }
 
 std::string Binance::createSignature(const std::string& queryString) const {
-    unsigned char* digest = nullptr;
-    unsigned int digestLen = 0;
+    EVP_MAC* mac = EVP_MAC_fetch(nullptr, "HMAC", nullptr);
+    EVP_MAC_CTX* ctx = EVP_MAC_CTX_new(mac);
     
-    HMAC_CTX* ctx = HMAC_CTX_new();
-    HMAC_Init_ex(ctx, this->secret.c_str(), this->secret.length(), EVP_sha256(), nullptr);
-    HMAC_Update(ctx, (unsigned char*)queryString.c_str(), queryString.length());
-    HMAC_Final(ctx, digest, &digestLen);
-    HMAC_CTX_free(ctx);
+    OSSL_PARAM params[] = {
+        OSSL_PARAM_construct_utf8_string("digest", (char*)"sha256", 0),
+        OSSL_PARAM_construct_end()
+    };
+    
+    EVP_MAC_init(ctx, (const unsigned char*)this->config_.secret.c_str(), this->config_.secret.length(), params);
+    EVP_MAC_update(ctx, (const unsigned char*)queryString.c_str(), queryString.length());
+    
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    size_t digestLen = 0;
+    EVP_MAC_final(ctx, digest, &digestLen, EVP_MAX_MD_SIZE);
+    
+    EVP_MAC_CTX_free(ctx);
+    EVP_MAC_free(mac);
     
     std::stringstream ss;
-    for(unsigned int i = 0; i < digestLen; i++) {
+    for (size_t i = 0; i < digestLen; i++) {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)digest[i];
     }
-    
     return ss.str();
 }
 

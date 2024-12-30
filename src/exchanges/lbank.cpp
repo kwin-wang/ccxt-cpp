@@ -233,7 +233,7 @@ String Lbank::sign(const String& path, const String& api,
         this->checkRequiredCredentials();
         String timestamp = std::to_string(this->milliseconds());
         String query = this->urlencode(this->keysort(params));
-        String auth = query + "&secret_key=" + this->secret;
+        String auth = query + "&secret_key=" + this->config_.secret;
         String signature = this->hash(this->encode(auth), "md5");
         
         if (method == "GET") {
@@ -242,7 +242,7 @@ String Lbank::sign(const String& path, const String& api,
             }
         } else {
             body = this->extend(params, {
-                {"api_key", this->apiKey},
+                {"api_key", this->config_.apiKey},
                 {"sign", signature},
                 {"timestamp", timestamp}
             });

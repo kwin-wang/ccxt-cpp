@@ -228,8 +228,8 @@ String Upbit::createJWT() {
         .set_type("JWT")
         .set_issued_at(std::chrono::system_clock::now())
         .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds(60))
-        .set_payload_claim("access_key", jwt::claim(std::string(this->apiKey)))
-        .sign(jwt::algorithm::hs256(this->secret));
+        .set_payload_claim("access_key", jwt::claim(std::string(this->config_.apiKey)))
+        .sign(jwt::algorithm::hs256(this->config_.secret));
     
     return token;
 }

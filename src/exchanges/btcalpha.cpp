@@ -471,11 +471,11 @@ std::string BTCAlpha::sign(const std::string& path, const std::string& api,
     if (api == "private") {
         this->check_required_credentials();
         auto nonce = std::to_string(this->nonce());
-        auto auth = nonce + this->uid + this->apiKey;
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto auth = nonce + this->uid + this->config_.apiKey;
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
         auto new_headers = headers;
-        new_headers["Api-Key"] = this->apiKey;
+        new_headers["Api-Key"] = this->config_.apiKey;
         new_headers["Api-Nonce"] = nonce;
         new_headers["Api-Signature"] = signature;
         

@@ -486,7 +486,7 @@ std::string BitMEX::sign(const std::string& path, const std::string& api,
     
     if (api == "private") {
         headers["api-expires"] = expires;
-        headers["api-key"] = this->apiKey;
+        headers["api-key"] = this->config_.apiKey;
         
         std::string data;
         if (method == "GET") {
@@ -499,7 +499,7 @@ std::string BitMEX::sign(const std::string& path, const std::string& api,
         }
         
         auto auth = method + url.substr(url.find("/api")) + data;
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         headers["api-signature"] = signature;
     }
     

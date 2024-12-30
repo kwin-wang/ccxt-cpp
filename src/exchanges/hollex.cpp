@@ -168,7 +168,7 @@ std::string Hollex::sign(const std::string& path, const std::string& api,
     } else {
         this->check_required_credentials();
         auto nonce = std::to_string(this->nonce());
-        auto auth = this->apiKey + ":" + nonce;
+        auto auth = this->config_.apiKey + ":" + nonce;
         
         std::string payload;
         if (method == "GET") {
@@ -182,10 +182,10 @@ std::string Hollex::sign(const std::string& path, const std::string& api,
             }
         }
 
-        auto signature = this->hmac(payload, this->secret, "sha256", "hex");
+        auto signature = this->hmac(payload, this->config_.secret, "sha256", "hex");
         
         auto headers_map = headers;
-        headers_map["API-KEY"] = this->apiKey;
+        headers_map["API-KEY"] = this->config_.apiKey;
         headers_map["API-TIMESTAMP"] = nonce;
         headers_map["API-SIGN"] = signature;
         

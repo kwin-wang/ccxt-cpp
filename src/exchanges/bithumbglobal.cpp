@@ -201,7 +201,7 @@ String Bithumbglobal::sign(const String& path, const String& api,
         String nonce = this->uuid();
         
         json payload = {
-            {"apiKey", this->apiKey},
+            {"apiKey", this->config_.apiKey},
             {"timestamp", timestamp},
             {"nonce", nonce}
         };
@@ -218,7 +218,7 @@ String Bithumbglobal::sign(const String& path, const String& api,
         }
         
         String payloadString = this->json(this->keysort(payload));
-        String signature = this->hmac(payloadString, this->encode(this->secret),
+        String signature = this->hmac(payloadString, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
         if (method == "GET") {
@@ -227,7 +227,7 @@ String Bithumbglobal::sign(const String& path, const String& api,
             }
         }
         
-        const_cast<std::map<String, String>&>(headers)["Api-Key"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["Api-Key"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["Api-Timestamp"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["Api-Nonce"] = nonce;
         const_cast<std::map<String, String>&>(headers)["Api-Signature"] = signature;

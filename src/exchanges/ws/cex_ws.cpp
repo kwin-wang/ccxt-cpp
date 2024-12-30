@@ -129,7 +129,7 @@ void cex_ws::authenticate(const Dict& params) {
     json request = {
         {"e", "auth"},
         {"auth", {
-            {"key", this->apiKey},
+            {"key", this->config_.apiKey},
             {"signature", signature},
             {"timestamp", timestamp}
         }}
@@ -139,8 +139,8 @@ void cex_ws::authenticate(const Dict& params) {
 }
 
 std::string cex_ws::getSignature(const std::string& timestamp, const std::string& nonce) {
-    std::string message = timestamp + this->apiKey + nonce;
-    return this->hmac(message, this->secret, "sha256");
+    std::string message = timestamp + this->config_.apiKey + nonce;
+    return this->hmac(message, this->config_.secret, "sha256");
 }
 
 std::string cex_ws::getSymbolId(const std::string& symbol) {

@@ -305,9 +305,9 @@ String GateIO::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->secret, "sha512", "hex");
+        String signature = this->hmac(auth, this->config_.secret, "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["Timestamp"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["SIGN"] = signature;
         

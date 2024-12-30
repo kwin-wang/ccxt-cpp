@@ -73,13 +73,13 @@ void bitcoincom_ws::authenticate() {
         {"method", "login"},
         {"params", {
             {"algo", "HS256"},
-            {"pKey", this->apiKey},
+            {"pKey", this->config_.apiKey},
             {"nonce", std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()
             ).count())},
-            {"signature", this->hmac(this->apiKey + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+            {"signature", this->hmac(this->config_.apiKey + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()
-            ).count()), this->secret, "sha256")}
+            ).count()), this->config_.secret, "sha256")}
         }},
         {"id", generate_client_id()}
     };

@@ -94,7 +94,7 @@ void Bitpanda::sign(Request& request, const std::string& path, const std::string
                    const std::string& method, const json& params, const json& headers,
                    const json& body) {
     if (api == "private") {
-        if (this->apiKey.empty()) {
+        if (this->config_.apiKey.empty()) {
             throw AuthenticationError("Authentication failed: API key required for private endpoints");
         }
 
@@ -102,7 +102,7 @@ void Bitpanda::sign(Request& request, const std::string& path, const std::string
         std::string bodyStr = body.dump();
         std::string signature = get_signature(nonce, method, path, bodyStr);
 
-        request.headers["ACCESS-KEY"] = this->apiKey;
+        request.headers["ACCESS-KEY"] = this->config_.apiKey;
         request.headers["ACCESS-TIMESTAMP"] = nonce;
         request.headers["ACCESS-SIGNATURE"] = signature;
         request.headers["Content-Type"] = "application/json";
@@ -113,7 +113,7 @@ std::string Bitpanda::get_signature(const std::string& timestamp, const std::str
                                   const std::string& path, const std::string& body) {
     std::string message = timestamp + method + path + body;
     unsigned char* digest = HMAC(EVP_sha256(),
-                               this->secret.c_str(), this->secret.length(),
+                               this->config_.secret.c_str(), this->config_.secret.length(),
                                (unsigned char*)message.c_str(), message.length(),
                                nullptr, nullptr);
     

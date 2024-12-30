@@ -207,7 +207,7 @@ Trade CoinbaseExchange::parseTrade(const json& trade, const Market* market) {
 std::string CoinbaseExchange::createSignature(const std::string& timestamp, const std::string& method,
                                             const std::string& requestPath, const std::string& body) const {
     std::string message = timestamp + method + requestPath + body;
-    return this->hmac(message, this->secret, "sha256", "base64");
+    return this->hmac(message, this->config_.secret, "sha256", "base64");
 }
 
 std::string CoinbaseExchange::getTimestamp() const {

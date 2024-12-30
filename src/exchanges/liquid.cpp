@@ -261,7 +261,7 @@ String Liquid::getNonce() {
 String Liquid::createSignature(const String& path, const String& method,
                               const String& nonce, const String& body) {
     String message = nonce + "|" + method + "|" + path + "|" + body;
-    return this->hmac(message, this->base64ToBinary(this->secret),
+    return this->hmac(message, this->base64ToBinary(this->config_.secret),
                      "sha256", "hex");
 }
 

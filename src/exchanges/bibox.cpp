@@ -217,7 +217,7 @@ String Bibox::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         json request = this->extend({
-            "apikey": this->apiKey,
+            "apikey": this->config_.apiKey,
             "timestamp": std::to_string(this->milliseconds())
         }, params);
         
@@ -233,7 +233,7 @@ String Bibox::sign(const String& path, const String& api,
 
 String Bibox::createSignature(const json& params) {
     String query = this->urlencode(this->keysort(params));
-    return this->hmac(query, this->encode(this->secret),
+    return this->hmac(query, this->encode(this->config_.secret),
                      "md5", "hex");
 }
 

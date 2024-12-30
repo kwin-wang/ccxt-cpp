@@ -39,8 +39,8 @@ void Exchange::init() {
     // Default implementation
 }
 
-json Exchange::describe() const {
-    return json::object();
+void Exchange::describe() const {
+    
 }
 
 AsyncPullType Exchange::performHttpRequest(const std::string& host, const std::string& target, const std::string& method) {
@@ -324,13 +324,6 @@ AsyncPullType Exchange::fetchClosedOrdersAsync(const String& symbol, int since, 
         });
 }
 
-// HTTP methods
-json Exchange::fetch(const String& url, const String& method,
-                    const std::map<String, String>& headers,
-                    const String& body) {
-    return json::object();
-}
-
 AsyncPullType Exchange::fetchAsync(const String& url, const String& method,
                                    const std::map<String, String>& headers,
                                    const String& body) {
@@ -451,10 +444,10 @@ std::string Exchange::hmac(const std::string& message, const std::string& secret
     return result.str();
 }
 
-long long Exchange::milliseconds() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()
-    ).count();
+long long Exchange::milliseconds() const {
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 }
 
 std::string Exchange::uuid() {
@@ -530,25 +523,79 @@ void Exchange::loadMarkets(bool reload) {
 std::string Exchange::marketId(const std::string& symbol) {
     return market(symbol).id;
 }
+
+std::string Exchange::safeString(const json& obj, const std::string& key, const std::string& defaultValue) const {
+    if (obj.contains(key)) {
+        const auto& value = obj[key];
+        if (value.is_string()) {
+            return value.get<std::string>();
+        }
+        if (value.is_number()) {
+            return value.dump();
+        }
+    }
+    return defaultValue;
+}
+
+std::string Exchange::safeString(const json& obj, const std::string& key1, const std::string& key2, const std::string& defaultValue) const {
+    auto value = safeString(obj, key1, "");
+    if (value.empty()) {
+        value = safeString(obj, key2, "");
+    }
+    return value.empty() ? defaultValue : value;
+}
+
+double Exchange::safeNumber(const json& obj, const std::string& key, double defaultValue) const {
+    if (obj.contains(key)) {
+        const auto& value = obj[key];
+        if (value.is_number()) {
+            return value.get<double>();
+        }
+        if (value.is_string()) {
+            try {
+                return std::stod(value.get<std::string>());
+            } catch (...) {}
+        }
+    }
+    return defaultValue;
+}
+
+bool Exchange::safeBool(const json& obj, const std::string& key, bool defaultValue) const {
+    if (obj.contains(key)) {
+        const auto& value = obj[key];
+        if (value.is_boolean()) {
+            return value.get<bool>();
+        }
+    }
+    return defaultValue;
+}
+
+json Exchange::safeValue(const json& obj, const std::string& key, const json& defaultValue) const {
+    if (obj.contains(key)) {
+        return obj[key];
+    }
+    return defaultValue;
+}
+
 json Exchange::fetch(const String& url, const String& method,
                     const std::map<String, String>& headers,
                     const String& body) {
 
-    
-    if(curl) {
-        struct curl_slist* headers = nullptr;
-        for (const auto& [key, value] : headers) {
-            headers = curl_slist_append(headers, (key + ": " + value).c_str());
+    std::string readBuffer;
+    if(curl_) {
+        struct curl_slist* curl_headers = nullptr;
+        std::map<std::string, std::string>::const_iterator it = headers.begin();
+        for (; it != headers.end(); ++it) {
+            curl_headers = curl_slist_append(curl_headers, (it->first + ": " + it->second).c_str());
         }
-        curl_easy_setopt(curl, CURLOP_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-        res = curl_easy_perform(curl);
+        curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, curl_headers);
+        curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, body.c_str());
+        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, NULL);
+        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &readBuffer);
+        CURLcode res = curl_easy_perform(curl_);
         long httpCode = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+        curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &httpCode);
 
         if(res != CURLE_OK) {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
@@ -564,9 +611,9 @@ json Exchange::fetch(const String& url, const String& method,
                 std::cerr << "JSON parse error: " << e.what() << std::endl;
             }
         }
-        curl_easy_cleanup(curl);
+        curl_easy_cleanup(curl_);
     }
-    return json::object();
+    return json::parse(readBuffer);
 }
 std::string Exchange::symbol(const std::string& marketId) {
     if (markets_by_id.find(marketId) == markets_by_id.end()) {

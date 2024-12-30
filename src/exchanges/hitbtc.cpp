@@ -230,7 +230,7 @@ std::string HitBTC::sign(const std::string& path, const std::string& api,
 
     if (api == "private") {
         this->check_required_credentials();
-        auto auth = this->apiKey + ":" + this->secret;
+        auto auth = this->config_.apiKey + ":" + this->config_.secret;
         auto encoded = this->string_to_base64(auth);
         
         auto new_headers = headers;

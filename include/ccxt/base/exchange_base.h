@@ -35,6 +35,13 @@ public:
     std::map<std::string, Market> markets;
     std::map<std::string, Market> markets_by_id;
 
+    // Time functions
+    virtual long long milliseconds() const {
+        auto now = std::chrono::system_clock::now();
+        auto duration = now.time_since_epoch();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    }
+
 protected:
     Config config_;
     boost::asio::io_context& context_;

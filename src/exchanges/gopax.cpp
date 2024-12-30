@@ -248,10 +248,10 @@ String Gopax::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->encode(this->secret),
+        String signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["API-KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["SIGNATURE"] = signature;
         const_cast<std::map<String, String>&>(headers)["NONCE"] = nonce;
         const_cast<std::map<String, String>&>(headers)["TIMESTAMP"] = timestamp;

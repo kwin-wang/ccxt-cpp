@@ -430,7 +430,7 @@ std::string Bitmart::sign(const std::string& path, const std::string& api,
     auto timestamp = std::to_string(this->milliseconds());
     
     if (api == "private") {
-        headers["X-BM-KEY"] = this->apiKey;
+        headers["X-BM-KEY"] = this->config_.apiKey;
         headers["X-BM-TIMESTAMP"] = timestamp;
         
         std::string payload;
@@ -441,8 +441,8 @@ std::string Bitmart::sign(const std::string& path, const std::string& api,
             payload = this->urlencode(params);
         }
         
-        auto auth = timestamp + "#" + this->apiKey + "#" + payload;
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto auth = timestamp + "#" + this->config_.apiKey + "#" + payload;
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         headers["X-BM-SIGN"] = signature;
     }
     

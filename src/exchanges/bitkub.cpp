@@ -229,14 +229,14 @@ String Bitkub::sign(const String& path, const String& api,
         
         json request = this->extend({
             "ts", timestamp,
-            "sig", this->apiKey
+            "sig", this->config_.apiKey
         }, params);
         
         String payload = this->urlencode(request);
-        String signature = this->hmac(payload, this->encode(this->secret),
+        String signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-BTK-APIKEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-BTK-APIKEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["X-BTK-SIGN"] = signature;
         const_cast<std::map<String, String>&>(headers)["X-BTK-TIMESTAMP"] = timestamp;
         

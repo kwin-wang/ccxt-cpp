@@ -182,10 +182,10 @@ std::string BitBNS::sign(const std::string& path, const std::string& api,
             payload += "\n" + this->json(this->keysort(query));
         }
 
-        auto signature = this->hmac(payload, this->secret, "sha512", "hex");
+        auto signature = this->hmac(payload, this->config_.secret, "sha512", "hex");
         
         auto new_headers = headers;
-        new_headers["X-BITBNS-APIKEY"] = this->apiKey;
+        new_headers["X-BITBNS-APIKEY"] = this->config_.apiKey;
         new_headers["X-BITBNS-PAYLOAD"] = this->string_to_base64(payload);
         new_headers["X-BITBNS-SIGNATURE"] = signature;
         new_headers["Accept"] = "application/json";
@@ -252,7 +252,7 @@ std::string BitBNS::get_version_string() {
 }
 
 std::string BitBNS::get_payload_hash(const std::string& payload) {
-    return this->hmac(payload, this->secret, "sha512", "hex");
+    return this->hmac(payload, this->config_.secret, "sha512", "hex");
 }
 
 // Async Market Data Methods

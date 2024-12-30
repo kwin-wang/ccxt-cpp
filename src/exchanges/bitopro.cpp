@@ -203,10 +203,10 @@ String Bitopro::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(payload, this->encode(this->secret),
+        String signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha384", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-BITOPRO-APIKEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-BITOPRO-APIKEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["X-BITOPRO-PAYLOAD"] = payload;
         const_cast<std::map<String, String>&>(headers)["X-BITOPRO-SIGNATURE"] = signature;
         

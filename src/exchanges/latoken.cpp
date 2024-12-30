@@ -227,10 +227,10 @@ String Latoken::sign(const String& path, const String& api,
             payload += query;
         }
         
-        String signature = this->hmac(payload, this->encode(this->secret),
+        String signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-LA-APIKEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-LA-APIKEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["X-LA-SIGNATURE"] = signature;
         const_cast<std::map<String, String>&>(headers)["X-LA-DIGEST"] = "HMAC-SHA512";
         const_cast<std::map<String, String>&>(headers)["X-LA-TIMESTAMP"] = timestamp;

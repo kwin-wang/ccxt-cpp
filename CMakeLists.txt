@@ -23,18 +23,25 @@ set(BASE_SOURCES
     src/base/exchange.cpp
     src/base/errors.cpp
     src/base/precise.cpp
+    src/base/websocket_client.cpp
 )
 
 # Exchange source files - only include implemented exchanges
 set(EXCHANGE_SOURCES
-    src/exchanges/ace.cpp
-    src/exchanges/alpaca.cpp
+    src/exchanges/binance.cpp
 )
+
+#
+set(EXChange_WS_SOURCES
+    src/exchanges/ws/binance_ws.cpp
+)
+
 
 # Add library
 add_library(ccxt
     ${BASE_SOURCES}
     ${EXCHANGE_SOURCES}
+    ${EXChange_WS_SOURCES}
 )
 
 # Link libraries

@@ -92,9 +92,9 @@ std::string bl3p::sign(const std::string& path, const std::string& api, const st
             auth_body = this->urlencode(this->keysort(params));
         }
 
-        std::string signature = this->hmac(auth_body, this->secret, "SHA256", "hex");
+        std::string signature = this->hmac(auth_body, this->config_.secret, "SHA256", "hex");
         
-        headers["Rest-Key"] = this->apiKey;
+        headers["Rest-Key"] = this->config_.apiKey;
         headers["Rest-Sign"] = signature;
     }
 

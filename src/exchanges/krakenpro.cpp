@@ -262,10 +262,10 @@ String KrakenPro::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->base64ToBinary(this->secret),
+        String signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
                                     "sha512", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["APIKey"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["APIKey"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["Nonce"] = nonce;
         const_cast<std::map<String, String>&>(headers)["Authent"] = signature;
         

@@ -274,9 +274,9 @@ String Phemex::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->secret, "sha256", "hex");
+        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["x-phemex-access-token"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["x-phemex-access-token"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["x-phemex-request-signature"] = signature;
         const_cast<std::map<String, String>&>(headers)["x-phemex-request-expiry"] = timestamp;
         

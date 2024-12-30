@@ -104,7 +104,7 @@ std::string HTX::getSignature(const std::string& path, const std::string& method
     }
 
     auto str = ss.str();
-    return hmacSha256(str, this->secret);
+    return hmacSha256(str, this->config_.secret);
 }
 
 json HTX::signRequest(const std::string& path, const std::string& api,
@@ -114,7 +114,7 @@ json HTX::signRequest(const std::string& path, const std::string& api,
     auto hostname = this->hostname();
     
     Params signParams = params;
-    signParams["AccessKeyId"] = this->apiKey;
+    signParams["AccessKeyId"] = this->config_.apiKey;
     signParams["SignatureMethod"] = "HmacSHA256";
     signParams["SignatureVersion"] = "2";
     signParams["Timestamp"] = timestamp;

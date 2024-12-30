@@ -248,9 +248,9 @@ String FTX::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->secret, "sha256", "hex");
+        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["FTX-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["FTX-KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["FTX-SIGN"] = signature;
         const_cast<std::map<String, String>&>(headers)["FTX-TS"] = timestamp;
         

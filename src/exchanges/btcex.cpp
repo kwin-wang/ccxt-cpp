@@ -294,10 +294,10 @@ String Btcex::sign(const String& path, const String& api,
             auth += "?" + queryString;
         }
         
-        String signature = this->hmac(auth, this->encode(this->secret),
+        String signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["BTCEX-ACCESS-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["BTCEX-ACCESS-KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["BTCEX-ACCESS-SIGN"] = signature;
         const_cast<std::map<String, String>&>(headers)["BTCEX-ACCESS-TIMESTAMP"] = timestamp;
         

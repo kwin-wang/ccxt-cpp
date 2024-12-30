@@ -157,12 +157,12 @@ void bitmex_ws::authenticate(const Dict& params) {
     }
     
     this->expires = std::chrono::system_clock::now().time_since_epoch().count() / 1000000 + 10000;  // Expires in 10 seconds
-    std::string signature = this->hmac("GET/realtime" + std::to_string(this->expires), this->secret, "sha256");
+    std::string signature = this->hmac("GET/realtime" + std::to_string(this->expires), this->config_.secret, "sha256");
     
     json request = {
         {"op", "authKeyExpires"},
         {"args", {
-            this->apiKey,
+            this->config_.apiKey,
             this->expires,
             signature
         }}

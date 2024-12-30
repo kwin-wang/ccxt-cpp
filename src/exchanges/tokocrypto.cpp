@@ -198,9 +198,9 @@ std::string Tokocrypto::sign(const std::string& path, const std::string& api,
             auth += this->urlencode(sorted);
         }
 
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         auto new_headers = headers;
-        new_headers["TOK-API-KEY"] = this->apiKey;
+        new_headers["TOK-API-KEY"] = this->config_.apiKey;
         new_headers["TOK-API-TIMESTAMP"] = timestamp;
         new_headers["TOK-API-SIGNATURE"] = signature;
 
@@ -282,7 +282,7 @@ std::string Tokocrypto::get_signature(const std::string& path, const std::string
         auth += this->urlencode(this->keysort(params));
     }
 
-    return this->hmac(auth, this->secret, "sha256", "hex");
+    return this->hmac(auth, this->config_.secret, "sha256", "hex");
 }
 
 } // namespace ccxt

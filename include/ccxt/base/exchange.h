@@ -21,7 +21,7 @@ public:
 
     // Common methods
     virtual void init();
-    virtual json describe() const;
+    virtual void describe() const;
     virtual AsyncPullType performHttpRequest(const std::string& host, const std::string& target, const std::string& method);
     // Usually methods
     virtual std::string implodeParams(const std::string& path, const json& params);
@@ -37,7 +37,7 @@ public:
     virtual std::string currencyToPrecision(const std::string& currency, double fee);
     virtual std::string feeToPrecision(const std::string& symbol, double fee);
     virtual long long parse8601(const std::string& datetime);
-    virtual long long milliseconds();
+    virtual long long milliseconds() const;
     virtual std::string uuid();
     virtual std::string iso8601(long long timestamp);
     virtual Market market(const std::string& symbol);
@@ -98,6 +98,13 @@ protected:
                      const std::map<String, String>& params = {},
                      const std::map<String, String>& headers = {});
 
+    // Safe type conversion helpers
+    std::string safeString(const json& obj, const std::string& key, const std::string& defaultValue ) const;
+    std::string safeString(const json& obj, const std::string& key1, const std::string& key2, const std::string& defaultValue ) const;
+    double safeNumber(const json& obj, const std::string& key, double defaultValue = 0.0) const;
+    bool safeBool(const json& obj, const std::string& key, bool defaultValue = false) const;
+    json safeValue(const json& obj, const std::string& key, const json& defaultValue = nullptr) const;
+
     // Parsing methods
     virtual json parseMarket(const json& market) const;
     virtual json parseTicker(const json& ticker, const json& market = json::object()) const;
@@ -106,6 +113,74 @@ protected:
     virtual json parseOrder(const json& order, const json& market = json::object()) const;
     virtual json parseTrade(const json& trade, const json& market = json::object()) const;
     virtual json parseBalance(const json& balance) const;
+
+    // Protected virtual functions that derived classes must implement
+    virtual json fetchMarketsImpl() const = 0;
+    virtual json fetchTickerImpl(const std::string& symbol) const = 0;
+    virtual json fetchTickersImpl(const std::vector<std::string>& symbols = {}) const = 0;
+    virtual json fetchOrderBookImpl(const std::string& symbol, const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchTradesImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt,
+                              const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchOHLCVImpl(const std::string& symbol, const std::string& timeframe = "1m",
+                             const std::optional<long long>& since = std::nullopt,
+                             const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchTimeImpl() const = 0;
+    virtual json fetchCurrenciesImpl() const = 0;
+    virtual json fetchTradingFeesImpl() const = 0;
+    virtual json fetchBalanceImpl() const = 0;
+    virtual json fetchDepositAddressImpl(const std::string& code, const json& params = json::object()) const = 0;
+    virtual json fetchDepositsImpl(const std::string& code = "", const std::optional<long long>& since = std::nullopt,
+                                const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchWithdrawalsImpl(const std::string& code = "", const std::optional<long long>& since = std::nullopt,
+                                   const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchDepositsWithdrawalsImpl(const std::string& code = "", const std::optional<long long>& since = std::nullopt,
+                                           const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchDepositWithdrawFeesImpl() const = 0;
+    virtual json fetchFundingRatesImpl(const std::vector<std::string>& symbols = {}) const = 0;
+    virtual json fetchFundingRateHistoryImpl(const std::string& symbol, const std::optional<long long>& since = std::nullopt,
+                                          const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchLeverageImpl(const std::string& symbol) const = 0;
+    virtual json fetchMarginModesImpl(const std::vector<std::string>& symbols = {}) const = 0;
+    virtual json fetchPositionsImpl(const std::vector<std::string>& symbols = {}) const = 0;
+    virtual json fetchBorrowRatesImpl() const = 0;
+    virtual json fetchBorrowRateHistoryImpl(const std::string& code, const std::optional<long long>& since = std::nullopt,
+                                         const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchBorrowInterestImpl(const std::string& code = "", const std::optional<long long>& since = std::nullopt,
+                                      const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchMyTradesImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt,
+                                const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt,
+                              const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchOpenOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt,
+                                  const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchClosedOrdersImpl(const std::string& symbol = "", const std::optional<long long>& since = std::nullopt,
+                                    const std::optional<int>& limit = std::nullopt) const = 0;
+    virtual json fetchOrderImpl(const std::string& id, const std::string& symbol = "") const = 0;
+
+    // Trading API
+    virtual json createOrderImpl(const std::string& symbol, const std::string& type, const std::string& side,
+                              double amount, const std::optional<double>& price = std::nullopt) = 0;
+    virtual json cancelOrderImpl(const std::string& id, const std::string& symbol = "") = 0;
+    virtual json cancelAllOrdersImpl(const std::string& symbol = "") = 0;
+    virtual json editOrderImpl(const std::string& id, const std::string& symbol, const std::string& type,
+                            const std::string& side, const std::optional<double>& amount = std::nullopt,
+                            const std::optional<double>& price = std::nullopt) = 0;
+    virtual json setLeverageImpl(int leverage, const std::string& symbol = "") = 0;
+    virtual json setMarginModeImpl(const std::string& marginMode, const std::string& symbol = "") = 0;
+    virtual json addMarginImpl(const std::string& symbol, double amount) = 0;
+    virtual json reduceMarginImpl(const std::string& symbol, double amount) = 0;
+    virtual json borrowCrossMarginImpl(const std::string& code, double amount, const std::string& symbol = "") = 0;
+    virtual json borrowIsolatedMarginImpl(const std::string& symbol, const std::string& code, double amount) = 0;
+    virtual json repayCrossMarginImpl(const std::string& code, double amount, const std::string& symbol = "") = 0;
+    virtual json repayIsolatedMarginImpl(const std::string& symbol, const std::string& code, double amount) = 0;
+    virtual json transferImpl(const std::string& code, double amount, const std::string& fromAccount,
+                           const std::string& toAccount) = 0;
+
+    // Helper methods
+    virtual std::string sign(const std::string& path, const std::string& api = "public",
+                          const std::string& method = "GET", const json& params = json::object(),
+                          const std::map<std::string, std::string>& headers = {},
+                          const json& body = nullptr) const = 0;
 };
 
 } // namespace ccxt

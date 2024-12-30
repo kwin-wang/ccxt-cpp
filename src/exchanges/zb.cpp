@@ -211,13 +211,13 @@ std::string ZB::sign(const std::string& path, const std::string& api,
         }
     } else {
         this->check_required_credentials();
-        query["accesskey"] = this->apiKey;
+        query["accesskey"] = this->config_.apiKey;
         query["method"] = path;
 
         auto nonce = this->nonce();
         auto sorted = this->keysort(query);
         auto auth = this->urlencode(sorted);
-        auto signature = this->hmac(auth, this->secret, "md5");
+        auto signature = this->hmac(auth, this->config_.secret, "md5");
         sorted["sign"] = signature;
         sorted["reqTime"] = std::to_string(nonce);
 

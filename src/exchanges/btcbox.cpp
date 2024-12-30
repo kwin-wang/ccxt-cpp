@@ -270,12 +270,12 @@ String BTCBOX::sign(const String& path, const String& api,
         this->checkRequiredCredentials();
         String nonce = this->nonce().str();
         json auth = this->extend({
-            "key", this->apiKey,
+            "key", this->config_.apiKey,
             "nonce", nonce
         }, query);
         
         String queryString = this->urlencode(this->keysort(auth));
-        String signature = this->hmac(queryString, this->encode(this->secret),
+        String signature = this->hmac(queryString, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
         auth["signature"] = signature;

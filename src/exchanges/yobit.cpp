@@ -199,10 +199,10 @@ std::string Yobit::sign(const std::string& path, const std::string& api,
             body += "&" + this->urlencode(query);
         }
 
-        auto signature = this->hmac(body, this->secret, "sha512", "hex");
+        auto signature = this->hmac(body, this->config_.secret, "sha512", "hex");
         auto new_headers = headers;
         new_headers["Content-Type"] = "application/x-www-form-urlencoded";
-        new_headers["Key"] = this->apiKey;
+        new_headers["Key"] = this->config_.apiKey;
         new_headers["Sign"] = signature;
 
         if (method == "POST") {
@@ -276,7 +276,7 @@ std::string Yobit::get_signature(const std::string& path, const std::string& met
     if (!params.empty()) {
         body += "&" + this->urlencode(params);
     }
-    return this->hmac(body, this->secret, "sha512", "hex");
+    return this->hmac(body, this->config_.secret, "sha512", "hex");
 }
 
 } // namespace ccxt

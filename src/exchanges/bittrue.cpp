@@ -100,7 +100,7 @@ void BitTrue::sign(Request& request, const std::string& path, const std::string&
                   const std::string& method, const json& params, const json& headers,
                   const json& body) {
     if (api == "private" || api == "sapi") {
-        if (this->apiKey.empty()) {
+        if (this->config_.apiKey.empty()) {
             throw AuthenticationError("Authentication failed: API key required for private endpoints");
         }
 
@@ -118,7 +118,7 @@ void BitTrue::sign(Request& request, const std::string& path, const std::string&
 
         std::string signature = getSignature(timestamp, method, path, queryString);
 
-        request.headers["X-BT-APIKEY"] = this->apiKey;
+        request.headers["X-BT-APIKEY"] = this->config_.apiKey;
         request.headers["X-BT-TIMESTAMP"] = timestamp;
         request.headers["X-BT-SIGNATURE"] = signature;
     }
@@ -128,7 +128,7 @@ std::string BitTrue::getSignature(const std::string& timestamp, const std::strin
                                 const std::string& path, const std::string& body) {
     std::string message = timestamp + method + path + body;
     unsigned char* digest = HMAC(EVP_sha256(),
-                               this->secret.c_str(), this->secret.length(),
+                               this->config_.secret.c_str(), this->config_.secret.length(),
                                (unsigned char*)message.c_str(), message.length(),
                                nullptr, nullptr);
     

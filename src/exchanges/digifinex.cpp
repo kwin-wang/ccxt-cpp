@@ -225,7 +225,7 @@ String Digifinex::sign(const String& path, const String& api,
         this->checkRequiredCredentials();
         
         json request = this->extend({
-            "access_key": this->apiKey,
+            "access_key": this->config_.apiKey,
             "timestamp": timestamp
         }, params);
         
@@ -247,7 +247,7 @@ String Digifinex::sign(const String& path, const String& api,
 String Digifinex::createSignature(const String& timestamp, const String& method,
                                  const String& path, const String& body) {
     String message = timestamp + method + path + body;
-    return this->hmac(message, this->encode(this->secret),
+    return this->hmac(message, this->encode(this->config_.secret),
                      "sha256", "hex");
 }
 

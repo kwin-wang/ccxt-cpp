@@ -188,11 +188,11 @@ String Btcturk::sign(const String& path, const String& api,
         String timestamp = std::to_string(this->milliseconds());
         String nonce = this->uuid();
         
-        String auth = this->apiKey + timestamp;
-        String signature = this->hmac(auth, this->encode(this->secret),
+        String auth = this->config_.apiKey + timestamp;
+        String signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["X-PCK"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-PCK"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["X-Stamp"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["X-Signature"] = signature;
         

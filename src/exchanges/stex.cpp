@@ -236,10 +236,10 @@ String STEX::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(payload, this->encode(this->secret),
+        String signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["APIKEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["APIKEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["TIMESTAMP"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["SIGNATURE"] = signature;
         const_cast<std::map<String, String>&>(headers)["RECVWINDOW"] = this->options["recvWindow"];

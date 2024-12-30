@@ -228,10 +228,10 @@ String Indodax::sign(const String& path, const String& api,
         }, query);
         
         String body = this->urlencode(request);
-        String signature = this->hmac(body, this->encode(this->secret),
+        String signature = this->hmac(body, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["Key"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["Key"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["Sign"] = signature;
         
         if (method == "POST") {

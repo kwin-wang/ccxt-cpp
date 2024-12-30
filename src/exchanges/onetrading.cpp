@@ -430,9 +430,9 @@ void onetrading::sign(Request& request, const std::string& path,
             }
         }
 
-        auto signature = this->hmac(auth, this->decode(this->secret), "sha256", "hex");
+        auto signature = this->hmac(auth, this->decode(this->config_.secret), "sha256", "hex");
         
-        request.headers["ONE-ACCESS-KEY"] = this->apiKey;
+        request.headers["ONE-ACCESS-KEY"] = this->config_.apiKey;
         request.headers["ONE-ACCESS-SIGN"] = signature;
         request.headers["ONE-ACCESS-TIMESTAMP"] = timestamp;
         request.headers["Content-Type"] = "application/json";
@@ -447,7 +447,7 @@ void onetrading::sign(Request& request, const std::string& path,
 std::string onetrading::get_signature(const std::string& timestamp, const std::string& method,
                                     const std::string& path, const std::string& body) {
     auto what = timestamp + method + path + body;
-    return this->hmac(what, this->decode(this->secret), "sha256", "hex");
+    return this->hmac(what, this->decode(this->config_.secret), "sha256", "hex");
 }
 
 } // namespace ccxt

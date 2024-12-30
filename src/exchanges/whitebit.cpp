@@ -210,11 +210,11 @@ std::string WhiteBIT::sign(const std::string& path, const std::string& api,
         }
 
         auto auth = nonce + method + "/api/v2/" + path + body;
-        auto signature = this->hmac(auth, this->secret, "sha512", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha512", "hex");
         
         auto new_headers = headers;
         new_headers["Content-Type"] = "application/json";
-        new_headers["X-TXC-APIKEY"] = this->apiKey;
+        new_headers["X-TXC-APIKEY"] = this->config_.apiKey;
         new_headers["X-TXC-PAYLOAD"] = nonce;
         new_headers["X-TXC-SIGNATURE"] = signature;
         
@@ -285,7 +285,7 @@ std::string WhiteBIT::get_nonce_string() {
 }
 
 std::string WhiteBIT::get_request_body_signature(const std::string& body) {
-    return this->hmac(body, this->secret, "sha512", "hex");
+    return this->hmac(body, this->config_.secret, "sha512", "hex");
 }
 
 } // namespace ccxt

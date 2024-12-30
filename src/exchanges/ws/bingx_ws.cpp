@@ -83,7 +83,7 @@ void bingx_ws::authenticate() {
     std::string request_id = generate_request_id();
     
     json auth_params = {
-        {"apiKey", this->apiKey},
+        {"apiKey", this->config_.apiKey},
         {"timestamp", timestamp},
         {"requestId", request_id}
     };
@@ -328,7 +328,7 @@ std::string bingx_ws::sign_request(const json& request) {
         query_string += it.key() + "=" + it.value().dump();
     }
     
-    return hmac(query_string, this->secret, "sha256");
+    return hmac(query_string, this->config_.secret, "sha256");
 }
 
 long long bingx_ws::get_timestamp() {

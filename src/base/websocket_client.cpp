@@ -1,4 +1,4 @@
-#include "../include/ccxt/websocket_client.h"
+#include <ccxt/base/websocket_client.h>
 
 namespace ccxt {
 
@@ -23,14 +23,14 @@ void WebSocketClient::onResolve(boost::beast::error_code ec, boost::asio::ip::tc
     if (ec) return;
     auto self(shared_from_this());
     boost::asio::async_connect(ws_.next_layer().next_layer(), results.begin(), results.end(),
-        [this, self](boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type endpoint) {
+        [this, self](const boost::system::error_code& ec, typename boost::asio::ip::tcp::resolver::iterator it) {
             if (!ec) {
-                onConnect(ec, endpoint);
+                onConnect(ec, it->endpoint());
             }
         });
 }
 
-void WebSocketClient::onConnect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type endpoint) {
+void WebSocketClient::onConnect(const boost::system::error_code& ec, const boost::asio::ip::tcp::endpoint& endpoint) {
     if (ec) return;
     auto self(shared_from_this());
     ws_.next_layer().async_handshake(boost::asio::ssl::stream_base::client,
@@ -84,9 +84,7 @@ void WebSocketClient::onRead(boost::beast::error_code ec, std::size_t bytes_tran
 void WebSocketClient::close() {
     auto self(shared_from_this());
     ws_.async_close(boost::beast::websocket::close_code::normal,
-        [this, self](boost::beast::error_code ec) {
-            onClose(ec);
-        });
+        boost::beast::bind_front_handler(&WebSocketClient::onClose, self));
 }
 
 void WebSocketClient::onClose(boost::beast::error_code ec) {

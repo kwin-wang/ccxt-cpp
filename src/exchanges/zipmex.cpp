@@ -213,9 +213,9 @@ std::string Zipmex::sign(const std::string& path, const std::string& api,
             auth += this->urlencode(sorted);
         }
 
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         auto new_headers = headers;
-        new_headers["ZM-API-KEY"] = this->apiKey;
+        new_headers["ZM-API-KEY"] = this->config_.apiKey;
         new_headers["ZM-API-TIMESTAMP"] = timestamp;
         new_headers["ZM-API-SIGNATURE"] = signature;
 
@@ -320,7 +320,7 @@ std::string Zipmex::get_signature(const std::string& path, const std::string& me
         auth += this->urlencode(this->keysort(params));
     }
 
-    return this->hmac(auth, this->secret, "sha256", "hex");
+    return this->hmac(auth, this->config_.secret, "sha256", "hex");
 }
 
 } // namespace ccxt

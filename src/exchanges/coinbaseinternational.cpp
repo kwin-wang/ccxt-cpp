@@ -268,9 +268,9 @@ void coinbaseinternational::sign(Request& request, const std::string& path,
             }
         }
 
-        auto signature = this->hmac(auth, this->decode(this->secret), "sha256", "hex");
+        auto signature = this->hmac(auth, this->decode(this->config_.secret), "sha256", "hex");
         
-        request.headers["CB-ACCESS-KEY"] = this->apiKey;
+        request.headers["CB-ACCESS-KEY"] = this->config_.apiKey;
         request.headers["CB-ACCESS-SIGN"] = signature;
         request.headers["CB-ACCESS-TIMESTAMP"] = timestamp;
         request.headers["CB-ACCESS-PASSPHRASE"] = this->password;
@@ -286,7 +286,7 @@ void coinbaseinternational::sign(Request& request, const std::string& path,
 std::string coinbaseinternational::get_signature(const std::string& timestamp, const std::string& method,
                                                const std::string& path, const std::string& body) {
     auto what = timestamp + method + path + body;
-    return this->hmac(what, this->decode(this->secret), "sha256", "hex");
+    return this->hmac(what, this->decode(this->config_.secret), "sha256", "hex");
 }
 
 // Async Market Data Methods

@@ -7,6 +7,7 @@ enable_testing()
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
+
 # Add test executable
 add_executable(ccxt_tests
     base_tests.cpp

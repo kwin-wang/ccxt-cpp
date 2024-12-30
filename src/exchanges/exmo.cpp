@@ -366,12 +366,12 @@ String Exmo::sign(const String& path, const String& api,
             "nonce", nonce
         }, params));
         
-        auto signature = this->hmac(body, this->encode(this->secret),
+        auto signature = this->hmac(body, this->encode(this->config_.secret),
                                   "sha512", "hex");
         
         auto headers = {
             {"Content-Type", "application/x-www-form-urlencoded"},
-            {"Key", this->apiKey},
+            {"Key", this->config_.apiKey},
             {"Sign", signature}
         };
     }

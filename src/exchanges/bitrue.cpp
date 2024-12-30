@@ -283,7 +283,7 @@ String Bitrue::sign(const String& path, const String& api,
         }, params);
         
         String queryString = this->urlencode(request);
-        String signature = this->hmac(queryString, this->encode(this->secret),
+        String signature = this->hmac(queryString, this->encode(this->config_.secret),
                                     "sha256", "hex");
         queryString += "&signature=" + signature;
         
@@ -295,7 +295,7 @@ String Bitrue::sign(const String& path, const String& api,
             const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
         }
         
-        const_cast<std::map<String, String>&>(headers)["X-MBX-APIKEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-MBX-APIKEY"] = this->config_.apiKey;
     }
     
     return url;

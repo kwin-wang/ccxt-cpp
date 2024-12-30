@@ -432,8 +432,8 @@ String Ace::sign(const String& path, const String& api,
             }
         }
         
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
-        headers["ACE-ACCESS-KEY"] = this->apiKey;
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
+        headers["ACE-ACCESS-KEY"] = this->config_.apiKey;
         headers["ACE-ACCESS-SIGN"] = signature;
         headers["ACE-ACCESS-TIMESTAMP"] = nonce;
     } else {

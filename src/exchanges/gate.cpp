@@ -199,10 +199,10 @@ Json gate::sign(const std::string &path, const std::string &api, const std::stri
         auto nonce = std::to_string(this->nonce());
         auto bodyString = body.empty() ? "" : this->json(body);
         auto auth = method + "\n" + url + "\n" + bodyString + "\n" + nonce;
-        auto signature = this->hmac(auth, this->secret, "SHA512", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "SHA512", "hex");
         
         auto newHeaders = Json::object();
-        newHeaders["KEY"] = this->apiKey;
+        newHeaders["KEY"] = this->config_.apiKey;
         newHeaders["Timestamp"] = nonce;
         newHeaders["SIGN"] = signature;
         

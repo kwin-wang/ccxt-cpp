@@ -390,10 +390,10 @@ String Deribit::sign(const String& path, const String& api,
             }
         }
         
-        auto signature = this->hmac(this->encode(auth), this->encode(this->secret),
+        auto signature = this->hmac(this->encode(auth), this->encode(this->config_.secret),
                                   "sha256", "hex");
         
-        headers["Authorization"] = "deri-hmac-sha256 id=" + this->apiKey +
+        headers["Authorization"] = "deri-hmac-sha256 id=" + this->config_.apiKey +
                                  ",ts=" + timestamp +
                                  ",nonce=" + nonce +
                                  ",sig=" + signature;

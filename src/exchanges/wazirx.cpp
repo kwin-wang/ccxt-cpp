@@ -360,7 +360,7 @@ String WazirX::sign(const String& path, const String& api,
             const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
         }
         
-        const_cast<std::map<String, String>&>(headers)["X-API-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-API-KEY"] = this->config_.apiKey;
     }
     
     return url;
@@ -369,7 +369,7 @@ String WazirX::sign(const String& path, const String& api,
 String WazirX::createSignature(const String& timestamp, const String& method,
                               const String& path, const String& body) {
     String message = timestamp + method + path + body;
-    return this->hmac(message, this->encode(this->secret),
+    return this->hmac(message, this->encode(this->config_.secret),
                      "sha256", "hex");
 }
 

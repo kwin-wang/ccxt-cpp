@@ -188,11 +188,11 @@ std::string Kuna::sign(const std::string& path, const std::string& api,
         }
 
         auto auth = nonce + method + "/v3/" + path + body;
-        auto signature = this->hmac(auth, this->secret, "sha384", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha384", "hex");
         
         auto new_headers = headers;
         new_headers["kun-nonce"] = nonce;
-        new_headers["kun-apikey"] = this->apiKey;
+        new_headers["kun-apikey"] = this->config_.apiKey;
         new_headers["kun-signature"] = signature;
 
         if (method != "GET") {

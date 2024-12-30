@@ -178,7 +178,7 @@ void blofin_ws::authenticate(const Dict& params) {
     json request = {
         {"op", "login"},
         {"args", {{
-            {"apiKey", this->apiKey},
+            {"apiKey", this->config_.apiKey},
             {"passphrase", this->password},
             {"timestamp", timestamp},
             {"sign", signature}
@@ -194,7 +194,7 @@ std::string blofin_ws::getSignature(const std::string& timestamp, const std::str
     if (!body.empty()) {
         message += body;
     }
-    return this->hmac(message, this->secret, "sha256");
+    return this->hmac(message, this->config_.secret, "sha256");
 }
 
 std::string blofin_ws::getSymbolId(const std::string& symbol) {

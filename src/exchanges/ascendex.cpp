@@ -927,7 +927,7 @@ std::string AscendEX::sign(const std::string& path, const std::string& api,
     std::map<std::string, std::string> auth_headers = headers;
     
     if (api == "private") {
-        if (this->apiKey.empty() || this->secret.empty()) {
+        if (this->config_.apiKey.empty() || this->config_.secret.empty()) {
             throw AuthenticationError("API key and secret are required for private endpoints");
         }
         
@@ -944,9 +944,9 @@ std::string AscendEX::sign(const std::string& path, const std::string& api,
             }
         }
         
-        std::string signature = this->hmac(prehash, this->secret, "sha256", true);
+        std::string signature = this->hmac(prehash, this->config_.secret, "sha256", true);
         
-        auth_headers["x-auth-key"] = this->apiKey;
+        auth_headers["x-auth-key"] = this->config_.apiKey;
         auth_headers["x-auth-signature"] = signature;
         auth_headers["x-auth-timestamp"] = timestamp;
         

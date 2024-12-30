@@ -213,8 +213,8 @@ void Korbit::refreshAccessToken() {
     long long currentTime = this->milliseconds();
     if (currentTime >= accessTokenExpiry) {
         json response = fetch("/oauth2/access_token", "private", "POST", {
-            {"client_id", this->apiKey},
-            {"client_secret", this->secret},
+            {"client_id", this->config_.apiKey},
+            {"client_secret", this->config_.secret},
             {"grant_type", "client_credentials"}
         });
         
@@ -254,10 +254,10 @@ String Korbit::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->encode(this->secret),
+        String signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-Key"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["API-Key"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["API-Nonce"] = nonce;
         const_cast<std::map<String, String>&>(headers)["API-Signature"] = signature;
         const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bearer " + accessToken;

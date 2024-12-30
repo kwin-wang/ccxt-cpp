@@ -60,12 +60,12 @@ void bitflyer_ws::authenticate() {
     long long timestamp = get_timestamp();
     std::string nonce = std::to_string(timestamp);
     std::string auth_payload = nonce + "GET/ws/auth";
-    std::string signature = this->hmac(auth_payload, this->secret, "sha256");
+    std::string signature = this->hmac(auth_payload, this->config_.secret, "sha256");
     
     json auth_message = {
         {"method", "auth"},
         {"params", {
-            {"api_key", this->apiKey},
+            {"api_key", this->config_.apiKey},
             {"timestamp", timestamp},
             {"nonce", nonce},
             {"signature", signature}

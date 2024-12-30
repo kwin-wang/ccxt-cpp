@@ -193,11 +193,11 @@ std::string NDAX::sign(const std::string& path, const std::string& api,
     if (api == "private") {
         this->check_required_credentials();
         auto nonce = std::to_string(this->nonce());
-        auto auth = this->apiKey + nonce + this->secret;
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto auth = this->config_.apiKey + nonce + this->config_.secret;
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
         auto new_headers = headers;
-        new_headers["API_KEY"] = this->apiKey;
+        new_headers["API_KEY"] = this->config_.apiKey;
         new_headers["API_NONCE"] = nonce;
         new_headers["API_SIGNATURE"] = signature;
         

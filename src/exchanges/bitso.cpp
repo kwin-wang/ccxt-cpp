@@ -289,10 +289,10 @@ String Bitso::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(request, this->encode(this->secret),
+        String signature = this->hmac(request, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bitso " + this->apiKey + ":" + nonce + ":" + signature;
+        const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bitso " + this->config_.apiKey + ":" + nonce + ":" + signature;
         
         if (method == "POST") {
             const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";

@@ -212,10 +212,10 @@ String Bitbank::sign(const String& path, const String& api,
         }
         
         auto auth = nonce + url + (body.empty() ? "" : body);
-        auto signature = this->hmac(this->encode(auth), this->encode(this->secret),
+        auto signature = this->hmac(this->encode(auth), this->encode(this->config_.secret),
                                   "sha256", "hex");
         
-        headers["API-KEY"] = this->apiKey;
+        headers["API-KEY"] = this->config_.apiKey;
         headers["API-TIMESTAMP"] = nonce;
         headers["API-SIGN"] = signature;
     }
@@ -230,7 +230,7 @@ String Bitbank::createNonce() {
 String Bitbank::createSignature(const String& nonce, const String& method,
                               const String& path, const String& body) {
     auto message = nonce + method + path + body;
-    unsigned char* digest = HMAC(EVP_sha256(), this->secret.c_str(), this->secret.length(),
+    unsigned char* digest = HMAC(EVP_sha256(), this->config_.secret.c_str(), this->config_.secret.length(),
                                 reinterpret_cast<const unsigned char*>(message.c_str()),
                                 message.length(), nullptr, nullptr);
     

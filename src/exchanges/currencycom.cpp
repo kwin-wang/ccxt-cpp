@@ -309,8 +309,8 @@ std::string currencycom::sign(const std::string& path, const std::string& api, c
         }, params);
         
         std::string query = this->urlencode(allParams);
-        std::string auth = query + this->secret;
-        std::string signature = this->hmac(auth, this->secret, "sha256");
+        std::string auth = query + this->config_.secret;
+        std::string signature = this->hmac(auth, this->config_.secret, "sha256");
         query += "&signature=" + signature;
         
         if (method == "GET") {
@@ -320,7 +320,7 @@ std::string currencycom::sign(const std::string& path, const std::string& api, c
             headers["Content-Type"] = "application/x-www-form-urlencoded";
         }
         
-        headers["X-MBX-APIKEY"] = this->apiKey;
+        headers["X-MBX-APIKEY"] = this->config_.apiKey;
     }
     
     return url;

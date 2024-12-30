@@ -130,10 +130,10 @@ std::string bitfinex2::sign(const std::string& path, const std::string& api, con
 
         std::string auth_path = "/" + this->version + "/" + path;
         std::string signature = nonce + auth_path + auth_body;
-        std::string signature_hex = this->hmac(signature, this->secret, "SHA384", "hex");
+        std::string signature_hex = this->hmac(signature, this->config_.secret, "SHA384", "hex");
 
         headers["bfx-nonce"] = nonce;
-        headers["bfx-apikey"] = this->apiKey;
+        headers["bfx-apikey"] = this->config_.apiKey;
         headers["bfx-signature"] = signature_hex;
         
         if (method == "POST") {

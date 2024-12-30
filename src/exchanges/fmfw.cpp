@@ -273,10 +273,10 @@ String FMFW::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(payload, this->encode(this->secret),
+        String signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["API-KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["API-TIMESTAMP"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["API-SIGNATURE"] = signature;
         

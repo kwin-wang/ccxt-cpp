@@ -348,7 +348,7 @@ std::string delta::sign(const std::string& path, const std::string& api, const s
             std::chrono::system_clock::now().time_since_epoch()).count();
         
         Json auth = {
-            {"api-key", this->apiKey},
+            {"api-key", this->config_.apiKey},
             {"timestamp", timestamp}
         };
         
@@ -363,8 +363,8 @@ std::string delta::sign(const std::string& path, const std::string& api, const s
             payload = std::to_string(timestamp) + method + "/v2/" + path + this->json(query);
         }
         
-        auth["signature"] = this->hmac(payload, this->secret, "sha256", "hex");
-        headers["api-key"] = this->apiKey;
+        auth["signature"] = this->hmac(payload, this->config_.secret, "sha256", "hex");
+        headers["api-key"] = this->config_.apiKey;
         headers["timestamp"] = std::to_string(timestamp);
         headers["signature"] = auth["signature"];
         headers["Content-Type"] = "application/json";

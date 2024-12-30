@@ -236,19 +236,19 @@ std::string CoinEx::sign(const std::string& path, const std::string& api,
             if (!query.empty()) {
                 url += "?" + this->urlencode(query);
             }
-            auth = url + "&secret_key=" + this->secret;
+            auth = url + "&secret_key=" + this->config_.secret;
         } else {
             if (!query.empty()) {
-                auth = this->urlencode(query) + "&secret_key=" + this->secret;
+                auth = this->urlencode(query) + "&secret_key=" + this->config_.secret;
             } else {
-                auth = "secret_key=" + this->secret;
+                auth = "secret_key=" + this->config_.secret;
             }
         }
 
         auto signature = this->hash(auth, "md5", "hex").upper();
         auto new_headers = headers;
         new_headers["authorization"] = signature;
-        new_headers["AccessId"] = this->apiKey;
+        new_headers["AccessId"] = this->config_.apiKey;
         new_headers["tonce"] = tonce;
     } else {
         if (!query.empty()) {

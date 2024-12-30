@@ -83,10 +83,10 @@ void bitfinex2_ws::watch_positions_impl(const json& params) {
 void bitfinex2_ws::authenticate() {
     long long nonce = get_nonce();
     std::string payload = "AUTH" + std::to_string(nonce);
-    std::string signature = this->hmac(payload, this->secret, "sha384");
+    std::string signature = this->hmac(payload, this->config_.secret, "sha384");
     
     json auth_message = {
-        {"apiKey", this->apiKey},
+        {"apiKey", this->config_.apiKey},
         {"authSig", signature},
         {"authNonce", nonce},
         {"authPayload", payload},

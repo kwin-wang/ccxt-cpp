@@ -117,12 +117,12 @@ void bitstamp_ws::authenticate(const Dict& params) {
     }
     
     std::string nonce = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
-    std::string signature = this->hmac(nonce + this->apiKey, this->secret, "sha256");
+    std::string signature = this->hmac(nonce + this->config_.apiKey, this->config_.secret, "sha256");
     
     json request = {
         {"event", "bts:subscribe"},
         {"data", {
-            {"key", this->apiKey},
+            {"key", this->config_.apiKey},
             {"signature", signature},
             {"nonce", nonce}
         }}

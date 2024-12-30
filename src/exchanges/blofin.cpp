@@ -485,9 +485,9 @@ void blofin::sign(Request& request, const std::string& path,
             }
         }
 
-        auto signature = this->hmac(auth, this->decode(this->secret), "sha256", "base64");
+        auto signature = this->hmac(auth, this->decode(this->config_.secret), "sha256", "base64");
         
-        request.headers["BF-ACCESS-KEY"] = this->apiKey;
+        request.headers["BF-ACCESS-KEY"] = this->config_.apiKey;
         request.headers["BF-ACCESS-SIGN"] = signature;
         request.headers["BF-ACCESS-TIMESTAMP"] = timestamp;
         request.headers["Content-Type"] = "application/json";
@@ -502,7 +502,7 @@ void blofin::sign(Request& request, const std::string& path,
 std::string blofin::get_signature(const std::string& timestamp, const std::string& method,
                                 const std::string& path, const std::string& body) {
     auto what = timestamp + method + path + body;
-    return this->hmac(what, this->decode(this->secret), "sha256", "base64");
+    return this->hmac(what, this->decode(this->config_.secret), "sha256", "base64");
 }
 
 } // namespace ccxt

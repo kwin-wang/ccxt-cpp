@@ -237,10 +237,10 @@ String Novadax::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->encode(this->secret),
+        String signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-Nova-Access-Key"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-Nova-Access-Key"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["X-Nova-Signature"] = signature;
         const_cast<std::map<String, String>&>(headers)["X-Nova-Timestamp"] = timestamp;
         

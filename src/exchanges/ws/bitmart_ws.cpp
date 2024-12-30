@@ -140,13 +140,13 @@ void bitmart_ws::authenticate(const Dict& params) {
     }
     
     std::string timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count() / 1000000);
-    std::string message = timestamp + "#" + this->apiKey + "#" + this->secret;
-    std::string signature = this->hmac(message, this->secret, "sha256");
+    std::string message = timestamp + "#" + this->config_.apiKey + "#" + this->config_.secret;
+    std::string signature = this->hmac(message, this->config_.secret, "sha256");
     
     json request = {
         {"op", "login"},
         {"args", {
-            {"apiKey", this->apiKey},
+            {"apiKey", this->config_.apiKey},
             {"timestamp", timestamp},
             {"sign", signature}
         }}

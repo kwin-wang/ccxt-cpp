@@ -80,7 +80,7 @@ CryptoCom::CryptoCom(const ExchangeConfig& config) : Exchange(config) {
 std::string CryptoCom::getSignature(const std::string& requestPath, const std::string& method,
                                   const std::string& paramsStr, const std::string& timestamp) const {
     std::string signStr = timestamp + method + requestPath + paramsStr;
-    return hmacSha256(signStr, this->secret);
+    return hmacSha256(signStr, this->config_.secret);
 }
 
 json CryptoCom::signRequest(const std::string& path, const std::string& api,
@@ -96,7 +96,7 @@ json CryptoCom::signRequest(const std::string& path, const std::string& api,
     auto signature = this->getSignature(requestPath, method, paramsStr, timestamp);
     
     json resultHeaders = headers;
-    resultHeaders["api-key"] = this->apiKey;
+    resultHeaders["api-key"] = this->config_.apiKey;
     resultHeaders["api-timestamp"] = timestamp;
     resultHeaders["api-signature"] = signature;
     resultHeaders["Content-Type"] = "application/json";
@@ -207,10 +207,10 @@ void CryptoCom::validateSymbol(const std::string& symbol) const {
 }
 
 void CryptoCom::checkRequiredCredentials() const {
-    if (this->apiKey.empty()) {
+    if (this->config_.apiKey.empty()) {
         throw AuthenticationError("API Key is required for private endpoints");
     }
-    if (this->secret.empty()) {
+    if (this->config_.secret.empty()) {
         throw AuthenticationError("API Secret is required for private endpoints");
     }
 }

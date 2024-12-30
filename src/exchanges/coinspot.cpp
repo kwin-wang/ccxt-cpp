@@ -266,12 +266,12 @@ std::string coinspot::sign(const std::string& path, const std::string& api, cons
         std::string request = this->json(this->extend(params, {
             "nonce", nonce
         }));
-        std::string secret = this->base64ToBinary(this->secret);
+        std::string secret = this->base64ToBinary(this->config_.secret);
         std::string auth = this->hmac(request, secret, "sha512", "base64");
         Json newHeaders = Json::object({
             {"Content-Type", "application/json"},
             {"sign", auth},
-            {"key", this->apiKey}
+            {"key", this->config_.apiKey}
         });
         headers.update(newHeaders);
         body = request;

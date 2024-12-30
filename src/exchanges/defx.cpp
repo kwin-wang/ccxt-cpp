@@ -309,8 +309,8 @@ std::string defx::sign(const std::string& path, const std::string& api, const st
         }, params);
         
         std::string query = this->urlencode(allParams);
-        std::string auth = query + this->secret;
-        std::string signature = this->hmac(auth, this->secret, "sha256");
+        std::string auth = query + this->config_.secret;
+        std::string signature = this->hmac(auth, this->config_.secret, "sha256");
         query += "&signature=" + signature;
         
         if (method == "GET") {
@@ -320,7 +320,7 @@ std::string defx::sign(const std::string& path, const std::string& api, const st
             headers["Content-Type"] = "application/x-www-form-urlencoded";
         }
         
-        headers["X-API-KEY"] = this->apiKey;
+        headers["X-API-KEY"] = this->config_.apiKey;
     }
     
     return url;

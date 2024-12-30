@@ -238,11 +238,11 @@ String Tidex::sign(const String& path, const String& api,
         }, params);
         
         String requestString = this->urlencode(request);
-        String signature = this->hmac(requestString, this->encode(this->secret),
+        String signature = this->hmac(requestString, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
         body = requestString;
-        const_cast<std::map<String, String>&>(headers)["Key"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["Key"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["Sign"] = signature;
         const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
     }

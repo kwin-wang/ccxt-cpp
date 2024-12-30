@@ -161,11 +161,11 @@ String Bitstamp::sign(const String& path, const String& api, const String& metho
         }
     } else if (api == "private") {
         auto nonce = this->getNonce();
-        auto auth = nonce + this->apiKey + this->apiSecret;
+        auto auth = nonce + this->config_.apiKey + this->apiSecret;
         auto signature = this->hmac(auth, this->apiSecret, "sha256");
         
         json request = this->extend({
-            "key": this->apiKey,
+            "key": this->config_.apiKey,
             "signature": signature,
             "nonce": nonce
         }, params);

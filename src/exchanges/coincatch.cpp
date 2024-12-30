@@ -81,7 +81,7 @@ std::string coincatch::sign(const std::string& path, const std::string& api, con
         auth += "?" + this->urlencode(params);
     }
 
-    auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+    auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
     
     return url;
 }

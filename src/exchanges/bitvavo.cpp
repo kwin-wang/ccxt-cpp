@@ -181,8 +181,8 @@ String Bitvavo::sign(const String& path, const String& api,
         if (request != "") {
             auth += request;
         }
-        auto signature = this->hmac(auth, this->secret, "sha256");
-        headers["BITVAVO-ACCESS-KEY"] = this->apiKey;
+        auto signature = this->hmac(auth, this->config_.secret, "sha256");
+        headers["BITVAVO-ACCESS-KEY"] = this->config_.apiKey;
         headers["BITVAVO-ACCESS-SIGNATURE"] = signature;
         headers["BITVAVO-ACCESS-TIMESTAMP"] = timestamp;
         headers["BITVAVO-ACCESS-WINDOW"] = "10000";

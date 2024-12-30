@@ -415,9 +415,9 @@ std::string idex::sign(const std::string& path, const std::string& api, const st
             }
         }
 
-        const std::string signature = this->hmac(payload, this->secret, "sha256", true);
+        const std::string signature = this->hmac(payload, this->config_.secret, "sha256", true);
         
-        headers["IDEX-API-Key"] = this->apiKey;
+        headers["IDEX-API-Key"] = this->config_.apiKey;
         headers["IDEX-TIMESTAMP"] = std::to_string(timestamp);
         headers["IDEX-SIGNATURE"] = signature;
         headers["Content-Type"] = "application/json";

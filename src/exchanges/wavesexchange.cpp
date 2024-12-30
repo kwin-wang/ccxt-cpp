@@ -319,11 +319,11 @@ std::string WavesExchange::sign(const std::string& path, const std::string& api,
     if (api == "private" || api == "forward") {
         this->check_required_credentials();
         auto timestamp = std::to_string(this->nonce());
-        auto auth = timestamp + this->apiKey;
-        auto signature = this->hmac(auth, this->secret, "sha512");
+        auto auth = timestamp + this->config_.apiKey;
+        auto signature = this->hmac(auth, this->config_.secret, "sha512");
         
         auto new_headers = headers;
-        new_headers["X-API-Key"] = this->apiKey;
+        new_headers["X-API-Key"] = this->config_.apiKey;
         new_headers["X-API-Signature"] = signature;
         new_headers["X-API-Timestamp"] = timestamp;
         
@@ -358,7 +358,7 @@ std::string WavesExchange::get_order_bytes(const nlohmann::json& order) {
 }
 
 std::string WavesExchange::sign_message(const std::string& message) {
-    return this->hmac(message, this->secret, "sha256");
+    return this->hmac(message, this->config_.secret, "sha256");
 }
 
 std::string WavesExchange::get_network_byte() {

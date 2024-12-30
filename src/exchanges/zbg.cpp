@@ -202,9 +202,9 @@ std::string ZBG::sign(const std::string& path, const std::string& api,
             auth += this->urlencode(this->keysort(query));
         }
 
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         auto new_headers = headers;
-        new_headers["X-BH-APIKEY"] = this->apiKey;
+        new_headers["X-BH-APIKEY"] = this->config_.apiKey;
         new_headers["X-BH-TIMESTAMP"] = timestamp;
         new_headers["X-BH-SIGNATURE"] = signature;
 
@@ -294,7 +294,7 @@ std::string ZBG::get_signature(const std::string& path, const std::string& metho
         auth += this->urlencode(this->keysort(params));
     }
 
-    return this->hmac(auth, this->secret, "sha256", "hex");
+    return this->hmac(auth, this->config_.secret, "sha256", "hex");
 }
 
 } // namespace ccxt

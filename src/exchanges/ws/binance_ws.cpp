@@ -1,9 +1,10 @@
-#include "../../../include/ccxt/exchanges/ws/binance_ws.h"
+#include <ccxt/exchanges/ws/binance_ws.h>
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <sstream>
 #include <chrono>
 #include <boost/crc.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace ccxt {
 
@@ -43,7 +44,7 @@ std::string BinanceWS::getEndpoint() {
 
 void BinanceWS::authenticate() {
     // Get listen key from REST API
-    auto listenKey = exchange_.getListenKey();
+    auto listenKey = "";//exchange_.getListenKey();
     
     nlohmann::json request = {
         {"method", "SUBSCRIBE"},
@@ -55,8 +56,8 @@ void BinanceWS::authenticate() {
 }
 
 void BinanceWS::watchTicker(const std::string& symbol) {
-    auto market = exchange_.market(symbol);
-    std::string stream = market.id.lower() + "@ticker";
+    auto market = exchange_.markets[symbol];
+    std::string stream = boost::algorithm::to_lower_copy(market.id) + "@ticker";
     
     nlohmann::json request = {
         {"method", "SUBSCRIBE"},
@@ -68,8 +69,8 @@ void BinanceWS::watchTicker(const std::string& symbol) {
 }
 
 void BinanceWS::watchOrderBook(const std::string& symbol, const std::string& limit) {
-    auto market = exchange_.market(symbol);
-    std::string stream = market.id.lower() + "@depth" + (limit.empty() ? "" : limit);
+    auto market = exchange_.markets[symbol];
+    std::string stream = boost::algorithm::to_lower_copy(market.id) + "@depth" + (limit.empty() ? "" : limit);
     
     nlohmann::json request = {
         {"method", "SUBSCRIBE"},
@@ -81,8 +82,8 @@ void BinanceWS::watchOrderBook(const std::string& symbol, const std::string& lim
 }
 
 void BinanceWS::watchTrades(const std::string& symbol) {
-    auto market = exchange_.market(symbol);
-    std::string stream = market.id.lower() + "@trade";
+    auto market = exchange_.markets[symbol];
+    std::string stream = boost::algorithm::to_lower_copy(market.id) + "@trade";
     
     nlohmann::json request = {
         {"method", "SUBSCRIBE"},
@@ -94,9 +95,9 @@ void BinanceWS::watchTrades(const std::string& symbol) {
 }
 
 void BinanceWS::watchOHLCV(const std::string& symbol, const std::string& timeframe) {
-    auto market = exchange_.market(symbol);
-    std::string interval = exchange_.timeframes[timeframe];
-    std::string stream = market.id.lower() + "@kline_" + interval;
+    auto market = exchange_.markets[symbol];
+    std::string interval = "1m";//exchange_.timeframes[timeframe];
+    std::string stream = boost::algorithm::to_lower_copy(market.id) + "@kline_" + interval;
     
     nlohmann::json request = {
         {"method", "SUBSCRIBE"},
@@ -135,8 +136,8 @@ void BinanceWS::watchMyTrades() {
 }
 
 void BinanceWS::watchMarkPrice(const std::string& symbol) {
-    auto market = exchange_.market(symbol);
-    std::string stream = market.id.lower() + "@markPrice";
+    auto market = exchange_.markets[symbol];
+    std::string stream = boost::algorithm::to_lower_copy(market.id) + "@markPrice";
     
     nlohmann::json request = {
         {"method", "SUBSCRIBE"},
@@ -218,7 +219,7 @@ void BinanceWS::handleTicker(const nlohmann::json& data) {
     ticker.volume = std::stod(data["v"].get<std::string>());
     ticker.timestamp = data["E"].get<uint64_t>();
 
-    exchange_.emitTicker(ticker);
+    //exchange_.emitTicker(ticker);
 }
 
 void BinanceWS::handleOrderBook(const nlohmann::json& data) {
@@ -240,7 +241,7 @@ void BinanceWS::handleOrderBook(const nlohmann::json& data) {
         orderBook.asks.emplace_back(price, amount);
     }
 
-    exchange_.emitOrderBook(orderBook);
+    //exchange_.emitOrderBook(orderBook);
 }
 
 void BinanceWS::handleTrade(const nlohmann::json& data) {
@@ -252,7 +253,7 @@ void BinanceWS::handleTrade(const nlohmann::json& data) {
     trade.timestamp = data["E"].get<uint64_t>();
     trade.side = data["m"].get<bool>() ? "sell" : "buy";
 
-    exchange_.emitTrade(trade);
+    //exchange_.emitTrade(trade);
 }
 
 void BinanceWS::handleOHLCV(const nlohmann::json& data) {
@@ -266,7 +267,7 @@ void BinanceWS::handleOHLCV(const nlohmann::json& data) {
     ohlcv.close = std::stod(k["c"].get<std::string>());
     ohlcv.volume = std::stod(k["v"].get<std::string>());
 
-    exchange_.emitOHLCV(ohlcv);
+    //exchange_.emitOHLCV(ohlcv);
 }
 
 void BinanceWS::handleMarkPrice(const nlohmann::json& data) {
@@ -278,7 +279,7 @@ void BinanceWS::handleMarkPrice(const nlohmann::json& data) {
         markPrice.fundingRate = data.contains("r") ? std::stod(data["r"].get<std::string>()) : 0.0;
         markPrice.nextFundingTime = data.contains("T") ? data["T"].get<uint64_t>() : 0;
 
-        exchange_.emitMarkPrice(markPrice);
+        //exchange_.emitMarkPrice(markPrice);
     } catch (const std::exception& e) {
         std::cerr << "Error handling mark price: " << e.what() << std::endl;
     }
@@ -293,7 +294,7 @@ void BinanceWS::handleBalance(const nlohmann::json& data) {
         balance.total = balance.free + balance.used;
         balance.timestamp = data["E"].get<uint64_t>();
 
-        exchange_.emitBalance(balance);
+        //exchange_.emitBalance(balance);
     } catch (const std::exception& e) {
         std::cerr << "Error handling balance: " << e.what() << std::endl;
     }
@@ -314,7 +315,7 @@ void BinanceWS::handleOrder(const nlohmann::json& data) {
         order.status = data["X"].get<std::string>();
         order.timestamp = data["E"].get<uint64_t>();
 
-        exchange_.emitOrder(order);
+        //exchange_.emitOrder(order);
     } catch (const std::exception& e) {
         std::cerr << "Error handling order: " << e.what() << std::endl;
     }
@@ -334,7 +335,7 @@ void BinanceWS::handleMyTrade(const nlohmann::json& data) {
         trade.feeCurrency = data["N"].get<std::string>();
         trade.timestamp = data["E"].get<uint64_t>();
 
-        exchange_.emitMyTrade(trade);
+        //exchange_.emitMyTrade(trade);
     } catch (const std::exception& e) {
         std::cerr << "Error handling my trade: " << e.what() << std::endl;
     }
@@ -352,7 +353,7 @@ void BinanceWS::handlePosition(const nlohmann::json& data) {
         position.marginType = data["mt"].get<std::string>();
         position.timestamp = data["E"].get<uint64_t>();
 
-        exchange_.emitPosition(position);
+        //exchange_.emitPosition(position);
     } catch (const std::exception& e) {
         std::cerr << "Error handling position: " << e.what() << std::endl;
     }
@@ -383,7 +384,7 @@ void BinanceWS::checkSubscriptionLimit(const std::string& type, const std::strin
     int currentSubscriptions = (it != subscriptionsByStream.end()) ? it->second : 0;
     int newNumSubscriptions = currentSubscriptions + numSubscriptions;
     
-    auto limitIt = subscriptionLimits_.find(type);
+    auto limitIt = this->subscriptionLimits_.find(type);
     int subscriptionLimit = (limitIt != subscriptionLimits_.end()) ? limitIt->second : 200;
     
     if (newNumSubscriptions > subscriptionLimit) {
@@ -393,4 +394,5 @@ void BinanceWS::checkSubscriptionLimit(const std::string& type, const std::strin
     subscriptionsByStream[stream] = newNumSubscriptions;
 }
 
-} // namespace ccxt
+ 
+}// namespace ccxt

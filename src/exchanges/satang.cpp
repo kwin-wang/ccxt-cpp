@@ -241,10 +241,10 @@ String Satang::sign(const String& path, const String& api,
         }
         
         String auth = timestamp + method + path + query;
-        String signature = this->hmac(auth, this->encode(this->secret),
+        String signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-Key"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["API-Key"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["API-Timestamp"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["API-Signature"] = signature;
         

@@ -267,15 +267,15 @@ String Bybit::sign(const String& path, const String& api,
     if (api == "private") {
         String timestamp = std::to_string(this->nonce());
         String queryString = this->rawencode(this->keysort(params));
-        String auth = timestamp + this->apiKey + queryString;
+        String auth = timestamp + this->config_.apiKey + queryString;
         
         if (method == "POST") {
             auth += body.dump();
         }
         
-        String signature = this->hmac(auth, this->secret, "sha256", "hex");
+        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-BAPI-API-KEY"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["X-BAPI-API-KEY"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["X-BAPI-TIMESTAMP"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["X-BAPI-SIGN"] = signature;
         
@@ -290,7 +290,7 @@ String Bybit::sign(const String& path, const String& api,
 String Bybit::createSignature(const String& timestamp, const String& method,
                             const String& path, const String& queryString,
                             const String& body) {
-    String message = timestamp + this->apiKey + queryString + body;
+    String message = timestamp + this->config_.apiKey + queryString + body;
     
     unsigned char* hmac = nullptr;
     unsigned int hmacLen = 0;

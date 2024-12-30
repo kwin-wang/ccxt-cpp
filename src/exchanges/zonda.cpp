@@ -178,14 +178,14 @@ String Zonda::sign(const String& path, const String& api,
         }, params);
 
         auto signature = this->hmac(this->encode(this->json(request)),
-                                  this->encode(this->secret),
+                                  this->encode(this->config_.secret),
                                   "sha512");
 
         auto body = this->urlencode(this->extend(request, {
             "signature", signature
         }));
 
-        headers["API-Key"] = this->apiKey;
+        headers["API-Key"] = this->config_.apiKey;
         headers["API-Hash"] = signature;
         headers["Content-Type"] = "application/x-www-form-urlencoded";
         headers["Request-Timestamp"] = nonce;
@@ -201,7 +201,7 @@ String Zonda::createNonce() {
 String Zonda::createSignature(const String& nonce, const String& method,
                             const String& path, const String& body) {
     auto message = nonce + method + path + body;
-    unsigned char* digest = HMAC(EVP_sha512(), this->secret.c_str(), this->secret.length(),
+    unsigned char* digest = HMAC(EVP_sha512(), this->config_.secret.c_str(), this->config_.secret.length(),
                                 reinterpret_cast<const unsigned char*>(message.c_str()),
                                 message.length(), nullptr, nullptr);
     

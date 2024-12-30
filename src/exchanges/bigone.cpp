@@ -204,9 +204,9 @@ std::string BigONE::sign(const std::string& path, const std::string& api,
             }
         }
 
-        auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+        auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         auto new_headers = headers;
-        new_headers["Authorization"] = "Bearer " + this->apiKey;
+        new_headers["Authorization"] = "Bearer " + this->config_.apiKey;
         new_headers["Big-Device-Id"] = this->get_signed_token();
         new_headers["Content-Type"] = "application/json";
         new_headers["timestamp"] = timestamp;
@@ -272,7 +272,7 @@ std::string BigONE::get_order_id() {
 
 std::string BigONE::get_signed_token() {
     auto timestamp = std::to_string(this->nonce());
-    return this->hmac(timestamp, this->secret, "sha256", "hex");
+    return this->hmac(timestamp, this->config_.secret, "sha256", "hex");
 }
 
 } // namespace ccxt

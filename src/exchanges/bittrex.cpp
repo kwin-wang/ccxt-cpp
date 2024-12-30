@@ -225,7 +225,7 @@ String Bittrex::sign(const String& path, const String& api,
         String signature = this->createSignature(timestamp, url, method,
                                                contentHash);
         
-        const_cast<std::map<String, String>&>(headers)["Api-Key"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["Api-Key"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["Api-Timestamp"] = timestamp;
         const_cast<std::map<String, String>&>(headers)["Api-Content-Hash"] = contentHash;
         const_cast<std::map<String, String>&>(headers)["Api-Signature"] = signature;
@@ -241,7 +241,7 @@ String Bittrex::sign(const String& path, const String& api,
 String Bittrex::createSignature(const String& timestamp, const String& uri,
                                const String& method, const String& body) {
     String preSign = timestamp + uri + method + body;
-    return this->hmac(preSign, this->base64ToBinary(this->secret),
+    return this->hmac(preSign, this->base64ToBinary(this->config_.secret),
                      "sha512", "hex");
 }
 

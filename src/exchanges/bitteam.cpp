@@ -184,11 +184,11 @@ String bitteam::sign(const String& path, const String& api, const String& method
     } else {
         this->checkRequiredCredentials();
         auto nonce = this->nonce();
-        auto auth = nonce + this->apiKey;
-        auto signature = this->hmac(auth, this->secret, "sha256");
+        auto auth = nonce + this->config_.apiKey;
+        auto signature = this->hmac(auth, this->config_.secret, "sha256");
         
         json request = this->extend({
-            "key": this->apiKey,
+            "key": this->config_.apiKey,
             "signature": signature,
             "nonce": nonce
         }, params);

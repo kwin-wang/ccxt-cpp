@@ -88,9 +88,9 @@ std::string btcmarkets::sign(const std::string& path, const std::string& api, co
             auth += this->json(body) + "\n";
         }
         
-        std::string signature = this->hmac(auth, this->base64ToBinary(this->secret), "SHA512", "base64");
+        std::string signature = this->hmac(auth, this->base64ToBinary(this->config_.secret), "SHA512", "base64");
         
-        headers["BM-AUTH-APIKEY"] = this->apiKey;
+        headers["BM-AUTH-APIKEY"] = this->config_.apiKey;
         headers["BM-AUTH-TIMESTAMP"] = nonce;
         headers["BM-AUTH-SIGNATURE"] = signature;
         headers["Content-Type"] = "application/json";

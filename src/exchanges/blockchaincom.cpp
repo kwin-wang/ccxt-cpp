@@ -94,9 +94,9 @@ std::string blockchaincom::sign(const std::string& path, const std::string& api,
             auth += this->json(params);
         }
         
-        std::string signature = this->hmac(auth, this->secret, "SHA256", "hex");
+        std::string signature = this->hmac(auth, this->config_.secret, "SHA256", "hex");
         
-        headers["X-API-Token"] = this->apiKey;
+        headers["X-API-Token"] = this->config_.apiKey;
         headers["X-Timestamp"] = nonce;
         headers["X-Signature"] = signature;
         headers["Content-Type"] = "application/json";

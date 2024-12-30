@@ -400,9 +400,9 @@ String MixCoin::sign(const String& path, const String& api,
                 auth += this->json(params);
             }
         }
-        auto signature = this->hmac(auth, this->secret);
+        auto signature = this->hmac(auth, this->config_.secret);
         auto newHeaders = headers;
-        newHeaders["ACCESS-KEY"] = this->apiKey;
+        newHeaders["ACCESS-KEY"] = this->config_.apiKey;
         newHeaders["ACCESS-TIMESTAMP"] = nonce;
         newHeaders["ACCESS-SIGN"] = signature;
         if (body.size()) {

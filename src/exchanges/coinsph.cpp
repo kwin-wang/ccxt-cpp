@@ -368,7 +368,7 @@ std::string coinsph::sign(const std::string& path, const std::string& api, const
         auth += "?" + this->urlencode(params);
     }
 
-    auto signature = this->hmac(auth, this->secret, "sha256", "hex");
+    auto signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
     
     return url;
 }

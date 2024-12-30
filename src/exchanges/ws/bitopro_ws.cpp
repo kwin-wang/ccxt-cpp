@@ -101,13 +101,13 @@ void bitopro_ws::authenticate(const Dict& params) {
     }
     
     int64_t timestamp = std::chrono::system_clock::now().time_since_epoch().count() / 1000000;
-    std::string payload = this->apiKey + std::to_string(timestamp);
-    std::string signature = this->hmac(payload, this->secret, "sha384");
+    std::string payload = this->config_.apiKey + std::to_string(timestamp);
+    std::string signature = this->hmac(payload, this->config_.secret, "sha384");
     
     json request = {
         {"event", "auth"},
         {"auth", {
-            {"apiKey", this->apiKey},
+            {"apiKey", this->config_.apiKey},
             {"timestamp", timestamp},
             {"signature", signature}
         }}

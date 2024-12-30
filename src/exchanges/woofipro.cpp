@@ -677,9 +677,9 @@ String WooFiPro::sign(const String& path, const String& api, const String& metho
                 url += "?" + queryString;
             }
         }
-        auto signature = this->hmac(this->encode(auth), this->encode(this->secret));
+        auto signature = this->hmac(this->encode(auth), this->encode(this->config_.secret));
         auto newHeaders = {
-            {"x-api-key", this->apiKey},
+            {"x-api-key", this->config_.apiKey},
             {"x-api-signature", signature},
             {"x-api-timestamp", timestamp},
             {"Content-Type", "application/json"}

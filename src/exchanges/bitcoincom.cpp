@@ -127,7 +127,7 @@ static std::string hmac_sha256(const std::string& key, const std::string& data) 
 std::string bitcoincom::sign(const std::string& path, const std::string& method,
                           const std::string& body,
                           const std::map<std::string, std::string>& headers) {
-    if (this->api_key.empty() || this->secret.empty()) {
+    if (this->api_key.empty() || this->config_.secret.empty()) {
         return body;
     }
 
@@ -137,7 +137,7 @@ std::string bitcoincom::sign(const std::string& path, const std::string& method,
         data += body;
     }
 
-    std::string signature = hmac_sha256(this->secret, data);
+    std::string signature = hmac_sha256(this->config_.secret, data);
     auto h = headers;
     h["AUTH-API-KEY"] = this->api_key;
     h["AUTH-API-TIMESTAMP"] = std::to_string(timestamp);

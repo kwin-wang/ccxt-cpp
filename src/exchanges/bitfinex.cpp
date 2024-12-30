@@ -278,10 +278,10 @@ String Bitfinex::sign(const String& path, const String& api,
             {"nonce", nonce}
         }, query));
         
-        String signature = this->hmac(body, this->secret, "sha384", "hex");
+        String signature = this->hmac(body, this->config_.secret, "sha384", "hex");
         
         const_cast<std::map<String, String>&>(headers)["bfx-nonce"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["bfx-apikey"] = this->apiKey;
+        const_cast<std::map<String, String>&>(headers)["bfx-apikey"] = this->config_.apiKey;
         const_cast<std::map<String, String>&>(headers)["bfx-signature"] = signature;
         const_cast<std::map<String, String>&>(headers)["content-type"] = "application/json";
     }
