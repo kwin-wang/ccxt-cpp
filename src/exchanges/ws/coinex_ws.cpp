@@ -30,8 +30,8 @@ void CoinexWS::authenticate() {
     std::string secret_key = exchange_.secret;
 
     // Create signature string
-    std::string signatureString = "access_id=" + access_id + "&timestamp=" + timestamp;
-    std::string signature = exchange_.hmac(signatureString, secret_key, "sha256");
+    std::string signaturestd::string = "access_id=" + access_id + "&timestamp=" + timestamp;
+    std::string signature = exchange_.hmac(signaturestd::string, secret_key, "sha256");
 
     nlohmann::json auth = {
         {"method", "server.sign"},

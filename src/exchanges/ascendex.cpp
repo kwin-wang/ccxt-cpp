@@ -311,7 +311,7 @@ json AscendEX::parseMarkets(const json& response, const std::string& type) const
     return result;
 }
 
-json AscendEX::fetchTicker(const String& symbol, const json& params) {
+json AscendEX::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
@@ -485,12 +485,12 @@ std::string AscendEX::getAccountCategory(const json& params) const {
     return accountCategory;
 }
 
-json AscendEX::createOrder(const String& symbol, const String& type,
-                          const String& side, double amount,
+json AscendEX::createOrder(const std::string& symbol, const std::string& type,
+                          const std::string& side, double amount,
                           double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String accountCategory = this->getAccountCategory(params);
+    std::string accountCategory = this->getAccountCategory(params);
     
     json request = {
         {"symbol", market.id},
@@ -506,7 +506,7 @@ json AscendEX::createOrder(const String& symbol, const String& type,
         request["orderPrice"] = this->priceToPrecision(symbol, price);
     }
     
-    String path = accountCategory == "futures" ? 
+    std::string path = accountCategory == "futures" ? 
         "/api/pro/v1/futures/order" : "/api/pro/v1/order";
     
     json response = fetch(path, "private", "POST",

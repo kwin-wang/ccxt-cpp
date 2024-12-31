@@ -112,12 +112,12 @@ json Bibox::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response["result"]) {
-        String id = this->safeString(market, "symbol");
-        String baseId = this->safeString(market, "coin_symbol");
-        String quoteId = this->safeString(market, "currency_symbol");
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "symbol");
+        std::string baseId = this->safeString(market, "coin_symbol");
+        std::string quoteId = this->safeString(market, "currency_symbol");
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -169,8 +169,8 @@ json Bibox::parseBalance(const json& response) {
     json balances = response["result"];
     
     for (const auto& balance : balances) {
-        String currencyId = balance["coin_symbol"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["coin_symbol"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "available")},
@@ -182,8 +182,8 @@ json Bibox::parseBalance(const json& response) {
     return result;
 }
 
-json Bibox::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Bibox::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -204,11 +204,11 @@ json Bibox::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["result"], market);
 }
 
-String Bibox::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Bibox::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api] + path;
+    std::string url = this->urls["api"][api] + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -221,29 +221,29 @@ String Bibox::sign(const String& path, const String& api,
             "timestamp": std::to_string(this->milliseconds())
         }, params);
         
-        String signature = this->createSignature(request);
+        std::string signature = this->createSignature(request);
         request["sign"] = signature;
         
         body = this->json(request);
-        const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+        const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
     }
     
     return url;
 }
 
-String Bibox::createSignature(const json& params) {
-    String query = this->urlencode(this->keysort(params));
+std::string Bibox::createSignature(const json& params) {
+    std::string query = this->urlencode(this->keysort(params));
     return this->hmac(query, this->encode(this->config_.secret),
                      "md5", "hex");
 }
 
 json Bibox::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "create_time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "order_type");
-    String side = this->safeStringLower(order, "order_side");
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "create_time");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = market.symbol;
+    std::string type = this->safeStringLower(order, "order_type");
+    std::string side = this->safeStringLower(order, "order_side");
     
     return {
         {"id", id},
@@ -270,8 +270,8 @@ json Bibox::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Bibox::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Bibox::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"1", "open"},
         {"2", "closed"},
         {"3", "canceled"},

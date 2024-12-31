@@ -92,12 +92,12 @@ json Btcturk::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : markets) {
-        String id = market["id"].get<String>();
-        String baseId = market["numerator"].get<String>();
-        String quoteId = market["denominator"].get<String>();
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["id"].get<std::string>();
+        std::string baseId = market["numerator"].get<std::string>();
+        std::string quoteId = market["denominator"].get<std::string>();
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -106,7 +106,7 @@ json Btcturk::fetchMarkets(const json& params) {
             {"quote", quote},
             {"baseId", baseId},
             {"quoteId", quoteId},
-            {"active", market["status"].get<String>() == "TRADING"},
+            {"active", market["status"].get<std::string>() == "TRADING"},
             {"precision", {
                 {"amount", market["numeratorScale"].get<int>()},
                 {"price", market["denominatorScale"].get<int>()}
@@ -143,9 +143,9 @@ json Btcturk::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String currencyId = balance["asset"].get<String>();
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = balance["asset"].get<std::string>();
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "free")},
             {"used", this->safeFloat(balance, "locked")},
             {"total", this->safeFloat(balance, "balance")}
@@ -156,13 +156,13 @@ json Btcturk::parseBalance(const json& response) {
     return result;
 }
 
-json Btcturk::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
+json Btcturk::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String orderType = type.substr(0, 1).toUpperCase() + type.substr(1);
-    String orderMethod = side.substr(0, 1).toUpperCase() + side.substr(1);
+    std::string orderType = type.substr(0, 1).toUpperCase() + type.substr(1);
+    std::string orderMethod = side.substr(0, 1).toUpperCase() + side.substr(1);
     json request = {
         {"pairSymbol", market["id"]},
         {"orderType", orderType},
@@ -177,27 +177,27 @@ json Btcturk::createOrder(const String& symbol, const String& type,
     return this->parseOrder(data, market);
 }
 
-String Btcturk::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+std::string Btcturk::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
-    String url = this->urls["api"][api] + path;
+    std::string url = this->urls["api"][api] + path;
     
     if (api == "private") {
         this->checkRequiredCredentials();
-        String timestamp = std::to_string(this->milliseconds());
-        String nonce = this->uuid();
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string nonce = this->uuid();
         
-        String auth = this->config_.apiKey + timestamp;
-        String signature = this->hmac(auth, this->encode(this->config_.secret),
+        std::string auth = this->config_.apiKey + timestamp;
+        std::string signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["X-PCK"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-Stamp"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["X-Signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-PCK"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-Stamp"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-Signature"] = signature;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
             body = this->json(this->extend(params, {}));
         } else if (!params.empty()) {
             url += "?" + this->urlencode(params);
@@ -209,20 +209,20 @@ String Btcturk::sign(const String& path, const String& api,
     return url;
 }
 
-String Btcturk::getNonce() {
+std::string Btcturk::getNonce() {
     return this->uuid();
 }
 
 json Btcturk::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "datetime");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "datetime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     } else {
-        String marketId = this->safeString(order, "pairSymbol");
+        std::string marketId = this->safeString(order, "pairSymbol");
         if (marketId != nullptr) {
             if (this->markets_by_id.contains(marketId)) {
                 market = this->markets_by_id[marketId];
@@ -233,8 +233,8 @@ json Btcturk::parseOrder(const json& order, const Market& market) {
         }
     }
     
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "orderMethod");
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "orderMethod");
     
     return {
         {"id", id},
@@ -259,8 +259,8 @@ json Btcturk::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Btcturk::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Btcturk::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"Untouched", "open"},
         {"Partial", "open"},
         {"Canceled", "canceled"},
@@ -270,7 +270,7 @@ String Btcturk::parseOrderStatus(const String& status) {
     return this->safeString(statuses, status, status);
 }
 
-json Btcturk::fetchTicker(const String& symbol, const json& params) {
+json Btcturk::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -281,14 +281,14 @@ json Btcturk::fetchTicker(const String& symbol, const json& params) {
     return this->parseTicker(ticker, market);
 }
 
-json Btcturk::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Btcturk::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     this->loadMarkets();
     json response = this->publicGetV2Ticker(params);
     json data = this->safeValue(response, "data");
     json result = json::object();
     for (const auto& ticker : data) {
         json market = this->safeMarket(ticker["pair"]);
-        String symbol = market["symbol"];
+        std::string symbol = market["symbol"];
         if (symbols.empty() || std::find(symbols.begin(), symbols.end(), symbol) != symbols.end()) {
             result[symbol] = this->parseTicker(ticker, market);
         }
@@ -296,7 +296,7 @@ json Btcturk::fetchTickers(const std::vector<String>& symbols, const json& param
     return result;
 }
 
-json Btcturk::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Btcturk::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -311,7 +311,7 @@ json Btcturk::fetchOrderBook(const String& symbol, int limit, const json& params
     return this->parseOrderBook(orderbook, symbol, timestamp);
 }
 
-json Btcturk::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json Btcturk::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -325,7 +325,7 @@ json Btcturk::fetchTrades(const String& symbol, int since, int limit, const json
     return this->parseTrades(trades, market, since, limit);
 }
 
-json Btcturk::fetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+json Btcturk::fetchOHLCV(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -345,7 +345,7 @@ json Btcturk::fetchOHLCV(const String& symbol, const String& timeframe, int sinc
 
 json Btcturk::parseTicker(const json& ticker, const Market& market) {
     double timestamp = this->safeTimestamp(ticker, "timestamp");
-    String symbol = this->safeString(market, "symbol");
+    std::string symbol = this->safeString(market, "symbol");
     return {
         {"symbol", symbol},
         {"timestamp", timestamp},
@@ -370,11 +370,11 @@ json Btcturk::parseTicker(const json& ticker, const Market& market) {
 }
 
 json Btcturk::parseTrade(const json& trade, const Market& market) {
-    String id = this->safeString(trade, "id");
+    std::string id = this->safeString(trade, "id");
     double timestamp = this->safeTimestamp(trade, "timestamp");
     double price = this->safeFloat(trade, "price");
     double amount = this->safeFloat(trade, "amount");
-    String side = this->safeString(trade, "side");
+    std::string side = this->safeString(trade, "side");
     return {
         {"id", id},
         {"info", trade},
@@ -392,7 +392,7 @@ json Btcturk::parseTrade(const json& trade, const Market& market) {
     };
 }
 
-json Btcturk::parseOHLCV(const json& ohlcv, const Market& market, const String& timeframe) {
+json Btcturk::parseOHLCV(const json& ohlcv, const Market& market, const std::string& timeframe) {
     return {
         this->safeTimestamp(ohlcv, "time"),
         this->safeFloat(ohlcv, "open"),
@@ -403,7 +403,7 @@ json Btcturk::parseOHLCV(const json& ohlcv, const Market& market, const String& 
     };
 }
 
-json Btcturk::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Btcturk::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for cancelOrder");
     }
@@ -416,7 +416,7 @@ json Btcturk::cancelOrder(const String& id, const String& symbol, const json& pa
     return this->privatePostV1CancelOrder(this->extend(request, params));
 }
 
-json Btcturk::fetchOrder(const String& id, const String& symbol, const json& params) {
+json Btcturk::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for fetchOrder");
     }
@@ -431,7 +431,7 @@ json Btcturk::fetchOrder(const String& id, const String& symbol, const json& par
     return this->parseOrder(data, market);
 }
 
-json Btcturk::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json Btcturk::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for fetchOrders");
     }
@@ -451,7 +451,7 @@ json Btcturk::fetchOrders(const String& symbol, int since, int limit, const json
     return this->parseOrders(data, market, since, limit);
 }
 
-json Btcturk::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json Btcturk::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for fetchOpenOrders");
     }
@@ -468,7 +468,7 @@ json Btcturk::fetchOpenOrders(const String& symbol, int since, int limit, const 
     return this->parseOrders(data, market, since, limit);
 }
 
-json Btcturk::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+json Btcturk::fetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     json request = this->extend({
         {"status": "closed"}
     }, params);

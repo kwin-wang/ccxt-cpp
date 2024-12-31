@@ -95,12 +95,12 @@ json Bybit::fetchMarkets(const json& params) {
                                    this->extend(request, params));
         
         for (const auto& market : categoryResponse["result"]["list"]) {
-            String id = market["symbol"];
-            String baseId = market["baseCoin"];
-            String quoteId = market["quoteCoin"];
-            String base = this->commonCurrencyCode(baseId);
-            String quote = this->commonCurrencyCode(quoteId);
-            String type = category;
+            std::string id = market["symbol"];
+            std::string baseId = market["baseCoin"];
+            std::string quoteId = market["quoteCoin"];
+            std::string base = this->commonCurrencyCode(baseId);
+            std::string quote = this->commonCurrencyCode(quoteId);
+            std::string type = category;
             
             markets.push_back({
                 {"id", id},
@@ -146,7 +146,7 @@ json Bybit::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Bybit::fetchTicker(const String& symbol, const json& params) {
+json Bybit::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
@@ -185,7 +185,7 @@ json Bybit::fetchTicker(const String& symbol, const json& params) {
 
 json Bybit::fetchBalance(const json& params) {
     this->loadMarkets();
-    String type = this->safeString(params, "type", defaultType);
+    std::string type = this->safeString(params, "type", defaultType);
     
     json request = {
         {"accountType", type == "spot" ? "SPOT" : "CONTRACT"},
@@ -201,9 +201,9 @@ json Bybit::fetchBalance(const json& params) {
     };
     
     for (const auto& balance : response["result"]["list"]) {
-        String currency = balance["coin"];
-        double total = std::stod(balance["walletBalance"].get<String>());
-        double free = std::stod(balance["availableToWithdraw"].get<String>());
+        std::string currency = balance["coin"];
+        double total = std::stod(balance["walletBalance"].get<std::string>());
+        double free = std::stod(balance["availableToWithdraw"].get<std::string>());
         double used = total - free;
         
         result[currency] = {
@@ -216,8 +216,8 @@ json Bybit::fetchBalance(const json& params) {
     return result;
 }
 
-json Bybit::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Bybit::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -242,7 +242,7 @@ json Bybit::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["result"], market);
 }
 
-json Bybit::fetchPositions(const String& symbol, const json& params) {
+json Bybit::fetchPositions(const std::string& symbol, const json& params) {
     this->loadMarkets();
     json request = {};
     
@@ -257,40 +257,40 @@ json Bybit::fetchPositions(const String& symbol, const json& params) {
     return this->parsePositions(response["result"]["list"]);
 }
 
-String Bybit::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Bybit::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String endpoint = "/" + this->implodeParams(path, params);
-    String url = this->urls["api"][api] + endpoint;
+    std::string endpoint = "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api] + endpoint;
     
     if (api == "private") {
-        String timestamp = std::to_string(this->nonce());
-        String queryString = this->rawencode(this->keysort(params));
-        String auth = timestamp + this->config_.apiKey + queryString;
+        std::string timestamp = std::to_string(this->nonce());
+        std::string querystd::string = this->rawencode(this->keysort(params));
+        std::string auth = timestamp + this->config_.apiKey + querystd::string;
         
         if (method == "POST") {
             auth += body.dump();
         }
         
-        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
+        std::string signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-BAPI-API-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-BAPI-TIMESTAMP"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["X-BAPI-SIGN"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BAPI-API-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BAPI-TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BAPI-SIGN"] = signature;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Bybit::createSignature(const String& timestamp, const String& method,
-                            const String& path, const String& queryString,
-                            const String& body) {
-    String message = timestamp + this->config_.apiKey + queryString + body;
+std::string Bybit::createSignature(const std::string& timestamp, const std::string& method,
+                            const std::string& path, const std::string& querystd::string,
+                            const std::string& body) {
+    std::string message = timestamp + this->config_.apiKey + querystd::string + body;
     
     unsigned char* hmac = nullptr;
     unsigned int hmacLen = 0;
@@ -304,8 +304,8 @@ String Bybit::createSignature(const String& timestamp, const String& method,
     return this->toHex(hmac, hmacLen);
 }
 
-json Bybit::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Bybit::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"Created", "open"},
         {"New", "open"},
         {"PartiallyFilled", "open"},
@@ -318,10 +318,10 @@ json Bybit::parseOrderStatus(const String& status) {
 }
 
 json Bybit::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "orderId");
-    String symbol = market.symbol;
-    String timestamp = this->safeString(order, "createdTime");
-    String status = this->parseOrderStatus(this->safeString(order, "orderStatus"));
+    std::string id = this->safeString(order, "orderId");
+    std::string symbol = market.symbol;
+    std::string timestamp = this->safeString(order, "createdTime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "orderStatus"));
     
     return {
         {"id", id},

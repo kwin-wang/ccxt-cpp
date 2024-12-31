@@ -110,12 +110,12 @@ json Liquid::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response) {
-        String id = this->safeString(market, "id");
-        String baseId = this->safeString(market, "base_currency");
-        String quoteId = this->safeString(market, "quoted_currency");
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "id");
+        std::string baseId = this->safeString(market, "base_currency");
+        std::string quoteId = this->safeString(market, "quoted_currency");
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         bool active = market["disabled"].get<bool>() == false;
         
         markets.push_back({
@@ -163,8 +163,8 @@ json Liquid::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : response) {
-        String currencyId = balance["currency"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currency"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "available_balance")},
@@ -176,8 +176,8 @@ json Liquid::fetchBalance(const json& params) {
     return result;
 }
 
-json Liquid::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Liquid::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -188,7 +188,7 @@ json Liquid::createOrder(const String& symbol, const String& type,
         {"quantity", this->amountToPrecision(symbol, amount)}
     };
     
-    String orderType = type.lower();
+    std::string orderType = type.lower();
     if (orderType == "limit") {
         request["order_type"] = "limit";
         request["price"] = this->priceToPrecision(symbol, price);
@@ -201,12 +201,12 @@ json Liquid::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Liquid::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Liquid::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api];
-    String endpoint = "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api];
+    std::string endpoint = "/" + this->implodeParams(path, params);
     url += endpoint;
     
     json query = this->omit(params, this->extractParams(path));
@@ -217,8 +217,8 @@ String Liquid::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->getNonce();
-        String authPath = "/" + this->version + endpoint;
+        std::string nonce = this->getNonce();
+        std::string authPath = "/" + this->version + endpoint;
         
         if (method == "GET") {
             if (!query.empty()) {
@@ -231,22 +231,22 @@ String Liquid::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->createSignature(authPath, method, nonce,
+        std::string signature = this->createSignature(authPath, method, nonce,
                                                body.empty() ? "" : body.dump());
         
-        const_cast<std::map<String, String>&>(headers)["X-Quoine-API-Version"] = this->version;
-        const_cast<std::map<String, String>&>(headers)["X-Quoine-Auth"] = signature;
-        const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+        const_cast<std::map<std::string, std::string>&>(headers)["X-Quoine-API-Version"] = this->version;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-Quoine-Auth"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         
         if (!body.empty()) {
-            const_cast<std::map<String, String>&>(headers)["Content-Length"] = std::to_string(body.dump().length());
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Length"] = std::to_string(body.dump().length());
         }
     }
     
     return url;
 }
 
-String Liquid::getNonce() {
+std::string Liquid::getNonce() {
     int64_t currentNonce = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
@@ -258,19 +258,19 @@ String Liquid::getNonce() {
     return std::to_string(currentNonce);
 }
 
-String Liquid::createSignature(const String& path, const String& method,
-                              const String& nonce, const String& body) {
-    String message = nonce + "|" + method + "|" + path + "|" + body;
+std::string Liquid::createSignature(const std::string& path, const std::string& method,
+                              const std::string& nonce, const std::string& body) {
+    std::string message = nonce + "|" + method + "|" + path + "|" + body;
     return this->hmac(message, this->base64ToBinary(this->config_.secret),
                      "sha256", "hex");
 }
 
 json Liquid::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "created_at");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String type = this->safeStringLower(order, "order_type");
-    String side = this->safeStringLower(order, "side");
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "created_at");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string type = this->safeStringLower(order, "order_type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -293,8 +293,8 @@ json Liquid::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Liquid::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Liquid::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"live", "open"},
         {"filled", "closed"},
         {"cancelled", "canceled"}

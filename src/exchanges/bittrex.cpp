@@ -103,13 +103,13 @@ json Bittrex::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response) {
-        String id = market["symbol"];
-        std::vector<String> parts = this->split(id, "-");
-        String baseId = parts[0];
-        String quoteId = parts[1];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"];
+        std::vector<std::string> parts = this->split(id, "-");
+        std::string baseId = parts[0];
+        std::string quoteId = parts[1];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         bool active = market["status"] == "ONLINE";
         
         markets.push_back({
@@ -157,8 +157,8 @@ json Bittrex::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : response) {
-        String currencyId = balance["currencySymbol"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currencySymbol"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "available")},
@@ -170,8 +170,8 @@ json Bittrex::fetchBalance(const json& params) {
     return result;
 }
 
-json Bittrex::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
+json Bittrex::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -192,12 +192,12 @@ json Bittrex::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Bittrex::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+std::string Bittrex::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
-    String url = this->urls["api"][api] + "/v3";
-    String endpoint = "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api] + "/v3";
+    std::string endpoint = "/" + this->implodeParams(path, params);
     url += endpoint;
     
     json query = this->omit(params, this->extractParams(path));
@@ -208,8 +208,8 @@ String Bittrex::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String timestamp = this->getTimestamp();
-        String contentHash = "";
+        std::string timestamp = this->getTimestamp();
+        std::string contentHash = "";
         
         if (method == "GET" || method == "DELETE") {
             if (!query.empty()) {
@@ -222,43 +222,43 @@ String Bittrex::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->createSignature(timestamp, url, method,
+        std::string signature = this->createSignature(timestamp, url, method,
                                                contentHash);
         
-        const_cast<std::map<String, String>&>(headers)["Api-Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Api-Timestamp"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["Api-Content-Hash"] = contentHash;
-        const_cast<std::map<String, String>&>(headers)["Api-Signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Timestamp"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Content-Hash"] = contentHash;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Signature"] = signature;
         
         if (!contentHash.empty()) {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Bittrex::createSignature(const String& timestamp, const String& uri,
-                               const String& method, const String& body) {
-    String preSign = timestamp + uri + method + body;
+std::string Bittrex::createSignature(const std::string& timestamp, const std::string& uri,
+                               const std::string& method, const std::string& body) {
+    std::string preSign = timestamp + uri + method + body;
     return this->hmac(preSign, this->base64ToBinary(this->config_.secret),
                      "sha512", "hex");
 }
 
-String Bittrex::getTimestamp() {
+std::string Bittrex::getTimestamp() {
     return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count());
 }
 
 json Bittrex::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "createdAt");
-    String lastTradeTimestamp = this->safeString(order, "closedAt");
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "direction");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "createdAt");
+    std::string lastTradeTimestamp = this->safeString(order, "closedAt");
+    std::string symbol = market.symbol;
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "direction");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
     
     return {
         {"id", id},
@@ -284,8 +284,8 @@ json Bittrex::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Bittrex::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Bittrex::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"OPEN", "open"},
         {"CLOSED", "closed"},
         {"CANCELLED", "canceled"},

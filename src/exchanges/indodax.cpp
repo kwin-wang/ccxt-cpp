@@ -113,12 +113,12 @@ json Indodax::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response) {
-        String id = this->safeString(market, "id");
-        String baseId = this->safeString(market, "base_currency");
-        String quoteId = this->safeString(market, "quote_currency");
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "id");
+        std::string baseId = this->safeString(market, "base_currency");
+        std::string quoteId = this->safeString(market, "quote_currency");
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -172,8 +172,8 @@ json Indodax::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& [currencyId, total] : balance.items()) {
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, currencyId)},
             {"used", this->safeFloat(frozen, currencyId, 0.0)},
             {"total", nullptr}
@@ -185,8 +185,8 @@ json Indodax::parseBalance(const json& response) {
     return result;
 }
 
-json Indodax::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
+json Indodax::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -206,12 +206,12 @@ json Indodax::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["return"], market);
 }
 
-String Indodax::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Indodax::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api];
-    String query = this->omit(params, this->extractParams(path));
+    std::string url = this->urls["api"][api];
+    std::string query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
         url += this->implodeParams(path, params);
@@ -220,43 +220,43 @@ String Indodax::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
+        std::string nonce = this->nonce().str();
         json request = this->extend({
             "method", path,
             "nonce", nonce,
             "timestamp", std::to_string(this->milliseconds())
         }, query);
         
-        String body = this->urlencode(request);
-        String signature = this->hmac(body, this->encode(this->config_.secret),
+        std::string body = this->urlencode(request);
+        std::string signature = this->hmac(body, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Sign"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Sign"] = signature;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
         }
     }
     
     return url;
 }
 
-String Indodax::createNonce() {
+std::string Indodax::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Indodax::parseOrder(const json& order, const Market& market) {
-    String timestamp = this->safeString(order, "submit_time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string timestamp = this->safeString(order, "submit_time");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "type");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "type");
     
     return {
         {"id", this->safeString(order, "order_id")},
@@ -282,8 +282,8 @@ json Indodax::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Indodax::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Indodax::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"pending", "open"},
         {"running", "open"},
         {"expired", "expired"},

@@ -3,35 +3,30 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <nlohmann/json.hpp>
+#include <ccxt/base/config.h>
 
 namespace ccxt {
-
-using json = nlohmann::json;
-using String = std::string;
-using AsyncPullType = boost::coroutines2::coroutine<json>::pull_type;
-
 struct Fee {
-    String type;
-    String currency;
+    std::string type;
+    std::string currency;
     double rate;
     double cost;
 };
 
 struct Market {
-    String id;
-    String symbol;
-    String base;
-    String quote;
-    String baseId;
-    String quoteId;
-    String active;
-    String type;
-    String spot;
-    String margin;
-    String swap;
-    String future;
-    String option;
+    std::string id;
+    std::string symbol;
+    std::string base;
+    std::string quote;
+    std::string baseId;
+    std::string quoteId;
+    std::string active;
+    std::string type;
+    std::string spot;
+    std::string margin;
+    std::string swap;
+    std::string future;
+    std::string option;
     int precision;
     int pricePrecision;
     int amountPrecision;
@@ -41,23 +36,23 @@ struct Market {
     double limits_price_max;
     double limits_cost_min;
     double limits_cost_max;
-    std::map<String, String> info;
+    std::map<std::string, std::string> info;
 
     Market& operator=(const json& j) {
-        if (j.contains("id")) id = j["id"].get<String>();
-        if (j.contains("symbol")) symbol = j["symbol"].get<String>();
-        if (j.contains("base")) base = j["base"].get<String>();
-        if (j.contains("quote")) quote = j["quote"].get<String>();
-        if (j.contains("type")) type = j["type"].get<String>();
-        if (j.contains("spot")) spot = j["spot"].get<String>();
-        if (j.contains("margin")) margin = j["margin"].get<String>();
-        if (j.contains("swap")) swap = j["swap"].get<String>();
-        if (j.contains("future")) future = j["future"].get<String>();
-        if (j.contains("option")) option = j["option"].get<String>();
+        if (j.contains("id")) id = j["id"].get<std::string>();
+        if (j.contains("symbol")) symbol = j["symbol"].get<std::string>();
+        if (j.contains("base")) base = j["base"].get<std::string>();
+        if (j.contains("quote")) quote = j["quote"].get<std::string>();
+        if (j.contains("type")) type = j["type"].get<std::string>();
+        if (j.contains("spot")) spot = j["spot"].get<std::string>();
+        if (j.contains("margin")) margin = j["margin"].get<std::string>();
+        if (j.contains("swap")) swap = j["swap"].get<std::string>();
+        if (j.contains("future")) future = j["future"].get<std::string>();
+        if (j.contains("option")) option = j["option"].get<std::string>();
         return *this;
     }
 
-    const String& operator[](const String& key) const {
+    const std::string& operator[](const std::string& key) const {
         if (key == "id") return id;
         if (key == "symbol") return symbol;
         if (key == "base") return base;
@@ -71,20 +66,20 @@ struct Market {
         if (key == "future") return future;
         if (key == "option") return option;
         if (key == "active") return active;
-        static const String empty;
+        static const std::string empty;
         return empty;
     }
 };
 
 struct Currency {
-    String id;
-    String code;
-    String name;
+    std::string id;
+    std::string code;
+    std::string name;
     int precision;
     bool active;
     Fee fee;
-    std::map<String, String> info;
-    std::vector<String> networks;
+    std::map<std::string, std::string> info;
+    std::vector<std::string> networks;
 };
 
 struct Balance {
@@ -92,20 +87,20 @@ struct Balance {
     double used;
     double total;
     uint64_t timestamp;
-    String currency;
+    std::string currency;
 };
 
 struct Order {
-    String id;
-    String clientOrderId;
-    String datetime;
+    std::string id;
+    std::string clientOrderId;
+    std::string datetime;
     long long timestamp;
-    String lastTradeTimestamp;
-    String status;
-    String symbol;
-    String type;
-    String timeInForce;
-    String side;
+    std::string lastTradeTimestamp;
+    std::string status;
+    std::string symbol;
+    std::string type;
+    std::string timeInForce;
+    std::string side;
     double price;
     double average;
     double amount;
@@ -114,25 +109,25 @@ struct Order {
     double cost;
     Fee fee;
     std::vector<json> trades;
-    std::map<String, String> info;
+    std::map<std::string, std::string> info;
 };
 
 struct Trade {
-    String id;
-    String order;
-    String info;
+    std::string id;
+    std::string order;
+    std::string info;
     long long timestamp;
-    String datetime;
-    String symbol;
-    String type;
-    String side;
-    String takerOrMaker;
+    std::string datetime;
+    std::string symbol;
+    std::string type;
+    std::string side;
+    std::string takerOrMaker;
     double price;
     double amount;
     double cost;
     double fee;
-    String feeCurrency;
-    String orderId;
+    std::string feeCurrency;
+    std::string orderId;
 };
 
 struct OHLCV {
@@ -145,9 +140,9 @@ struct OHLCV {
 };
 
 struct Ticker {
-    String symbol;
+    std::string symbol;
     long long timestamp;
-    String datetime;
+    std::string datetime;
     double high;
     double low;
     double bid;
@@ -179,23 +174,23 @@ struct Ticker {
     double currentDayClosePrice;
     double currentDayCloseQuantity;
     double currentDayCloseAverage;
-    std::map<String, String> info;
+    std::map<std::string, std::string> info;
 };
 
 struct OrderBook {
     long long timestamp;
-    String datetime;
-    String symbol;
+    std::string datetime;
+    std::string symbol;
     int nonce;
     std::vector<std::vector<double>> bids;
     std::vector<std::vector<double>> asks;
 };
 
 struct Position {
-    String symbol;
-    String type;
-    String side;
-    String marginType;
+    std::string symbol;
+    std::string type;
+    std::string side;
+    std::string marginType;
     double notional;
     double leverage;
     double unrealizedPnl;
@@ -207,13 +202,13 @@ struct Position {
     double initialMargin;
     double maintenanceMargin;
     long long timestamp;
-    String datetime;
-    std::map<String, String> info;
-    String amount;
+    std::string datetime;
+    std::map<std::string, std::string> info;
+    std::string amount;
 };
 
 struct MarkPrice {
-    String symbol;
+    std::string symbol;
     double markPrice;
     double indexPrice;
     double estimatedSettlePrice;
@@ -221,8 +216,8 @@ struct MarkPrice {
     long long nextFundingTime;
     long long timestamp;
     double fundingRate;
-    String datetime;
-    std::map<String, String> info;
+    std::string datetime;
+    std::map<std::string, std::string> info;
 };
 
 } // namespace ccxt

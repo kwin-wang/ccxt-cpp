@@ -128,12 +128,12 @@ json Gopax::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response) {
-        String id = this->safeString(market, "name");
-        String baseId = this->safeString(market, "baseAsset");
-        String quoteId = this->safeString(market, "quoteAsset");
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "name");
+        std::string baseId = this->safeString(market, "baseAsset");
+        std::string quoteId = this->safeString(market, "quoteAsset");
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -184,9 +184,9 @@ json Gopax::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String currencyId = this->safeString(balance, "asset");
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = this->safeString(balance, "asset");
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "avail")},
             {"used", this->safeFloat(balance, "hold")},
             {"total", this->safeFloat(balance, "total")}
@@ -197,8 +197,8 @@ json Gopax::parseBalance(const json& response) {
     return result;
 }
 
-json Gopax::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Gopax::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -219,11 +219,11 @@ json Gopax::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Gopax::sign(const String& path, const String& api,
-                  const String& method, const json& params,
-                  const std::map<String, String>& headers,
+std::string Gopax::sign(const std::string& path, const std::string& api,
+                  const std::string& method, const json& params,
+                  const std::map<std::string, std::string>& headers,
                   const json& body) {
-    String url = this->urls["api"][api] + "/" + this->version + "/" + path;
+    std::string url = this->urls["api"][api] + "/" + this->version + "/" + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -231,9 +231,9 @@ String Gopax::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
-        String timestamp = std::to_string(this->milliseconds());
-        String auth = timestamp + method + "/" + path;
+        std::string nonce = this->nonce().str();
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string auth = timestamp + method + "/" + path;
         
         if (method == "POST") {
             if (!params.empty()) {
@@ -242,44 +242,44 @@ String Gopax::sign(const String& path, const String& api,
             }
         } else {
             if (!params.empty()) {
-                String query = this->urlencode(params);
+                std::string query = this->urlencode(params);
                 url += "?" + query;
                 auth += "?" + query;
             }
         }
         
-        String signature = this->hmac(auth, this->encode(this->config_.secret),
+        std::string signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["SIGNATURE"] = signature;
-        const_cast<std::map<String, String>&>(headers)["NONCE"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["SIGNATURE"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["NONCE"] = nonce;
+        const_cast<std::map<std::string, std::string>&>(headers)["TIMESTAMP"] = timestamp;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Gopax::createNonce() {
+std::string Gopax::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Gopax::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -309,8 +309,8 @@ json Gopax::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Gopax::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Gopax::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"placed", "open"},
         {"cancelled", "canceled"},
         {"completed", "closed"},

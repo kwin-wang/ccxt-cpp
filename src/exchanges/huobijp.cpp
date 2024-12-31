@@ -274,31 +274,31 @@ AsyncPullType huobijp::fetchMarketsAsync(const json& params) {
     });
 }
 
-AsyncPullType huobijp::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType huobijp::fetchTickerAsync(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-AsyncPullType huobijp::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+AsyncPullType huobijp::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-AsyncPullType huobijp::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+AsyncPullType huobijp::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-AsyncPullType huobijp::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType huobijp::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-AsyncPullType huobijp::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+AsyncPullType huobijp::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                           int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
@@ -311,39 +311,39 @@ AsyncPullType huobijp::fetchBalanceAsync(const json& params) {
     });
 }
 
-AsyncPullType huobijp::createOrderAsync(const String& symbol, const String& type,
-                                          const String& side, double amount,
+AsyncPullType huobijp::createOrderAsync(const std::string& symbol, const std::string& type,
+                                          const std::string& side, double amount,
                                           double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-AsyncPullType huobijp::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType huobijp::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-AsyncPullType huobijp::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType huobijp::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-AsyncPullType huobijp::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType huobijp::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType huobijp::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType huobijp::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType huobijp::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType huobijp::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });

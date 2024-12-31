@@ -99,13 +99,13 @@ void Coinbase::describe() {
     });
 }
 
-std::pair<String, String> Coinbase::getVersionAndRegion() {
+std::pair<std::string, std::string> Coinbase::getVersionAndRegion() {
     auto version = this->safeString(this->options, "version", "advanced");
     auto region = this->safeString(this->options, "region", "US");
     return {version, region};
 }
 
-String Coinbase::getEndpoint(const String& path) {
+std::string Coinbase::getEndpoint(const std::string& path) {
     auto [version, region] = this->getVersionAndRegion();
     auto urls = this->urls["api"];
     
@@ -126,20 +126,20 @@ json Coinbase::fetchMarkets(const json& params) {
             {"quoteId", market["quote_currency"]},
             {"active", market["status"] == "online"},
             {"precision", {
-                {"amount", market["base_increment"].get<String>().find('1') - 1},
-                {"price", market["quote_increment"].get<String>().find('1') - 1}
+                {"amount", market["base_increment"].get<std::string>().find('1') - 1},
+                {"price", market["quote_increment"].get<std::string>().find('1') - 1}
             }},
             {"limits", {
                 {"amount", {
-                    {"min", std::stod(market["base_min_size"].get<String>())},
-                    {"max", std::stod(market["base_max_size"].get<String>())}
+                    {"min", std::stod(market["base_min_size"].get<std::string>())},
+                    {"max", std::stod(market["base_max_size"].get<std::string>())}
                 }},
                 {"price", {
-                    {"min", std::stod(market["quote_increment"].get<String>())}
+                    {"min", std::stod(market["quote_increment"].get<std::string>())}
                 }},
                 {"cost", {
-                    {"min", std::stod(market["min_market_funds"].get<String>())},
-                    {"max", std::stod(market["max_market_funds"].get<String>())}
+                    {"min", std::stod(market["min_market_funds"].get<std::string>())},
+                    {"max", std::stod(market["max_market_funds"].get<std::string>())}
                 }}
             }},
             {"info", market}
@@ -158,9 +158,9 @@ json Coinbase::fetchBalance(const json& params) {
     };
     
     for (const auto& balance : response) {
-        String currency = balance["currency"];
-        double available = std::stod(balance["available"].get<String>());
-        double hold = std::stod(balance["hold"].get<String>());
+        std::string currency = balance["currency"];
+        double available = std::stod(balance["available"].get<std::string>());
+        double hold = std::stod(balance["hold"].get<std::string>());
         double total = available + hold;
         
         if (total > 0) {
@@ -175,8 +175,8 @@ json Coinbase::fetchBalance(const json& params) {
     return result;
 }
 
-json Coinbase::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
+json Coinbase::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     Market market = this->market(symbol);
     
@@ -197,44 +197,44 @@ json Coinbase::createOrder(const String& symbol, const String& type,
     return fetch("/orders", "private", "POST", order);
 }
 
-String Coinbase::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+std::string Coinbase::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
-    String url = getEndpoint(path);
+    std::string url = getEndpoint(path);
     
     if (api == "private") {
-        String timestamp = getTimestamp();
-        String bodyStr = body.empty() ? "" : body.dump();
+        std::string timestamp = getTimestamp();
+        std::string bodyStr = body.empty() ? "" : body.dump();
         auto authHeaders = getAuthHeaders(method, path, bodyStr);
         
         for (const auto& [key, value] : authHeaders) {
-            const_cast<std::map<String, String>&>(headers)[key] = value;
+            const_cast<std::map<std::string, std::string>&>(headers)[key] = value;
         }
     }
     
     if (!params.empty()) {
-        std::stringstream queryString;
+        std::stringstream querystd::string;
         bool first = true;
         for (const auto& [key, value] : params.items()) {
-            if (!first) queryString << "&";
-            queryString << key << "=" << value.get<String>();
+            if (!first) querystd::string << "&";
+            querystd::string << key << "=" << value.get<std::string>();
             first = false;
         }
-        url += "?" + queryString.str();
+        url += "?" + querystd::string.str();
     }
     
     return url;
 }
 
-String Coinbase::getTimestamp() {
+std::string Coinbase::getTimestamp() {
     auto now = std::chrono::system_clock::now();
     return std::to_string(std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count());
 }
 
-String Coinbase::createSignature(const String& timestamp, const String& method,
-                               const String& requestPath, const String& body) {
-    String message = timestamp + method + requestPath + body;
+std::string Coinbase::createSignature(const std::string& timestamp, const std::string& method,
+                               const std::string& requestPath, const std::string& body) {
+    std::string message = timestamp + method + requestPath + body;
     
     unsigned char* hmac = nullptr;
     unsigned int hmacLen = 0;
@@ -248,11 +248,11 @@ String Coinbase::createSignature(const String& timestamp, const String& method,
     return base64_encode(hmac, hmacLen);
 }
 
-std::map<String, String> Coinbase::getAuthHeaders(const String& method,
-                                                const String& requestPath,
-                                                const String& body) {
-    String timestamp = getTimestamp();
-    String signature = createSignature(timestamp, method, requestPath, body);
+std::map<std::string, std::string> Coinbase::getAuthHeaders(const std::string& method,
+                                                const std::string& requestPath,
+                                                const std::string& body) {
+    std::string timestamp = getTimestamp();
+    std::string signature = createSignature(timestamp, method, requestPath, body);
     
     return {
         {"CB-ACCESS-KEY", apiKey},
@@ -269,31 +269,31 @@ boost::future<json> Coinbase::fetchMarketsAsync(const json& params) const {
     });
 }
 
-boost::future<json> Coinbase::fetchTickerAsync(const String& symbol, const json& params) const {
+boost::future<json> Coinbase::fetchTickerAsync(const std::string& symbol, const json& params) const {
     return boost::async(boost::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-boost::future<json> Coinbase::fetchTickersAsync(const std::vector<String>& symbols, const json& params) const {
+boost::future<json> Coinbase::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) const {
     return boost::async(boost::launch::async, [this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-boost::future<json> Coinbase::fetchOrderBookAsync(const String& symbol, int limit, const json& params) const {
+boost::future<json> Coinbase::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) const {
     return boost::async(boost::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-boost::future<json> Coinbase::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) const {
+boost::future<json> Coinbase::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) const {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Coinbase::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+boost::future<json> Coinbase::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                            int since, int limit, const json& params) const {
     return boost::async(boost::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
@@ -307,39 +307,39 @@ boost::future<json> Coinbase::fetchBalanceAsync(const json& params) const {
     });
 }
 
-boost::future<json> Coinbase::createOrderAsync(const String& symbol, const String& type,
-                                           const String& side, double amount,
+boost::future<json> Coinbase::createOrderAsync(const std::string& symbol, const std::string& type,
+                                           const std::string& side, double amount,
                                            double price, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-boost::future<json> Coinbase::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Coinbase::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async(boost::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-boost::future<json> Coinbase::fetchOrderAsync(const String& id, const String& symbol, const json& params) const {
+boost::future<json> Coinbase::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) const {
     return boost::async(boost::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-boost::future<json> Coinbase::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) const {
+boost::future<json> Coinbase::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) const {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Coinbase::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) const {
+boost::future<json> Coinbase::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) const {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Coinbase::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) const {
+boost::future<json> Coinbase::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) const {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });

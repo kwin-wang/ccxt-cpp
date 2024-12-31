@@ -45,7 +45,7 @@ void Ace::fetchMarkets() {
     }
 }
 
-json Ace::fetchOrderBook(const String &symbol, const long *limit = nullptr,
+json Ace::fetchOrderBook(const std::string &symbol, const long *limit = nullptr,
                       const json &params = json::object()) 
                       {
                         return json::object();
@@ -236,7 +236,7 @@ json Ace::parseMarket(const json& market) {
     return result;
 }
 
-json Ace::fetchTicker(const String& symbol, const json& params) {
+json Ace::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -275,7 +275,7 @@ json Ace::parseTicker(const json& ticker, const Market& market) {
     };
 }
 
-json Ace::fetchOrderBook(const String& symbol, const long* limit, const json& params) {
+json Ace::fetchOrderBook(const std::string& symbol, const long* limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -291,7 +291,7 @@ json Ace::fetchOrderBook(const String& symbol, const long* limit, const json& pa
 }
 
 // Trading API - Sync
-json Ace::createOrder(const String& symbol, const String& type, const String& side,
+json Ace::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                      const double& amount, const double* price, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -313,7 +313,7 @@ json Ace::createOrder(const String& symbol, const String& type, const String& si
     return this->parseOrder(response["data"], market);
 }
 
-json Ace::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Ace::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("cancelOrder() requires a symbol argument");
     }
@@ -329,7 +329,7 @@ json Ace::cancelOrder(const String& id, const String& symbol, const json& params
     return this->parseOrder(response["data"], market);
 }
 
-json Ace::fetchOrder(const String& id, const String& symbol, const json& params) {
+json Ace::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchOrder() requires a symbol argument");
     }
@@ -345,7 +345,7 @@ json Ace::fetchOrder(const String& id, const String& symbol, const json& params)
     return this->parseOrder(response["data"], market);
 }
 
-json Ace::fetchOpenOrders(const String& symbol, const long* since,
+json Ace::fetchOpenOrders(const std::string& symbol, const long* since,
                          const long* limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchOpenOrders() requires a symbol argument");
@@ -368,7 +368,7 @@ json Ace::fetchOpenOrders(const String& symbol, const long* since,
     return this->parseOrders(response["data"], market, since, limit);
 }
 
-json Ace::fetchClosedOrders(const String& symbol, const long* since,
+json Ace::fetchClosedOrders(const std::string& symbol, const long* since,
                           const long* limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchClosedOrders() requires a symbol argument");
@@ -392,7 +392,7 @@ json Ace::fetchClosedOrders(const String& symbol, const long* since,
     return this->parseOrders(response["data"], market, since, limit);
 }
 
-json Ace::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Ace::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     this->loadMarkets();
     auto response = this->fetch("/api/v2/spot/tickers", "GET", params);
     auto data = this->safeValue(response, "data", json::array());
@@ -408,9 +408,9 @@ json Ace::fetchTickers(const std::vector<String>& symbols, const json& params) {
     return this->filterByArray(result, "symbol", symbols);
 }
 
-String Ace::sign(const String& path, const String& api,
-                const String& method, const json& params,
-                const std::map<String, String>& headers,
+std::string Ace::sign(const std::string& path, const std::string& api,
+                const std::string& method, const json& params,
+                const std::map<std::string, std::string>& headers,
                 const json& body) {
     auto url = this->urls["api"]["rest"] + path;
     auto query = params;
@@ -445,8 +445,8 @@ String Ace::sign(const String& path, const String& api,
     return url;
 }
 
-String Ace::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Ace::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"FILLED", "closed"},
         {"PARTIALLY_FILLED", "open"},
@@ -511,7 +511,7 @@ json Ace::parseOHLCV(const json& ohlcv, const Market& market) {
     });
 }
 
-json Ace::fetchOHLCV(const String& symbol, const String& timeframe,
+json Ace::fetchOHLCV(const std::string& symbol, const std::string& timeframe,
                     const long* since, const long* limit,
                     const json& params) {
     this->loadMarkets();
@@ -609,7 +609,7 @@ json Ace::parseTrade(const json& trade, const Market& market) {
     };
 }
 
-json Ace::fetchMyTrades(const String& symbol, const long* since,
+json Ace::fetchMyTrades(const std::string& symbol, const long* since,
                        const long* limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchMyTrades() requires a symbol argument");
@@ -632,7 +632,7 @@ json Ace::fetchMyTrades(const String& symbol, const long* since,
     return this->parseTrades(response["data"], market, since, limit);
 }
 
-json Ace::fetchOrderTrades(const String& id, const String& symbol,
+json Ace::fetchOrderTrades(const std::string& id, const std::string& symbol,
                          const long* since, const long* limit,
                          const json& params) {
     if (symbol.empty()) {
@@ -667,7 +667,7 @@ AsyncPullType Ace::fetchMarketsAsync(const json& params) {
         });
 }
 
-AsyncPullType Ace::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType Ace::fetchTickerAsync(const std::string& symbol, const json& params) {
     return AsyncPullType(
         [this, symbol, params](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -680,7 +680,7 @@ AsyncPullType Ace::fetchTickerAsync(const String& symbol, const json& params) {
 }
 
 AsyncPullType Ace::fetchTickersAsync(
-    const std::vector<String>& symbols, const json& params) {
+    const std::vector<std::string>& symbols, const json& params) {
     return AsyncPullType(
         [this, symbols, params](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -693,7 +693,7 @@ AsyncPullType Ace::fetchTickersAsync(
 }
 
 AsyncPullType Ace::fetchTickersAsync(
-    const std::vector<String>& symbols, const json& params) {
+    const std::vector<std::string>& symbols, const json& params) {
     return AsyncPullType(
         [&](boost::coroutines2::coroutine<json>::push_type& yield) {
             this->loadMarkets();
@@ -713,7 +713,7 @@ AsyncPullType Ace::fetchTickersAsync(
     );
 }
 
-AsyncPullType Ace::fetchMyTradesAsync(const String& symbol,
+AsyncPullType Ace::fetchMyTradesAsync(const std::string& symbol,
                                                                       const long* since,
                                                                       const long* limit,
                                                                       const json& params) {
@@ -742,8 +742,8 @@ AsyncPullType Ace::fetchMyTradesAsync(const String& symbol,
     );
 }
 
-AsyncPullType Ace::fetchOrderTradesAsync(const String& id,
-                                                                         const String& symbol,
+AsyncPullType Ace::fetchOrderTradesAsync(const std::string& id,
+                                                                         const std::string& symbol,
                                                                          const long* since,
                                                                          const long* limit,
                                                                          const json& params) {
@@ -771,7 +771,7 @@ AsyncPullType Ace::fetchOrderTradesAsync(const String& id,
 }
 
 AsyncPullType Ace::fetchOrderBookAsync(
-    const String& symbol, const long* limit, const json& params) {
+    const std::string& symbol, const long* limit, const json& params) {
     return AsyncPullType(
         [this, symbol, limit, params](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -784,7 +784,7 @@ AsyncPullType Ace::fetchOrderBookAsync(
 }
 
 AsyncPullType Ace::fetchOHLCVAsync(
-    const String& symbol, const String& timeframe,
+    const std::string& symbol, const std::string& timeframe,
     const long* since, const long* limit,
     const json& params) {
     return AsyncPullType(
@@ -799,7 +799,7 @@ AsyncPullType Ace::fetchOHLCVAsync(
 }
 
 AsyncPullType Ace::createOrderAsync(
-    const String& symbol, const String& type, const String& side,
+    const std::string& symbol, const std::string& type, const std::string& side,
     const double& amount, const double* price,
     const json& params) {
     return AsyncPullType(
@@ -814,7 +814,7 @@ AsyncPullType Ace::createOrderAsync(
 }
 
 AsyncPullType Ace::cancelOrderAsync(
-    const String& id, const String& symbol, const json& params) {
+    const std::string& id, const std::string& symbol, const json& params) {
     return AsyncPullType(
         [this, id, symbol, params](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -827,7 +827,7 @@ AsyncPullType Ace::cancelOrderAsync(
 }
 
 AsyncPullType Ace::fetchOrderAsync(
-    const String& id, const String& symbol, const json& params) {
+    const std::string& id, const std::string& symbol, const json& params) {
     return AsyncPullType(
         [this, id, symbol, params](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -840,7 +840,7 @@ AsyncPullType Ace::fetchOrderAsync(
 }
 
 AsyncPullType Ace::fetchOpenOrdersAsync(
-    const String& symbol, const long* since,
+    const std::string& symbol, const long* since,
     const long* limit, const json& params) {
     return AsyncPullType(
         [this, symbol, since, limit, params](boost::coroutines2::coroutine<json>::push_type& yield) {
@@ -854,7 +854,7 @@ AsyncPullType Ace::fetchOpenOrdersAsync(
 }
 
 AsyncPullType Ace::fetchMyTradesAsync(
-    const String& symbol, const long* since,
+    const std::string& symbol, const long* since,
     const long* limit, const json& params) {
     return AsyncPullType(
         [this, symbol, since, limit, params](boost::coroutines2::coroutine<json>::push_type& yield) {
@@ -880,7 +880,7 @@ AsyncPullType Ace::fetchBalanceAsync(const json& params) {
 }
 
 AsyncPullType Ace::fetchClosedOrdersAsync(
-    const String& symbol, const long* since,
+    const std::string& symbol, const long* since,
     const long* limit, const json& params) {
     return AsyncPullType(
         [&](boost::coroutines2::coroutine<json>::push_type& yield) {
@@ -908,7 +908,7 @@ AsyncPullType Ace::fetchClosedOrdersAsync(
     );
 }
 
-json Ace::parseTransaction(const json& transaction, const String& currency) {
+json Ace::parseTransaction(const json& transaction, const std::string& currency) {
     auto id = this->safeString(transaction, "id");
     auto currencyId = this->safeString(transaction, "currency");
     auto code = this->safeCurrencyCode(currencyId);
@@ -953,8 +953,8 @@ json Ace::parseTransaction(const json& transaction, const String& currency) {
     };
 }
 
-String Ace::parseTransactionStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Ace::parseTransactionStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"1", "pending"},     // Processing
         {"2", "ok"},         // Success
         {"3", "failed"},     // Failed
@@ -964,7 +964,7 @@ String Ace::parseTransactionStatus(const String& status) {
     return this->safeString(statuses, status, status);
 }
 
-json Ace::fetchDeposits(const String& code, const long* since,
+json Ace::fetchDeposits(const std::string& code, const long* since,
                        const long* limit, const json& params) {
     if (code.empty()) {
         throw ArgumentsRequired("fetchDeposits() requires a code argument");
@@ -989,7 +989,7 @@ json Ace::fetchDeposits(const String& code, const long* since,
 }
 
 AsyncPullType Ace::fetchDepositsAsync(
-    const String& code, const long* since,
+    const std::string& code, const long* since,
     const long* limit, const json& params) {
     return AsyncPullType(
         [&](boost::coroutines2::coroutine<json>::push_type& yield) {
@@ -1081,7 +1081,7 @@ AsyncPullType Ace::fetchCurrenciesAsync(const json& params) {
     );
 }
 
-json Ace::fetchWithdrawals(const String& code, const long* since,
+json Ace::fetchWithdrawals(const std::string& code, const long* since,
                           const long* limit, const json& params) {
     if (code.empty()) {
         throw ArgumentsRequired("fetchWithdrawals() requires a code argument");
@@ -1108,7 +1108,7 @@ json Ace::fetchWithdrawals(const String& code, const long* since,
 }
 
 AsyncPullType Ace::fetchWithdrawalsAsync(
-    const String& code, const long* since,
+    const std::string& code, const long* since,
     const long* limit, const json& params) {
     return AsyncPullType(
         [&](boost::coroutines2::coroutine<json>::push_type& yield) {
@@ -1138,8 +1138,8 @@ AsyncPullType Ace::fetchWithdrawalsAsync(
     );
 }
 
-json Ace::withdraw(const String& code, const double& amount, const String& address,
-                  const String& tag, const json& params) {
+json Ace::withdraw(const std::string& code, const double& amount, const std::string& address,
+                  const std::string& tag, const json& params) {
     if (code.empty()) {
         throw ArgumentsRequired("withdraw() requires a code argument");
     }
@@ -1154,7 +1154,7 @@ json Ace::withdraw(const String& code, const double& amount, const String& addre
     auto currency = this->currency(code);
     auto request = json{
         {"currency", currency["id"]},
-        {"amount", this->numberToString(amount)},
+        {"amount", this->numberTostd::string(amount)},
         {"address", address}
     };
     
@@ -1184,7 +1184,7 @@ json Ace::withdraw(const String& code, const double& amount, const String& addre
             auto currency = this->currency(code);
             auto request = json{
                 {"currency", currency["id"]},
-                {"amount", this->numberToString(amount)},
+                {"amount", this->numberTostd::string(amount)},
                 {"address", address}
             };
             

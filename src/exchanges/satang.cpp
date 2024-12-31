@@ -120,12 +120,12 @@ json Satang::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response["symbols"]) {
-        String id = this->safeString(market, "symbol");
-        String baseId = this->safeString(market, "baseAsset");
-        String quoteId = this->safeString(market, "quoteAsset");
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "symbol");
+        std::string baseId = this->safeString(market, "baseAsset");
+        std::string quoteId = this->safeString(market, "quoteAsset");
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -177,9 +177,9 @@ json Satang::parseBalance(const json& response) {
     json balances = this->safeValue(response, "balances", json::array());
     
     for (const auto& balance : balances) {
-        String currencyId = this->safeString(balance, "asset");
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = this->safeString(balance, "asset");
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "free")},
             {"used", this->safeFloat(balance, "locked")},
             {"total", nullptr}
@@ -191,8 +191,8 @@ json Satang::parseBalance(const json& response) {
     return result;
 }
 
-json Satang::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Satang::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -213,11 +213,11 @@ json Satang::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Satang::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Satang::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api] + "/" + path;
+    std::string url = this->urls["api"][api] + "/" + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -225,8 +225,8 @@ String Satang::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String timestamp = std::to_string(this->milliseconds());
-        String query = "";
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string query = "";
         
         if (method == "GET") {
             if (!params.empty()) {
@@ -240,37 +240,37 @@ String Satang::sign(const String& path, const String& api,
             }
         }
         
-        String auth = timestamp + method + path + query;
-        String signature = this->hmac(auth, this->encode(this->config_.secret),
+        std::string auth = timestamp + method + path + query;
+        std::string signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["API-Timestamp"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["API-Signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Timestamp"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Signature"] = signature;
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Satang::createNonce() {
+std::string Satang::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Satang::parseOrder(const json& order, const Market& market) {
-    String timestamp = this->safeString(order, "time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string timestamp = this->safeString(order, "time");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", this->safeString(order, "orderId")},
@@ -296,8 +296,8 @@ json Satang::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Satang::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Satang::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"PARTIALLY_FILLED", "open"},
         {"FILLED", "closed"},

@@ -183,10 +183,10 @@ json Kraken::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& [id, market] : response["result"].items()) {
-        String baseId = market["base"];
-        String quoteId = market["quote"];
-        String base = getCommonSymbol(baseId);
-        String quote = getCommonSymbol(quoteId);
+        std::string baseId = market["base"];
+        std::string quoteId = market["quote"];
+        std::string base = getCommonSymbol(baseId);
+        std::string quote = getCommonSymbol(quoteId);
         
         markets.push_back({
             {"id", id},
@@ -202,7 +202,7 @@ json Kraken::fetchMarkets(const json& params) {
             }},
             {"limits", {
                 {"amount", {
-                    {"min", std::stod(market["ordermin"].get<String>())}
+                    {"min", std::stod(market["ordermin"].get<std::string>())}
                 }}
             }},
             {"info", market}
@@ -212,7 +212,7 @@ json Kraken::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Kraken::fetchTicker(const String& symbol, const json& params) {
+json Kraken::fetchTicker(const std::string& symbol, const json& params) {
     Market market = this->market(symbol);
     json request = {{"pair", market.id}};
     json response = fetch("/0/public/Ticker", "public", "GET", request);
@@ -222,17 +222,17 @@ json Kraken::fetchTicker(const String& symbol, const json& params) {
         {"symbol", symbol},
         {"timestamp", nullptr},
         {"datetime", nullptr},
-        {"high", std::stod(ticker["h"][1].get<String>())},
-        {"low", std::stod(ticker["l"][1].get<String>())},
-        {"bid", std::stod(ticker["b"][0].get<String>())},
-        {"bidVolume", std::stod(ticker["b"][2].get<String>())},
-        {"ask", std::stod(ticker["a"][0].get<String>())},
-        {"askVolume", std::stod(ticker["a"][2].get<String>())},
-        {"vwap", std::stod(ticker["p"][1].get<String>())},
-        {"open", std::stod(ticker["o"].get<String>())},
-        {"close", std::stod(ticker["c"][0].get<String>())},
-        {"last", std::stod(ticker["c"][0].get<String>())},
-        {"baseVolume", std::stod(ticker["v"][1].get<String>())},
+        {"high", std::stod(ticker["h"][1].get<std::string>())},
+        {"low", std::stod(ticker["l"][1].get<std::string>())},
+        {"bid", std::stod(ticker["b"][0].get<std::string>())},
+        {"bidVolume", std::stod(ticker["b"][2].get<std::string>())},
+        {"ask", std::stod(ticker["a"][0].get<std::string>())},
+        {"askVolume", std::stod(ticker["a"][2].get<std::string>())},
+        {"vwap", std::stod(ticker["p"][1].get<std::string>())},
+        {"open", std::stod(ticker["o"].get<std::string>())},
+        {"close", std::stod(ticker["c"][0].get<std::string>())},
+        {"last", std::stod(ticker["c"][0].get<std::string>())},
+        {"baseVolume", std::stod(ticker["v"][1].get<std::string>())},
         {"quoteVolume", nullptr},
         {"info", ticker}
     };
@@ -247,8 +247,8 @@ json Kraken::fetchBalance(const json& params) {
     };
     
     for (const auto& [currency, balance] : response["result"].items()) {
-        String commonCurrency = getCommonSymbol(currency);
-        double total = std::stod(balance.get<String>());
+        std::string commonCurrency = getCommonSymbol(currency);
+        double total = std::stod(balance.get<std::string>());
         
         result[commonCurrency] = {
             {"free", total},
@@ -260,8 +260,8 @@ json Kraken::fetchBalance(const json& params) {
     return result;
 }
 
-json Kraken::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Kraken::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     Market market = this->market(symbol);
     
@@ -282,50 +282,50 @@ json Kraken::createOrder(const String& symbol, const String& type,
     return fetch("/0/private/AddOrder", "private", "POST", request);
 }
 
-String Kraken::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Kraken::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = baseUrl + path;
+    std::string url = baseUrl + path;
     
     if (api == "private") {
-        String nonce = getNonce();
+        std::string nonce = getNonce();
         std::stringstream postData;
         postData << "nonce=" << nonce;
         
         for (const auto& [key, value] : params.items()) {
-            postData << "&" << key << "=" << value.get<String>();
+            postData << "&" << key << "=" << value.get<std::string>();
         }
         
-        String signature = createSignature(path, nonce, postData.str());
+        std::string signature = createSignature(path, nonce, postData.str());
         
-        const_cast<std::map<String, String>&>(headers)["API-Key"] = apiKey;
-        const_cast<std::map<String, String>&>(headers)["API-Sign"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Key"] = apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Sign"] = signature;
         
         return url + "?" + postData.str();
     } else if (!params.empty()) {
-        std::stringstream queryString;
+        std::stringstream querystd::string;
         bool first = true;
         for (const auto& [key, value] : params.items()) {
-            if (!first) queryString << "&";
-            queryString << key << "=" << value.get<String>();
+            if (!first) querystd::string << "&";
+            querystd::string << key << "=" << value.get<std::string>();
             first = false;
         }
-        url += "?" + queryString.str();
+        url += "?" + querystd::string.str();
     }
     
     return url;
 }
 
-String Kraken::getNonce() {
+std::string Kraken::getNonce() {
     auto now = std::chrono::system_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
     return std::to_string(ms.count());
 }
 
-String Kraken::createSignature(const String& path, const String& nonce,
-                             const String& postData) {
-    String message = nonce + postData;
+std::string Kraken::createSignature(const std::string& path, const std::string& nonce,
+                             const std::string& postData) {
+    std::string message = nonce + postData;
     
     unsigned char* sha256 = nullptr;
     unsigned int sha256Len = 0;
@@ -348,7 +348,7 @@ String Kraken::createSignature(const String& path, const String& nonce,
     return base64_encode(hmac, hmacLen);
 }
 
-String Kraken::getKrakenSymbol(const String& symbol) {
+std::string Kraken::getKrakenSymbol(const std::string& symbol) {
     // Convert common symbol to Kraken symbol
     // For example: BTC/USD -> XBTUSD
     if (symbol == "BTC/USD") return "XBTUSD";
@@ -356,7 +356,7 @@ String Kraken::getKrakenSymbol(const String& symbol) {
     return symbol;
 }
 
-String Kraken::getCommonSymbol(const String& krakenSymbol) {
+std::string Kraken::getCommonSymbol(const std::string& krakenSymbol) {
     // Convert Kraken symbol to common symbol
     // For example: XXBT -> BTC
     if (krakenSymbol == "XXBT") return "BTC";

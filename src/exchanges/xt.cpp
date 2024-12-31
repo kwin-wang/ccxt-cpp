@@ -124,7 +124,7 @@ json Xt::fetchCurrencies(const json& params) {
     return this->parseCurrencies(data);
 }
 
-json Xt::fetchTicker(const String& symbol, const json& params) {
+json Xt::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -135,7 +135,7 @@ json Xt::fetchTicker(const String& symbol, const json& params) {
     return this->parseTicker(data, market);
 }
 
-json Xt::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Xt::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -150,7 +150,7 @@ json Xt::fetchOrderBook(const String& symbol, int limit, const json& params) {
 }
 
 // Trading Methods
-json Xt::createOrder(const String& symbol, const String& type, const String& side, 
+json Xt::createOrder(const std::string& symbol, const std::string& type, const std::string& side, 
                     const double& amount, const double& price, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -172,7 +172,7 @@ json Xt::createOrder(const String& symbol, const String& type, const String& sid
     });
 }
 
-json Xt::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Xt::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -182,7 +182,7 @@ json Xt::cancelOrder(const String& id, const String& symbol, const json& params)
     return this->privateDeleteOrder(this->extend(request, params));
 }
 
-json Xt::fetchOrder(const String& id, const String& symbol, const json& params) {
+json Xt::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -193,7 +193,7 @@ json Xt::fetchOrder(const String& id, const String& symbol, const json& params) 
     return this->parseOrder(response, market);
 }
 
-json Xt::fetchOrders(const String& symbol, const long* since,
+json Xt::fetchOrders(const std::string& symbol, const long* since,
                     const long* limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -210,13 +210,13 @@ json Xt::fetchOrders(const String& symbol, const long* since,
     return this->parseOrders(response, market, since, limit);
 }
 
-json Xt::fetchOpenOrders(const String& symbol, const long* since,
+json Xt::fetchOpenOrders(const std::string& symbol, const long* since,
                         const long* limit, const json& params) {
     auto request = {{"status", "NEW"}};
     return this->fetchOrders(symbol, since, limit, this->extend(request, params));
 }
 
-json Xt::fetchClosedOrders(const String& symbol, const long* since,
+json Xt::fetchClosedOrders(const std::string& symbol, const long* since,
                           const long* limit, const json& params) {
     auto request = {{"status", "FILLED"}};
     return this->fetchOrders(symbol, since, limit, this->extend(request, params));
@@ -229,7 +229,7 @@ json Xt::fetchBalance(const json& params) {
     return this->parseBalance(response);
 }
 
-json Xt::fetchDeposits(const Nullable<String>& code, const long* since,
+json Xt::fetchDeposits(const Nullable<std::string>& code, const long* since,
                        const long* limit, const json& params) {
     this->loadMarkets();
     auto request = {};
@@ -248,7 +248,7 @@ json Xt::fetchDeposits(const Nullable<String>& code, const long* since,
     return this->parseTransactions(response, currency, since, limit, {{"type", "deposit"}});
 }
 
-json Xt::fetchWithdrawals(const Nullable<String>& code, const long* since,
+json Xt::fetchWithdrawals(const Nullable<std::string>& code, const long* since,
                          const long* limit, const json& params) {
     this->loadMarkets();
     auto request = {};
@@ -268,26 +268,26 @@ json Xt::fetchWithdrawals(const Nullable<String>& code, const long* since,
 }
 
 // Async Methods
-AsyncPullType Xt::createOrderAsync(const String& symbol, const String& type, const String& side,
+AsyncPullType Xt::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                      const double& amount, const double& price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-AsyncPullType Xt::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Xt::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Xt::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Xt::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Xt::fetchOrdersAsync(const String& symbol, const long* since,
+AsyncPullType Xt::fetchOrdersAsync(const std::string& symbol, const long* since,
                                      const long* limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
@@ -339,8 +339,8 @@ json Xt::parseMarket(const json& market) {
     };
 }
 
-String Xt::sign(const String& path, const String& api, const String& method,
-                const json& params, const json& headers, const String& body) {
+std::string Xt::sign(const std::string& path, const std::string& api, const std::string& method,
+                const json& params, const json& headers, const std::string& body) {
     auto url = this->urls["api"][api];
     url += "/" + path;
 
@@ -446,11 +446,11 @@ json Xt::parseTrade(const json& trade, const Market& market) {
     auto side = this->safeStringLower(trade, "side");
     auto id = this->safeString(trade, "id");
     auto orderId = this->safeString(trade, "order_id");
-    auto priceString = this->safeString(trade, "price");
-    auto amountString = this->safeString(trade, "amount");
-    auto price = this->parseNumber(priceString);
-    auto amount = this->parseNumber(amountString);
-    auto cost = this->parseNumber(Precise::stringMul(priceString, amountString));
+    auto pricestd::string = this->safeString(trade, "price");
+    auto amountstd::string = this->safeString(trade, "amount");
+    auto price = this->parseNumber(pricestd::string);
+    auto amount = this->parseNumber(amountstd::string);
+    auto cost = this->parseNumber(Precise::stringMul(pricestd::string, amountstd::string));
     auto feeCost = this->safeNumber(trade, "fee");
     auto fee = nullptr;
     
@@ -501,7 +501,7 @@ json Xt::parseBalance(const json& response) {
     return result;
 }
 
-String Xt::parseOrderStatus(const String& status) {
+std::string Xt::parseOrderStatus(const std::string& status) {
     auto statuses = {
         {"NEW", "open"},
         {"FILLED", "closed"},

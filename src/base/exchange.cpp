@@ -89,23 +89,23 @@ json Exchange::fetchMarkets(const json& params) {
     return json::object();
 }
 
-json Exchange::fetchTicker(const String& symbol, const json& params) {
+json Exchange::fetchTicker(const std::string& symbol, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Exchange::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Exchange::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json Exchange::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchOHLCV(const String& symbol, const String& timeframe,
+json Exchange::fetchOHLCV(const std::string& symbol, const std::string& timeframe,
                          int since, int limit, const json& params) {
     return json::object();
 }
@@ -114,28 +114,28 @@ json Exchange::fetchBalance(const json& params) {
     return json::object();
 }
 
-json Exchange::createOrder(const String& symbol, const String& type, const String& side,
+json Exchange::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                          double amount, double price, const json& params) {
     return json::object();
 }
 
-json Exchange::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Exchange::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchOrder(const String& id, const String& symbol, const json& params) {
+json Exchange::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json Exchange::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json Exchange::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     return json::object();
 }
 
-json Exchange::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+json Exchange::fetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     return json::object();
 }
 
@@ -154,7 +154,7 @@ AsyncPullType Exchange::fetchMarketsAsync(const json& params) {
         });
 }
 
-AsyncPullType Exchange::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType Exchange::fetchTickerAsync(const std::string& symbol, const json& params) {
     return AsyncPullType(
         [this, symbol, params](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -168,7 +168,7 @@ AsyncPullType Exchange::fetchTickerAsync(const String& symbol, const json& param
         });
 }
 
-AsyncPullType Exchange::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Exchange::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -182,7 +182,7 @@ AsyncPullType Exchange::fetchTickersAsync(const std::vector<String>& symbols, co
         });
 }
 
-AsyncPullType Exchange::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+AsyncPullType Exchange::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -196,7 +196,7 @@ AsyncPullType Exchange::fetchOrderBookAsync(const String& symbol, int limit, con
         });
 }
 
-AsyncPullType Exchange::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Exchange::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -210,7 +210,7 @@ AsyncPullType Exchange::fetchTradesAsync(const String& symbol, int since, int li
         });
 }
 
-AsyncPullType Exchange::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+AsyncPullType Exchange::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                          int since, int limit, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
@@ -239,7 +239,7 @@ AsyncPullType Exchange::fetchBalanceAsync(const json& params) {
         });
 }
 
-AsyncPullType Exchange::createOrderAsync(const String& symbol, const String& type, const String& side,
+AsyncPullType Exchange::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                          double amount, double price, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
@@ -254,7 +254,7 @@ AsyncPullType Exchange::createOrderAsync(const String& symbol, const String& typ
         });
 }
 
-AsyncPullType Exchange::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Exchange::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -268,7 +268,7 @@ AsyncPullType Exchange::cancelOrderAsync(const String& id, const String& symbol,
         });
 }
 
-AsyncPullType Exchange::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Exchange::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -282,7 +282,7 @@ AsyncPullType Exchange::fetchOrderAsync(const String& id, const String& symbol, 
         });
 }
 
-AsyncPullType Exchange::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Exchange::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -296,7 +296,7 @@ AsyncPullType Exchange::fetchOrdersAsync(const String& symbol, int since, int li
         });
 }
 
-AsyncPullType Exchange::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Exchange::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
      return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -310,7 +310,7 @@ AsyncPullType Exchange::fetchOpenOrdersAsync(const String& symbol, int since, in
         });
 }
 
-AsyncPullType Exchange::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Exchange::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
    return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -324,9 +324,9 @@ AsyncPullType Exchange::fetchClosedOrdersAsync(const String& symbol, int since, 
         });
 }
 
-AsyncPullType Exchange::fetchAsync(const String& url, const String& method,
-                                   const std::map<String, String>& headers,
-                                   const String& body) {
+AsyncPullType Exchange::fetchAsync(const std::string& url, const std::string& method,
+                                   const std::map<std::string, std::string>& headers,
+                                   const std::string& body) {
      return AsyncPullType(
         [this](boost::coroutines2::coroutine<json>::push_type& yield) {
             try {
@@ -341,9 +341,9 @@ AsyncPullType Exchange::fetchAsync(const String& url, const String& method,
 }
 
 // Utility methods
-String Exchange::sign(const String& path, const String& api,
-                     const String& method, const std::map<String, String>& params,
-                     const std::map<String, String>& headers) {
+std::string Exchange::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const std::map<std::string, std::string>& params,
+                     const std::map<std::string, std::string>& headers) {
     return "";
 }
 
@@ -352,14 +352,6 @@ std::string Exchange::implodeParams(const std::string& path, const json& params)
     for (const auto& [key, value] : params.items()) {
         result = std::regex_replace(result, std::regex("\\{" + key + "\\}"),
                                   value.get<std::string>());
-    }
-    return result;
-}
-
-json Exchange::omit(const json& params, const std::vector<std::string>& keys) {
-    json result = params;
-    for (const auto& key : keys) {
-        result.erase(key);
     }
     return result;
 }
@@ -482,14 +474,14 @@ std::string Exchange::uuid() {
     return ss.str();
 }
 
-std::string Exchange::iso8601(long long timestamp) {
+std::string Exchange::iso8601(long long timestamp) const {
     std::time_t time = timestamp / 1000;
     std::tm* tm = std::gmtime(&time);
     char buffer[30];
-    std::strftime(buffer, 30, "%Y-%m-%dT%H:%M:%S", tm);
-    std::stringstream ss;
-    ss << buffer << "." << std::setfill('0') << std::setw(3) << (timestamp % 1000) << "Z";
-    return ss.str();
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", tm);
+    int milliseconds = timestamp % 1000;
+    sprintf(buffer + strlen(buffer), ".%03dZ", milliseconds);
+    return std::string(buffer);
 }
 
 long long Exchange::parse8601(const std::string& datetime) {
@@ -525,96 +517,61 @@ std::string Exchange::marketId(const std::string& symbol) {
 }
 
 std::string Exchange::safeString(const json& obj, const std::string& key, const std::string& defaultValue) const {
-    if (obj.contains(key)) {
-        const auto& value = obj[key];
-        if (value.is_string()) {
-            return value.get<std::string>();
-        }
-        if (value.is_number()) {
-            return value.dump();
-        }
+    if (obj.contains(key) && obj[key].is_string()) {
+        return obj[key].get<std::string>();
     }
     return defaultValue;
-}
-
-std::string Exchange::safeString(const json& obj, const std::string& key1, const std::string& key2, const std::string& defaultValue) const {
-    auto value = safeString(obj, key1, "");
-    if (value.empty()) {
-        value = safeString(obj, key2, "");
-    }
-    return value.empty() ? defaultValue : value;
 }
 
 double Exchange::safeNumber(const json& obj, const std::string& key, double defaultValue) const {
     if (obj.contains(key)) {
-        const auto& value = obj[key];
-        if (value.is_number()) {
-            return value.get<double>();
+        if (obj[key].is_number()) {
+            return obj[key].get<double>();
         }
-        if (value.is_string()) {
+        if (obj[key].is_string()) {
             try {
-                return std::stod(value.get<std::string>());
-            } catch (...) {}
-        }
-    }
-    return defaultValue;
-}
-
-bool Exchange::safeBool(const json& obj, const std::string& key, bool defaultValue) const {
-    if (obj.contains(key)) {
-        const auto& value = obj[key];
-        if (value.is_boolean()) {
-            return value.get<bool>();
-        }
-    }
-    return defaultValue;
-}
-
-json Exchange::safeValue(const json& obj, const std::string& key, const json& defaultValue) const {
-    if (obj.contains(key)) {
-        return obj[key];
-    }
-    return defaultValue;
-}
-
-json Exchange::fetch(const String& url, const String& method,
-                    const std::map<String, String>& headers,
-                    const String& body) {
-
-    std::string readBuffer;
-    if(curl_) {
-        struct curl_slist* curl_headers = nullptr;
-        std::map<std::string, std::string>::const_iterator it = headers.begin();
-        for (; it != headers.end(); ++it) {
-            curl_headers = curl_slist_append(curl_headers, (it->first + ": " + it->second).c_str());
-        }
-        curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, curl_headers);
-        curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, body.c_str());
-        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, NULL);
-        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &readBuffer);
-        CURLcode res = curl_easy_perform(curl_);
-        long httpCode = 0;
-        curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &httpCode);
-
-        if(res != CURLE_OK) {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
-        } else if (httpCode != 200) {
-            std::cerr << "HTTP request failed with code: " << httpCode << std::endl;
-        } else {
-            try {
-                auto jsonResponse = nlohmann::json::parse(readBuffer);
-                // Process the JSON response (e.g., check order status)
-                std::cout << jsonResponse.dump(4) << std::endl;
-                return jsonResponse; // Pretty print
-            } catch (const nlohmann::json::parse_error& e) {
-                std::cerr << "JSON parse error: " << e.what() << std::endl;
+                return std::stod(obj[key].get<std::string>());
+            } catch (...) {
+                return defaultValue;
             }
         }
-        curl_easy_cleanup(curl_);
     }
-    return json::parse(readBuffer);
+    return defaultValue;
 }
+
+long long Exchange::safeInteger(const json& obj, const std::string& key, long long defaultValue) const {
+    if (obj.contains(key)) {
+        if (obj[key].is_number_integer()) {
+            return obj[key].get<long long>();
+        }
+        if (obj[key].is_string()) {
+            try {
+                return std::stoll(obj[key].get<std::string>());
+            } catch (...) {
+                return defaultValue;
+            }
+        }
+    }
+    return defaultValue;
+}
+
+bool Exchange::safeBoolean(const json& obj, const std::string& key, bool defaultValue) const {
+    if (obj.contains(key)) {
+        if (obj[key].is_boolean()) {
+            return obj[key].get<bool>();
+        }
+        if (obj[key].is_string()) {
+            std::string value = obj[key].get<std::string>();
+            if (value == "true" || value == "1") return true;
+            if (value == "false" || value == "0") return false;
+        }
+        if (obj[key].is_number()) {
+            return obj[key].get<int>() != 0;
+        }
+    }
+    return defaultValue;
+}
+
 std::string Exchange::symbol(const std::string& marketId) {
     if (markets_by_id.find(marketId) == markets_by_id.end()) {
         throw ExchangeError("Market ID '" + marketId + "' does not exist");
@@ -650,6 +607,53 @@ std::string Exchange::costToPrecision(const std::string& symbol, double cost) {
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(8) << cost;
     return ss.str();
+}
+
+json Exchange::fetch(const std::string& url, const std::string& method,
+                    const std::map<std::string, std::string>& headers,
+                    const std::string& body) {
+
+    std::string readBuffer;
+    if(curl_) {
+        struct curl_slist* curl_headers = nullptr;
+        std::map<std::string, std::string>::const_iterator it = headers.begin();
+        for (; it != headers.end(); ++it) {
+            curl_headers = curl_slist_append(curl_headers, (it->first + ": " + it->second).c_str());
+        }
+        curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, curl_headers);
+        curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, body.c_str());
+        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, NULL);
+        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &readBuffer);
+        CURLcode res = curl_easy_perform(curl_);
+        long httpCode = 0;
+        curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &httpCode);
+
+        if(res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        } else if (httpCode != 200) {
+            std::cerr << "HTTP request failed with code: " << httpCode << std::endl;
+        } else {
+            try {
+                auto jsonResponse = nlohmann::json::parse(readBuffer);
+                // Process the JSON response (e.g., check order status)
+                std::cout << jsonResponse.dump(4) << std::endl;
+                return jsonResponse; // Pretty print
+            } catch (const nlohmann::json::parse_error& e) {
+                std::cerr << "JSON parse error: " << e.what() << std::endl;
+            }
+        }
+        curl_easy_cleanup(curl_);
+    }
+    return json::parse(readBuffer);
+}
+
+json Exchange::omit(const json& params, const std::vector<std::string>& keys) {
+    json result = params;
+    for (const auto& key : keys) {
+        result.erase(key);
+    }
+    return result;
 }
 
 } // namespace ccxt

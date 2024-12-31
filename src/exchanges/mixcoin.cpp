@@ -103,13 +103,13 @@ json MixCoin::fetchMarkets(const json& params) {
     return markets;
 }
 
-json MixCoin::fetchTicker(const String& symbol, const json& params) {
+json MixCoin::fetchTicker(const std::string& symbol, const json& params) {
     auto market = loadMarket(symbol);
     auto response = fetch("/ticker/" + market["id"], "public", "GET", params);
     return parseTicker(response, market);
 }
 
-json MixCoin::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json MixCoin::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     auto response = fetch("/tickers", "public", "GET", params);
     auto result = json::object();
     for (const auto& ticker : response) {
@@ -119,7 +119,7 @@ json MixCoin::fetchTickers(const std::vector<String>& symbols, const json& param
     return result;
 }
 
-json MixCoin::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json MixCoin::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = params;
     if (limit) {
@@ -134,7 +134,7 @@ json MixCoin::fetchOrderBook(const String& symbol, int limit, const json& params
     };
 }
 
-json MixCoin::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json MixCoin::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = params;
     if (since) {
@@ -147,7 +147,7 @@ json MixCoin::fetchTrades(const String& symbol, int since, int limit, const json
     return parseTrades(response, market, since, limit);
 }
 
-json MixCoin::fetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+json MixCoin::fetchOHLCV(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = params;
     request["period"] = timeframe;
@@ -178,7 +178,7 @@ json MixCoin::fetchBalance(const json& params) {
     return result;
 }
 
-json MixCoin::createOrder(const String& symbol, const String& type, const String& side,
+json MixCoin::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                          double amount, double price, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
@@ -195,20 +195,20 @@ json MixCoin::createOrder(const String& symbol, const String& type, const String
     return parseOrder(response);
 }
 
-json MixCoin::cancelOrder(const String& id, const String& symbol, const json& params) {
+json MixCoin::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     checkRequiredCredentials();
     auto request = {{"id", id}};
     return fetch("/order/cancel", "private", "POST", extend(request, params));
 }
 
-json MixCoin::fetchOrder(const String& id, const String& symbol, const json& params) {
+json MixCoin::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
     auto response = fetch("/order/" + id, "private", "GET", params);
     return parseOrder(response, market);
 }
 
-json MixCoin::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json MixCoin::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
     auto request = params;
@@ -222,17 +222,17 @@ json MixCoin::fetchOrders(const String& symbol, int since, int limit, const json
     return parseOrders(response, market, since, limit);
 }
 
-json MixCoin::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json MixCoin::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     auto request = extend(params, {{"state", "wait"}});
     return fetchOrders(symbol, since, limit, request);
 }
 
-json MixCoin::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+json MixCoin::fetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     auto request = extend(params, {{"state", "done"}});
     return fetchOrders(symbol, since, limit, request);
 }
 
-json MixCoin::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json MixCoin::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
     auto request = params;
@@ -253,7 +253,7 @@ json MixCoin::fetchAccounts(const json& params) {
     return response["accounts"];
 }
 
-json MixCoin::fetchLedger(const String& code, int since, int limit, const json& params) {
+json MixCoin::fetchLedger(const std::string& code, int since, int limit, const json& params) {
     checkRequiredCredentials();
     auto currency = loadCurrency(code);
     auto request = params;
@@ -267,7 +267,7 @@ json MixCoin::fetchLedger(const String& code, int since, int limit, const json& 
     return parseLedger(response["transactions"], currency, since, limit);
 }
 
-json MixCoin::fetchTradingFee(const String& symbol, const json& params) {
+json MixCoin::fetchTradingFee(const std::string& symbol, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
     auto response = fetch("/trading_fee/" + market["id"], "private", "GET", params);
@@ -363,7 +363,7 @@ json MixCoin::parseTradingFee(const json& fee, const Market& market) {
     };
 }
 
-String MixCoin::getAccountId(const String& type, const String& currency) {
+std::string MixCoin::getAccountId(const std::string& type, const std::string& currency) {
     auto accounts = fetchAccounts();
     for (const auto& account : accounts) {
         if (account["type"] == type && account["currency"] == currency) {
@@ -374,9 +374,9 @@ String MixCoin::getAccountId(const String& type, const String& currency) {
 }
 
 // Sign Implementation
-String MixCoin::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+std::string MixCoin::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
     auto endpoint = "/" + this->version + "/" + path;
     auto url = this->urls["api"][api] + endpoint;
@@ -422,21 +422,21 @@ String MixCoin::sign(const String& path, const String& api,
     }
 
 IMPLEMENT_ASYNC_METHOD(FetchMarkets, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchTicker, const String& symbol, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchTickers, const std::vector<String>& symbols, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchOrderBook, const String& symbol, int limit, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchTrades, const String& symbol, int since, int limit, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchOHLCV, const String& symbol, const String& timeframe, int since, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchTicker, const std::string& symbol, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchTickers, const std::vector<std::string>& symbols, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchOrderBook, const std::string& symbol, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchTrades, const std::string& symbol, int since, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchOHLCV, const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params)
 IMPLEMENT_ASYNC_METHOD(FetchBalance, const json& params)
-IMPLEMENT_ASYNC_METHOD(CreateOrder, const String& symbol, const String& type, const String& side, double amount, double price, const json& params)
-IMPLEMENT_ASYNC_METHOD(CancelOrder, const String& id, const String& symbol, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchOrder, const String& id, const String& symbol, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchOrders, const String& symbol, int since, int limit, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchOpenOrders, const String& symbol, int since, int limit, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchClosedOrders, const String& symbol, int since, int limit, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchMyTrades, const String& symbol, int since, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(CreateOrder, const std::string& symbol, const std::string& type, const std::string& side, double amount, double price, const json& params)
+IMPLEMENT_ASYNC_METHOD(CancelOrder, const std::string& id, const std::string& symbol, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchOrder, const std::string& id, const std::string& symbol, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchOrders, const std::string& symbol, int since, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchOpenOrders, const std::string& symbol, int since, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchClosedOrders, const std::string& symbol, int since, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchMyTrades, const std::string& symbol, int since, int limit, const json& params)
 IMPLEMENT_ASYNC_METHOD(FetchAccounts, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchLedger, const String& code, int since, int limit, const json& params)
-IMPLEMENT_ASYNC_METHOD(FetchTradingFee, const String& symbol, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchLedger, const std::string& code, int since, int limit, const json& params)
+IMPLEMENT_ASYNC_METHOD(FetchTradingFee, const std::string& symbol, const json& params)
 
 } // namespace ccxt

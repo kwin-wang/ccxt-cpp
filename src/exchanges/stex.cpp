@@ -121,12 +121,12 @@ json STEX::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response) {
-        String id = market["id"];
-        String baseId = market["currency_id"];
-        String quoteId = market["market_currency_id"];
-        String base = this->safeCurrencyCode(market["currency_code"]);
-        String quote = this->safeCurrencyCode(market["market_code"]);
-        String symbol = base + "/" + quote;
+        std::string id = market["id"];
+        std::string baseId = market["currency_id"];
+        std::string quoteId = market["market_currency_id"];
+        std::string base = this->safeCurrencyCode(market["currency_code"]);
+        std::string quote = this->safeCurrencyCode(market["market_code"]);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -177,8 +177,8 @@ json STEX::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String code = this->safeCurrencyCode(balance["currency_code"]);
-        String account = {
+        std::string code = this->safeCurrencyCode(balance["currency_code"]);
+        std::string account = {
             {"free", this->safeFloat(balance, "balance")},
             {"used", this->safeFloat(balance, "frozen_balance")},
             {"total", this->safeFloat(balance, "total_balance")}
@@ -189,8 +189,8 @@ json STEX::parseBalance(const json& response) {
     return result;
 }
 
-json STEX::createOrder(const String& symbol, const String& type,
-                      const String& side, double amount,
+json STEX::createOrder(const std::string& symbol, const std::string& type,
+                      const std::string& side, double amount,
                       double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -210,11 +210,11 @@ json STEX::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String STEX::sign(const String& path, const String& api,
-                  const String& method, const json& params,
-                  const std::map<String, String>& headers,
+std::string STEX::sign(const std::string& path, const std::string& api,
+                  const std::string& method, const json& params,
+                  const std::map<std::string, std::string>& headers,
                   const json& body) {
-    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
     json query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
@@ -223,9 +223,9 @@ String STEX::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
-        String timestamp = std::to_string(this->milliseconds());
-        String payload = timestamp + method + "/" + path;
+        std::string nonce = this->nonce().str();
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string payload = timestamp + method + "/" + path;
         
         if (!query.empty()) {
             if (method == "GET") {
@@ -236,38 +236,38 @@ String STEX::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(payload, this->encode(this->config_.secret),
+        std::string signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["APIKEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["TIMESTAMP"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["SIGNATURE"] = signature;
-        const_cast<std::map<String, String>&>(headers)["RECVWINDOW"] = this->options["recvWindow"];
+        const_cast<std::map<std::string, std::string>&>(headers)["APIKEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["SIGNATURE"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["RECVWINDOW"] = this->options["recvWindow"];
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String STEX::getNonce() {
+std::string STEX::getNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json STEX::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "side");
     
     return {
         {"id", id},
@@ -297,8 +297,8 @@ json STEX::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String STEX::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string STEX::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"new", "open"},
         {"processing", "open"},
         {"filled", "closed"},

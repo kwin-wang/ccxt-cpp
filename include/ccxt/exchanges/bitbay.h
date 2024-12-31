@@ -13,26 +13,26 @@ public:
 
     // Async Market Data API
     boost::future<json> fetchMarketsAsync(const json& params = json::object());
-    boost::future<json> fetchTickerAsync(const String& symbol, const json& params = json::object());
-    boost::future<json> fetchOrderBookAsync(const String& symbol, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchTradesAsync(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+    boost::future<json> fetchTickerAsync(const std::string& symbol, const json& params = json::object());
+    boost::future<json> fetchOrderBookAsync(const std::string& symbol, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchTradesAsync(const std::string& symbol, int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe = "1m",
                                       int since = 0, int limit = 0, const json& params = json::object());
     boost::future<json> fetchTradingFeesAsync(const json& params = json::object());
 
     // Async Trading API
     boost::future<json> fetchBalanceAsync(const json& params = json::object());
-    boost::future<json> createOrderAsync(const String& symbol, const String& type, const String& side,
+    boost::future<json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                       double amount, double price = 0, const json& params = json::object());
-    boost::future<json> cancelOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
-    boost::future<json> fetchOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
-    boost::future<json> fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    boost::future<json> fetchMyTradesAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> cancelOrderAsync(const std::string& id, const std::string& symbol = "", const json& params = json::object());
+    boost::future<json> fetchOrderAsync(const std::string& id, const std::string& symbol = "", const json& params = json::object());
+    boost::future<json> fetchOpenOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    boost::future<json> fetchMyTradesAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
 
     // Async Account API
-    boost::future<json> fetchDepositAddressAsync(const String& code, const json& params = json::object());
-    boost::future<json> withdrawAsync(const String& code, double amount, const String& address,
-                                   const String& tag = "", const json& params = json::object());
+    boost::future<json> fetchDepositAddressAsync(const std::string& code, const json& params = json::object());
+    boost::future<json> withdrawAsync(const std::string& code, double amount, const std::string& address,
+                                   const std::string& tag = "", const json& params = json::object());
 
 protected:
     json describe() override {

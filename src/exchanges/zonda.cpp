@@ -155,9 +155,9 @@ void Zonda::initializeApiEndpoints() {
     };
 }
 
-String Zonda::sign(const String& path, const String& api,
-                  const String& method, const json& params,
-                  const std::map<String, String>& headers,
+std::string Zonda::sign(const std::string& path, const std::string& api,
+                  const std::string& method, const json& params,
+                  const std::map<std::string, std::string>& headers,
                   const json& body) {
     auto query = this->omit(params, this->extractParams(path));
     auto url = this->urls["api"][api];
@@ -194,12 +194,12 @@ String Zonda::sign(const String& path, const String& api,
     return url;
 }
 
-String Zonda::createNonce() {
+std::string Zonda::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
-String Zonda::createSignature(const String& nonce, const String& method,
-                            const String& path, const String& body) {
+std::string Zonda::createSignature(const std::string& nonce, const std::string& method,
+                            const std::string& path, const std::string& body) {
     auto message = nonce + method + path + body;
     unsigned char* digest = HMAC(EVP_sha512(), this->config_.secret.c_str(), this->config_.secret.length(),
                                 reinterpret_cast<const unsigned char*>(message.c_str()),

@@ -150,13 +150,13 @@ json FMFW::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response) {
-        String id = market["id"];
-        String baseId = market["baseCurrency"];
-        String quoteId = market["quoteCurrency"];
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
-        String type = market["type"];
+        std::string id = market["id"];
+        std::string baseId = market["baseCurrency"];
+        std::string quoteId = market["quoteCurrency"];
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
+        std::string type = market["type"];
         bool active = market["active"];
         
         result.push_back({
@@ -200,9 +200,9 @@ json FMFW::fetchMarkets(const json& params) {
 
 json FMFW::fetchBalance(const json& params) {
     this->loadMarkets();
-    String type = this->safeString(params, "type", this->options["defaultType"]);
-    String accountType = this->safeString(this->options, "accountType", type);
-    String method = accountType + "/balance";
+    std::string type = this->safeString(params, "type", this->options["defaultType"]);
+    std::string accountType = this->safeString(this->options, "accountType", type);
+    std::string method = accountType + "/balance";
     json response = fetch("/" + method, "private", "GET", this->omit(params, "type"));
     return parseBalance(response);
 }
@@ -211,8 +211,8 @@ json FMFW::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String code = this->safeCurrencyCode(balance["currency"]);
-        String account = {
+        std::string code = this->safeCurrencyCode(balance["currency"]);
+        std::string account = {
             {"free", this->safeFloat(balance, "available")},
             {"used", this->safeFloat(balance, "reserved")},
             {"total", this->safeFloat(balance, "total")}
@@ -223,13 +223,13 @@ json FMFW::parseBalance(const json& response) {
     return result;
 }
 
-json FMFW::createOrder(const String& symbol, const String& type,
-                      const String& side, double amount,
+json FMFW::createOrder(const std::string& symbol, const std::string& type,
+                      const std::string& side, double amount,
                       double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String accountType = this->safeString(this->options, "accountType", market["type"]);
-    String method = accountType + "/order";
+    std::string accountType = this->safeString(this->options, "accountType", market["type"]);
+    std::string method = accountType + "/order";
     
     json request = {
         {"symbol", market["id"]},
@@ -247,11 +247,11 @@ json FMFW::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String FMFW::sign(const String& path, const String& api,
-                  const String& method, const json& params,
-                  const std::map<String, String>& headers,
+std::string FMFW::sign(const std::string& path, const std::string& api,
+                  const std::string& method, const json& params,
+                  const std::map<std::string, std::string>& headers,
                   const json& body) {
-    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
     json query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
@@ -260,9 +260,9 @@ String FMFW::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
-        String timestamp = std::to_string(this->milliseconds());
-        String payload = timestamp + method + "/" + path;
+        std::string nonce = this->nonce().str();
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string payload = timestamp + method + "/" + path;
         
         if (!query.empty()) {
             if (method == "GET") {
@@ -273,38 +273,38 @@ String FMFW::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(payload, this->encode(this->config_.secret),
+        std::string signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["API-TIMESTAMP"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["API-SIGNATURE"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-SIGNATURE"] = signature;
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String FMFW::getNonce() {
+std::string FMFW::getNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json FMFW::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String clientOrderId = this->safeString(order, "clientOrderId");
-    String timestamp = this->safeString(order, "createdAt");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string clientOrderId = this->safeString(order, "clientOrderId");
+    std::string timestamp = this->safeString(order, "createdAt");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "side");
     
     return {
         {"id", id},
@@ -334,8 +334,8 @@ json FMFW::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String FMFW::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string FMFW::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"new", "open"},
         {"suspended", "open"},
         {"partiallyFilled", "open"},

@@ -14,72 +14,72 @@ public:
     // Market Data Methods - Sync
     json fetchMarkets(const json& params = json::object()) override;
     json fetchCurrencies(const json& params = json::object()) override;
-    json fetchTicker(const String& symbol, const json& params = json::object()) override;
-    json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object()) override;
-    json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object()) override;
-    json fetchTrades(const String& symbol, int since = 0, int limit = 0,
+    json fetchTicker(const std::string& symbol, const json& params = json::object()) override;
+    json fetchTickers(const std::vector<std::string>& symbols = {}, const json& params = json::object()) override;
+    json fetchOrderBook(const std::string& symbol, int limit = 0, const json& params = json::object()) override;
+    json fetchTrades(const std::string& symbol, int since = 0, int limit = 0,
                     const json& params = json::object()) override;
-    json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
+    json fetchOHLCV(const std::string& symbol, const std::string& timeframe = "1m",
                    int since = 0, int limit = 0, const json& params = json::object()) override;
 
     // Trading Methods - Sync
-    json createOrder(const String& symbol, const String& type, const String& side,
+    json createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                     double amount, double price = 0, const json& params = json::object()) override;
-    json cancelOrder(const String& id, const String& symbol = "",
+    json cancelOrder(const std::string& id, const std::string& symbol = "",
                     const json& params = json::object()) override;
-    json fetchOrder(const String& id, const String& symbol = "",
+    json fetchOrder(const std::string& id, const std::string& symbol = "",
                    const json& params = json::object()) override;
-    json fetchOrders(const String& symbol = "", int since = 0, int limit = 0,
+    json fetchOrders(const std::string& symbol = "", int since = 0, int limit = 0,
                     const json& params = json::object()) override;
-    json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0,
+    json fetchOpenOrders(const std::string& symbol = "", int since = 0, int limit = 0,
                         const json& params = json::object()) override;
-    json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0,
+    json fetchClosedOrders(const std::string& symbol = "", int since = 0, int limit = 0,
                           const json& params = json::object()) override;
-    json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0,
+    json fetchMyTrades(const std::string& symbol = "", int since = 0, int limit = 0,
                       const json& params = json::object()) override;
 
     // Account Methods - Sync
     json fetchBalance(const json& params = json::object()) override;
-    json fetchDeposits(const String& code = "", int since = 0, int limit = 0,
+    json fetchDeposits(const std::string& code = "", int since = 0, int limit = 0,
                       const json& params = json::object()) override;
-    json fetchWithdrawals(const String& code = "", int since = 0, int limit = 0,
+    json fetchWithdrawals(const std::string& code = "", int since = 0, int limit = 0,
                          const json& params = json::object()) override;
 
     // Market Data Methods - Async
     AsyncPullType fetchMarketsAsync(const json& params = json::object());
     AsyncPullType fetchCurrenciesAsync(const json& params = json::object());
-    AsyncPullType fetchTickerAsync(const String& symbol, const json& params = json::object());
-    AsyncPullType fetchTickersAsync(const std::vector<String>& symbols = {},
+    AsyncPullType fetchTickerAsync(const std::string& symbol, const json& params = json::object());
+    AsyncPullType fetchTickersAsync(const std::vector<std::string>& symbols = {},
                                       const json& params = json::object());
-    AsyncPullType fetchOrderBookAsync(const String& symbol, int limit = 0,
+    AsyncPullType fetchOrderBookAsync(const std::string& symbol, int limit = 0,
                                         const json& params = json::object());
-    AsyncPullType fetchTradesAsync(const String& symbol, int since = 0, int limit = 0,
+    AsyncPullType fetchTradesAsync(const std::string& symbol, int since = 0, int limit = 0,
                                      const json& params = json::object());
-    AsyncPullType fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+    AsyncPullType fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe = "1m",
                                     int since = 0, int limit = 0, const json& params = json::object());
 
     // Trading Methods - Async
-    AsyncPullType createOrderAsync(const String& symbol, const String& type,
-                                     const String& side, double amount, double price = 0,
+    AsyncPullType createOrderAsync(const std::string& symbol, const std::string& type,
+                                     const std::string& side, double amount, double price = 0,
                                      const json& params = json::object());
-    AsyncPullType cancelOrderAsync(const String& id, const String& symbol = "",
+    AsyncPullType cancelOrderAsync(const std::string& id, const std::string& symbol = "",
                                      const json& params = json::object());
-    AsyncPullType fetchOrderAsync(const String& id, const String& symbol = "",
+    AsyncPullType fetchOrderAsync(const std::string& id, const std::string& symbol = "",
                                     const json& params = json::object());
-    AsyncPullType fetchOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0,
                                      const json& params = json::object());
-    AsyncPullType fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchOpenOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0,
                                          const json& params = json::object());
-    AsyncPullType fetchClosedOrdersAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchClosedOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0,
                                            const json& params = json::object());
-    AsyncPullType fetchMyTradesAsync(const String& symbol = "", int since = 0, int limit = 0,
+    AsyncPullType fetchMyTradesAsync(const std::string& symbol = "", int since = 0, int limit = 0,
                                        const json& params = json::object());
 
     // Account Methods - Async
     AsyncPullType fetchBalanceAsync(const json& params = json::object());
-    AsyncPullType fetchDepositsAsync(const String& code = "", int since = 0, int limit = 0,
+    AsyncPullType fetchDepositsAsync(const std::string& code = "", int since = 0, int limit = 0,
                                        const json& params = json::object());
-    AsyncPullType fetchWithdrawalsAsync(const String& code = "", int since = 0, int limit = 0,
+    AsyncPullType fetchWithdrawalsAsync(const std::string& code = "", int since = 0, int limit = 0,
                                           const json& params = json::object());
 
 protected:
@@ -92,10 +92,10 @@ protected:
     json parseBalance(const json& response);
     json parseMarket(const json& market);
     json parseCurrency(const json& currency);
-    String parseOrderStatus(const String& status);
-    String sign(const String& path, const String& api = "public",
-               const String& method = "GET", const json& params = json::object(),
-               const json& headers = nullptr, const String& body = "") override;
+    std::string parseOrderStatus(const std::string& status);
+    std::string sign(const std::string& path, const std::string& api = "public",
+               const std::string& method = "GET", const json& params = json::object(),
+               const json& headers = nullptr, const std::string& body = "") override;
 
 private:
     // Async helper methods
@@ -107,8 +107,8 @@ private:
                          std::forward<Args>(args)...);
     }
 
-    String v1;
-    String v2;
+    std::string v1;
+    std::string v2;
 };
 
 } // namespace ccxt

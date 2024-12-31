@@ -94,11 +94,11 @@ json GateIO::fetchMarkets(const json& params) {
     
     // Spot markets
     for (const auto& market : response) {
-        String id = market["id"];
-        String baseId = market["base"];
-        String quoteId = market["quote"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
+        std::string id = market["id"];
+        std::string baseId = market["base"];
+        std::string quoteId = market["quote"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
         
         markets.push_back({
             {"id", id},
@@ -138,16 +138,16 @@ json GateIO::fetchMarkets(const json& params) {
     if (this->has["fetchFuturesMarkets"]) {
         for (const auto& settle : {"btc", "usdt", "usd"}) {
             json request = {{"settle", settle}};
-            json futuresResponse = fetch("/futures/" + String(settle) + "/contracts", 
+            json futuresResponse = fetch("/futures/" + std::string(settle) + "/contracts", 
                                       "public", "GET", request);
             
             for (const auto& market : futuresResponse) {
-                String id = market["name"];
-                String baseId = market["underlying"];
-                String quoteId = settle;
-                String base = this->commonCurrencyCode(baseId);
-                String quote = this->commonCurrencyCode(quoteId);
-                String type = market["type"];
+                std::string id = market["name"];
+                std::string baseId = market["underlying"];
+                std::string quoteId = settle;
+                std::string base = this->commonCurrencyCode(baseId);
+                std::string quote = this->commonCurrencyCode(quoteId);
+                std::string type = market["type"];
                 
                 markets.push_back({
                     {"id", id},
@@ -192,7 +192,7 @@ json GateIO::fetchMarkets(const json& params) {
     return markets;
 }
 
-json GateIO::fetchTicker(const String& symbol, const json& params) {
+json GateIO::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
@@ -227,10 +227,10 @@ json GateIO::fetchTicker(const String& symbol, const json& params) {
 
 json GateIO::fetchBalance(const json& params) {
     this->loadMarkets();
-    String type = this->safeString(params, "type", defaultType);
+    std::string type = this->safeString(params, "type", defaultType);
     
-    String path = type == "spot" ? "/spot/accounts" : 
-                 "/futures/" + String(settle ? "settle" : "usdt") + "/accounts";
+    std::string path = type == "spot" ? "/spot/accounts" : 
+                 "/futures/" + std::string(settle ? "settle" : "usdt") + "/accounts";
     
     json response = fetch(path, "private", "GET", params);
     json result = {
@@ -240,11 +240,11 @@ json GateIO::fetchBalance(const json& params) {
     };
     
     for (const auto& balance : response) {
-        String currency = balance["currency"];
-        double total = std::stod(balance["available"].get<String>()) + 
-                      std::stod(balance["locked"].get<String>());
-        double free = std::stod(balance["available"].get<String>());
-        double used = std::stod(balance["locked"].get<String>());
+        std::string currency = balance["currency"];
+        double total = std::stod(balance["available"].get<std::string>()) + 
+                      std::stod(balance["locked"].get<std::string>());
+        double free = std::stod(balance["available"].get<std::string>());
+        double used = std::stod(balance["locked"].get<std::string>());
         
         result[currency] = {
             {"free", free},
@@ -256,8 +256,8 @@ json GateIO::fetchBalance(const json& params) {
     return result;
 }
 
-json GateIO::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json GateIO::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -276,27 +276,27 @@ json GateIO::createOrder(const String& symbol, const String& type,
         request["price"] = this->priceToPrecision(symbol, price);
     }
     
-    String path = market.type == "spot" ? "/spot/orders" : 
-                 "/futures/" + String(settle ? "settle" : "usdt") + "/orders";
+    std::string path = market.type == "spot" ? "/spot/orders" : 
+                 "/futures/" + std::string(settle ? "settle" : "usdt") + "/orders";
     
     json response = fetch(path, "private", "POST", this->extend(request, params));
     return this->parseOrder(response, market);
 }
 
-String GateIO::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string GateIO::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String endpoint = "/" + this->version + path;
-    String url = this->urls["api"][api] + endpoint;
+    std::string endpoint = "/" + this->version + path;
+    std::string url = this->urls["api"][api] + endpoint;
     
     if (api == "private") {
-        String timestamp = std::to_string(this->nonce());
-        String queryString = this->rawencode(this->keysort(params));
-        String auth = timestamp + method + endpoint;
+        std::string timestamp = std::to_string(this->nonce());
+        std::string querystd::string = this->rawencode(this->keysort(params));
+        std::string auth = timestamp + method + endpoint;
         
-        if (!queryString.empty()) {
-            auth += "?" + queryString;
+        if (!querystd::string.empty()) {
+            auth += "?" + querystd::string;
         }
         
         if (method == "POST" || method == "PUT" || method == "DELETE") {
@@ -305,23 +305,23 @@ String GateIO::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->config_.secret, "sha512", "hex");
+        std::string signature = this->hmac(auth, this->config_.secret, "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Timestamp"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["SIGN"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Timestamp"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["SIGN"] = signature;
         
         if (method == "POST" || method == "PUT" || method == "DELETE") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String GateIO::createSignature(const String& method, const String& path,
-                             const String& queryString, const String& body) {
-    String message = method + "\n" + path + "\n" + queryString + "\n" + body + "\n";
+std::string GateIO::createSignature(const std::string& method, const std::string& path,
+                             const std::string& querystd::string, const std::string& body) {
+    std::string message = method + "\n" + path + "\n" + querystd::string + "\n" + body + "\n";
     
     unsigned char* hmac = nullptr;
     unsigned int hmacLen = 0;
@@ -335,8 +335,8 @@ String GateIO::createSignature(const String& method, const String& path,
     return this->toHex(hmac, hmacLen);
 }
 
-json GateIO::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json GateIO::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"open", "open"},
         {"closed", "closed"},
         {"cancelled", "canceled"}
@@ -346,9 +346,9 @@ json GateIO::parseOrderStatus(const String& status) {
 }
 
 json GateIO::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "create_time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "create_time");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
     
     return {
         {"id", id},

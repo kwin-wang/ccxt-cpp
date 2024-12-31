@@ -84,8 +84,8 @@ json Huobi::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response["data"]) {
-        String baseId = market["base-currency"];
-        String quoteId = market["quote-currency"];
+        std::string baseId = market["base-currency"];
+        std::string quoteId = market["quote-currency"];
         std::transform(baseId.begin(), baseId.end(), baseId.begin(), ::toupper);
         std::transform(quoteId.begin(), quoteId.end(), quoteId.begin(), ::toupper);
         
@@ -103,11 +103,11 @@ json Huobi::fetchMarkets(const json& params) {
             }},
             {"limits", {
                 {"amount", {
-                    {"min", std::stod(market["min-order-amt"].get<String>())},
-                    {"max", std::stod(market["max-order-amt"].get<String>())}
+                    {"min", std::stod(market["min-order-amt"].get<std::string>())},
+                    {"max", std::stod(market["max-order-amt"].get<std::string>())}
                 }},
                 {"price", {
-                    {"min", std::stod(market["min-order-value"].get<String>())}
+                    {"min", std::stod(market["min-order-value"].get<std::string>())}
                 }}
             }},
             {"info", market}
@@ -117,7 +117,7 @@ json Huobi::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Huobi::fetchTicker(const String& symbol, const json& params) {
+json Huobi::fetchTicker(const std::string& symbol, const json& params) {
     Market market = this->market(symbol);
     json response = fetch("/market/detail/merged", "market", "GET", {{"symbol", market.id}});
     json ticker = response["tick"];
@@ -147,7 +147,7 @@ json Huobi::fetchTicker(const String& symbol, const json& params) {
 }
 
 json Huobi::fetchBalance(const json& params) {
-    String accountId = getAccountId();
+    std::string accountId = getAccountId();
     json response = fetch("/v1/account/accounts/" + accountId + "/balance", "private", "GET");
     json result = {
         {"info", response},
@@ -156,11 +156,11 @@ json Huobi::fetchBalance(const json& params) {
     };
     
     for (const auto& balance : response["data"]["list"]) {
-        String currency = balance["currency"];
+        std::string currency = balance["currency"];
         std::transform(currency.begin(), currency.end(), currency.begin(), ::toupper);
         
         if (balance["type"] == "trade") {
-            double free = std::stod(balance["balance"].get<String>());
+            double free = std::stod(balance["balance"].get<std::string>());
             if (result.contains(currency)) {
                 result[currency]["free"] = free;
                 result[currency]["total"] = free + result[currency]["used"].get<double>();
@@ -172,7 +172,7 @@ json Huobi::fetchBalance(const json& params) {
                 };
             }
         } else if (balance["type"] == "frozen") {
-            double used = std::stod(balance["balance"].get<String>());
+            double used = std::stod(balance["balance"].get<std::string>());
             if (result.contains(currency)) {
                 result[currency]["used"] = used;
                 result[currency]["total"] = used + result[currency]["free"].get<double>();
@@ -189,10 +189,10 @@ json Huobi::fetchBalance(const json& params) {
     return result;
 }
 
-json Huobi::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Huobi::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
-    String accountId = getAccountId();
+    std::string accountId = getAccountId();
     Market market = this->market(symbol);
     
     json request = {
@@ -212,15 +212,15 @@ json Huobi::createOrder(const String& symbol, const String& type,
     return fetch("/v1/order/orders/place", "private", "POST", request);
 }
 
-String Huobi::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Huobi::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = baseUrl + path;
+    std::string url = baseUrl + path;
     
-    std::map<String, String> query;
+    std::map<std::string, std::string> query;
     for (const auto& [key, value] : params.items()) {
-        query[key] = value.get<String>();
+        query[key] = value.get<std::string>();
     }
     
     if (api == "private") {
@@ -229,26 +229,26 @@ String Huobi::sign(const String& path, const String& api,
         query["SignatureVersion"] = "2";
         query["Timestamp"] = getTimestamp();
         
-        String host = "api.huobi.pro";
-        String signature = createSignature(method, host, path, query);
+        std::string host = "api.huobi.pro";
+        std::string signature = createSignature(method, host, path, query);
         query["Signature"] = signature;
     }
     
     if (!query.empty()) {
-        std::stringstream queryString;
+        std::stringstream querystd::string;
         bool first = true;
         for (const auto& [key, value] : query) {
-            if (!first) queryString << "&";
-            queryString << key << "=" << value;
+            if (!first) querystd::string << "&";
+            querystd::string << key << "=" << value;
             first = false;
         }
-        url += "?" + queryString.str();
+        url += "?" + querystd::string.str();
     }
     
     return url;
 }
 
-String Huobi::getTimestamp() {
+std::string Huobi::getTimestamp() {
     auto now = std::chrono::system_clock::now();
     auto tp = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
@@ -256,22 +256,22 @@ String Huobi::getTimestamp() {
     return ss.str();
 }
 
-String Huobi::createSignature(const String& method, const String& host,
-                            const String& path,
-                            const std::map<String, String>& params) {
+std::string Huobi::createSignature(const std::string& method, const std::string& host,
+                            const std::string& path,
+                            const std::map<std::string, std::string>& params) {
     std::stringstream ss;
     ss << method << "\n" << host << "\n" << path << "\n";
     
-    std::stringstream queryString;
+    std::stringstream querystd::string;
     bool first = true;
     for (const auto& [key, value] : params) {
-        if (!first) queryString << "&";
-        queryString << key << "=" << value;
+        if (!first) querystd::string << "&";
+        querystd::string << key << "=" << value;
         first = false;
     }
-    ss << queryString.str();
+    ss << querystd::string.str();
     
-    String message = ss.str();
+    std::string message = ss.str();
     
     unsigned char* hmac = nullptr;
     unsigned int hmacLen = 0;
@@ -285,7 +285,7 @@ String Huobi::createSignature(const String& method, const String& host,
     return base64_encode(hmac, hmacLen);
 }
 
-String Huobi::getAccountId() {
+std::string Huobi::getAccountId() {
     if (accountId.empty()) {
         json response = fetch("/v1/account/accounts", "private", "GET");
         for (const auto& account : response["data"]) {
@@ -305,31 +305,31 @@ AsyncPullType Huobi::fetchMarketsAsync(const json& params) {
     });
 }
 
-AsyncPullType Huobi::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType Huobi::fetchTickerAsync(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-AsyncPullType Huobi::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Huobi::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-AsyncPullType Huobi::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+AsyncPullType Huobi::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-AsyncPullType Huobi::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Huobi::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Huobi::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+AsyncPullType Huobi::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                         int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
@@ -342,39 +342,39 @@ AsyncPullType Huobi::fetchBalanceAsync(const json& params) {
     });
 }
 
-AsyncPullType Huobi::createOrderAsync(const String& symbol, const String& type,
-                                        const String& side, double amount,
+AsyncPullType Huobi::createOrderAsync(const std::string& symbol, const std::string& type,
+                                        const std::string& side, double amount,
                                         double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-AsyncPullType Huobi::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Huobi::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Huobi::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Huobi::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Huobi::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Huobi::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Huobi::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Huobi::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Huobi::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Huobi::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });

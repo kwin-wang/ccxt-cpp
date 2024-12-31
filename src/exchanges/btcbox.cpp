@@ -113,12 +113,12 @@ json BTCBOX::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response) {
-        String id = market["id"];
-        String baseId = market["base_currency"];
-        String quoteId = market["quote_currency"];
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["id"];
+        std::string baseId = market["base_currency"];
+        std::string quoteId = market["quote_currency"];
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -170,8 +170,8 @@ json BTCBOX::parseBalance(const json& response) {
     
     for (const auto& [currency, balance] : response.items()) {
         if (currency != "success" && currency != "result") {
-            String code = this->safeCurrencyCode(currency);
-            String account = {
+            std::string code = this->safeCurrencyCode(currency);
+            std::string account = {
                 {"free", this->safeFloat(balance, "available")},
                 {"used", this->safeFloat(balance, "in_use")},
                 {"total", this->safeFloat(balance, "total")}
@@ -183,8 +183,8 @@ json BTCBOX::parseBalance(const json& response) {
     return result;
 }
 
-json BTCBOX::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json BTCBOX::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -198,7 +198,7 @@ json BTCBOX::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-json BTCBOX::cancelOrder(const String& id, const String& symbol, const json& params) {
+json BTCBOX::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for cancelOrder");
     }
@@ -211,7 +211,7 @@ json BTCBOX::cancelOrder(const String& id, const String& symbol, const json& par
     return this->privatePostTradeCancel(this->extend(request, params));
 }
 
-json BTCBOX::fetchOrder(const String& id, const String& symbol, const json& params) {
+json BTCBOX::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for fetchOrder");
     }
@@ -225,7 +225,7 @@ json BTCBOX::fetchOrder(const String& id, const String& symbol, const json& para
     return this->parseOrder(response, market);
 }
 
-json BTCBOX::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json BTCBOX::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for fetchOrders");
     }
@@ -241,25 +241,25 @@ json BTCBOX::fetchOrders(const String& symbol, int since, int limit, const json&
     return this->parseOrders(response, market, since, limit);
 }
 
-json BTCBOX::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json BTCBOX::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     json request = this->extend({
         {"type", "open"}
     }, params);
     return this->fetchOrders(symbol, since, limit, request);
 }
 
-json BTCBOX::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+json BTCBOX::fetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     json request = this->extend({
         {"type", "closed"}
     }, params);
     return this->fetchOrders(symbol, since, limit, request);
 }
 
-String BTCBOX::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string BTCBOX::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
     json query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
@@ -268,40 +268,40 @@ String BTCBOX::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
+        std::string nonce = this->nonce().str();
         json auth = this->extend({
             "key", this->config_.apiKey,
             "nonce", nonce
         }, query);
         
-        String queryString = this->urlencode(this->keysort(auth));
-        String signature = this->hmac(queryString, this->encode(this->config_.secret),
+        std::string querystd::string = this->urlencode(this->keysort(auth));
+        std::string signature = this->hmac(querystd::string, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
         auth["signature"] = signature;
         body = this->json(auth);
-        const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+        const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
     }
     
     return url;
 }
 
-String BTCBOX::getNonce() {
+std::string BTCBOX::getNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json BTCBOX::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "datetime");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "datetime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "side");
     
     return {
         {"id", id},
@@ -331,8 +331,8 @@ json BTCBOX::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String BTCBOX::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string BTCBOX::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"open", "open"},
         {"closed", "closed"},
         {"canceled", "canceled"},
@@ -342,7 +342,7 @@ String BTCBOX::parseOrderStatus(const String& status) {
     return this->safeString(statuses, status, status);
 }
 
-json BTCBOX::fetchTicker(const String& symbol, const json& params) {
+json BTCBOX::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -352,12 +352,12 @@ json BTCBOX::fetchTicker(const String& symbol, const json& params) {
     return this->parseTicker(response, market);
 }
 
-json BTCBOX::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json BTCBOX::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     this->loadMarkets();
     json response = this->publicGetTicker(params);
     json result = json::object();
     for (const auto& market : this->markets) {
-        String symbol = market["symbol"];
+        std::string symbol = market["symbol"];
         if (symbols.empty() || std::find(symbols.begin(), symbols.end(), symbol) != symbols.end()) {
             json request = {
                 {"coin", market["baseId"]}
@@ -369,7 +369,7 @@ json BTCBOX::fetchTickers(const std::vector<String>& symbols, const json& params
     return result;
 }
 
-json BTCBOX::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json BTCBOX::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -382,7 +382,7 @@ json BTCBOX::fetchOrderBook(const String& symbol, int limit, const json& params)
     return this->parseOrderBook(response, symbol);
 }
 
-json BTCBOX::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json BTCBOX::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -397,7 +397,7 @@ json BTCBOX::fetchTrades(const String& symbol, int since, int limit, const json&
 
 json BTCBOX::parseTicker(const json& ticker, const Market& market) {
     double timestamp = this->safeTimestamp(ticker, "timestamp");
-    String symbol = this->safeString(market, "symbol");
+    std::string symbol = this->safeString(market, "symbol");
     return {
         {"symbol", symbol},
         {"timestamp", timestamp},
@@ -415,11 +415,11 @@ json BTCBOX::parseTicker(const json& ticker, const Market& market) {
 }
 
 json BTCBOX::parseTrade(const json& trade, const Market& market) {
-    String id = this->safeString(trade, "tid");
+    std::string id = this->safeString(trade, "tid");
     double timestamp = this->safeTimestamp(trade, "date");
     double price = this->safeFloat(trade, "price");
     double amount = this->safeFloat(trade, "amount");
-    String side = this->safeString(trade, "type");
+    std::string side = this->safeString(trade, "type");
     return {
         {"id", id},
         {"info", trade},
@@ -434,7 +434,7 @@ json BTCBOX::parseTrade(const json& trade, const Market& market) {
     };
 }
 
-json BTCBOX::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json BTCBOX::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ExchangeError("symbol is required for fetchMyTrades");
     }
@@ -450,12 +450,12 @@ json BTCBOX::fetchMyTrades(const String& symbol, int since, int limit, const jso
     return this->parseTrades(response, market, since, limit);
 }
 
-json BTCBOX::fetchDeposits(const String& code, int since, int limit, const json& params) {
+json BTCBOX::fetchDeposits(const std::string& code, int since, int limit, const json& params) {
     if (code.empty()) {
         throw ExchangeError("code is required for fetchDeposits");
     }
     this->loadMarkets();
-    String currency = this->currency(code);
+    std::string currency = this->currency(code);
     json request = {
         {"coin", currency["id"]}
     };
@@ -466,12 +466,12 @@ json BTCBOX::fetchDeposits(const String& code, int since, int limit, const json&
     return this->parseTransactions(response, code, since, limit, "deposit");
 }
 
-json BTCBOX::fetchWithdrawals(const String& code, int since, int limit, const json& params) {
+json BTCBOX::fetchWithdrawals(const std::string& code, int since, int limit, const json& params) {
     if (code.empty()) {
         throw ExchangeError("code is required for fetchWithdrawals");
     }
     this->loadMarkets();
-    String currency = this->currency(code);
+    std::string currency = this->currency(code);
     json request = {
         {"coin", currency["id"]}
     };
@@ -482,12 +482,12 @@ json BTCBOX::fetchWithdrawals(const String& code, int since, int limit, const js
     return this->parseTransactions(response, code, since, limit, "withdrawal");
 }
 
-json BTCBOX::fetchDepositAddress(const String& code, const json& params) {
+json BTCBOX::fetchDepositAddress(const std::string& code, const json& params) {
     if (code.empty()) {
         throw ExchangeError("code is required for fetchDepositAddress");
     }
     this->loadMarkets();
-    String currency = this->currency(code);
+    std::string currency = this->currency(code);
     json request = {
         {"coin", currency["id"]}
     };
@@ -495,14 +495,14 @@ json BTCBOX::fetchDepositAddress(const String& code, const json& params) {
     return this->parseDepositAddress(response, currency);
 }
 
-json BTCBOX::withdraw(const String& code, double amount, const String& address,
-                     const String& tag, const json& params) {
+json BTCBOX::withdraw(const std::string& code, double amount, const std::string& address,
+                     const std::string& tag, const json& params) {
     this->checkAddress(address);
     if (code.empty()) {
         throw ExchangeError("code is required for withdraw");
     }
     this->loadMarkets();
-    String currency = this->currency(code);
+    std::string currency = this->currency(code);
     json request = {
         {"coin", currency["id"]},
         {"amount", this->currencyToPrecision(code, amount)},
@@ -515,15 +515,15 @@ json BTCBOX::withdraw(const String& code, double amount, const String& address,
     return this->parseTransaction(response, currency);
 }
 
-json BTCBOX::parseTransaction(const json& transaction, const String& currency) {
-    String id = this->safeString(transaction, "id");
+json BTCBOX::parseTransaction(const json& transaction, const std::string& currency) {
+    std::string id = this->safeString(transaction, "id");
     double timestamp = this->safeTimestamp(transaction, "timestamp");
-    String address = this->safeString(transaction, "address");
-    String tag = this->safeString(transaction, "tag");
+    std::string address = this->safeString(transaction, "address");
+    std::string tag = this->safeString(transaction, "tag");
     double amount = this->safeFloat(transaction, "amount");
     double fee = this->safeFloat(transaction, "fee");
-    String type = this->safeString(transaction, "type");
-    String status = this->safeString(transaction, "status");
+    std::string type = this->safeString(transaction, "type");
+    std::string status = this->safeString(transaction, "status");
     return {
         {"id", id},
         {"info", transaction},
@@ -542,9 +542,9 @@ json BTCBOX::parseTransaction(const json& transaction, const String& currency) {
     };
 }
 
-json BTCBOX::parseDepositAddress(const json& depositAddress, const String& currency) {
-    String address = this->safeString(depositAddress, "address");
-    String tag = this->safeString(depositAddress, "tag");
+json BTCBOX::parseDepositAddress(const json& depositAddress, const std::string& currency) {
+    std::string address = this->safeString(depositAddress, "address");
+    std::string tag = this->safeString(depositAddress, "tag");
     return {
         {"currency", currency},
         {"address", address},
@@ -557,10 +557,10 @@ json BTCBOX::fetchCurrencies(const json& params) {
     json response = this->publicGetCurrencies(params);
     json result = json::object();
     for (const auto& entry : response.items()) {
-        String id = entry.key();
+        std::string id = entry.key();
         json currency = entry.value();
-        String code = this->safeCurrencyCode(id);
-        String name = this->safeString(currency, "name");
+        std::string code = this->safeCurrencyCode(id);
+        std::string name = this->safeString(currency, "name");
         bool active = this->safeInteger(currency, "status") == 1;
         result[code] = {
             {"id", id},
@@ -602,7 +602,7 @@ json BTCBOX::fetchTime(const json& params) {
 
 json BTCBOX::fetchStatus(const json& params) {
     json response = this->publicGetStatus(params);
-    String status = this->safeString(response, "status");
+    std::string status = this->safeString(response, "status");
     return {
         {"status", status == "ok" ? "ok" : "maintenance"},
         {"updated", this->safeTimestamp(response, "timestamp")},
@@ -612,12 +612,12 @@ json BTCBOX::fetchStatus(const json& params) {
     };
 }
 
-json BTCBOX::fetchTransactions(const String& code, int since, int limit, const json& params) {
+json BTCBOX::fetchTransactions(const std::string& code, int since, int limit, const json& params) {
     if (code.empty()) {
         throw ExchangeError("code is required for fetchTransactions");
     }
     this->loadMarkets();
-    String currency = this->currency(code);
+    std::string currency = this->currency(code);
     json request = {
         {"coin", currency["id"]}
     };

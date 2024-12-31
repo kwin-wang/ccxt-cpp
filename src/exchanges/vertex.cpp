@@ -137,13 +137,13 @@ json Vertex::fetchMarkets(const json& params) {
     json result = json::array();
 
     for (const auto& market : response["markets"]) {
-        String id = market["symbol"].get<String>();
-        String baseId = market["baseAsset"].get<String>();
-        String quoteId = market["quoteAsset"].get<String>();
-        String base = commonCurrencyCode(baseId);
-        String quote = commonCurrencyCode(quoteId);
-        String type = market["type"].get<String>();
-        String symbol = base + "/" + quote + ":" + quote;
+        std::string id = market["symbol"].get<std::string>();
+        std::string baseId = market["baseAsset"].get<std::string>();
+        std::string quoteId = market["quoteAsset"].get<std::string>();
+        std::string base = commonCurrencyCode(baseId);
+        std::string quote = commonCurrencyCode(quoteId);
+        std::string type = market["type"].get<std::string>();
+        std::string symbol = base + "/" + quote + ":" + quote;
         bool linear = (type == "linear");
 
         result.push_back({
@@ -192,37 +192,37 @@ json Vertex::fetchMarkets(const json& params) {
     return result;
 }
 
-json Vertex::fetchTicker(const String& symbol, const json& params) {
+json Vertex::fetchTicker(const std::string& symbol, const json& params) {
     auto market = loadMarket(symbol);
     json requestParams = params;
     requestParams["symbol"] = market["id"];
 
-    auto response = fetch("/ticker/" + market["id"].get<String>(), "public", "GET", requestParams);
+    auto response = fetch("/ticker/" + market["id"].get<std::string>(), "public", "GET", requestParams);
     return parseTicker(response, market);
 }
 
-json Vertex::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Vertex::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     auto response = fetch("/tickers", "public", "GET", params);
     json result = json::object();
 
     for (const auto& ticker : response["tickers"]) {
-        String marketId = ticker["symbol"].get<String>();
+        std::string marketId = ticker["symbol"].get<std::string>();
         auto market = loadMarketById(marketId);
-        String symbol = market["symbol"].get<String>();
+        std::string symbol = market["symbol"].get<std::string>();
         result[symbol] = parseTicker(ticker, market);
     }
 
     return filterByArray(result, "symbol", symbols);
 }
 
-json Vertex::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Vertex::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     auto market = loadMarket(symbol);
     json requestParams = params;
     if (limit > 0) {
         requestParams["depth"] = limit;
     }
 
-    auto response = fetch("/orderbook/" + market["id"].get<String>(), "public", "GET", requestParams);
+    auto response = fetch("/orderbook/" + market["id"].get<std::string>(), "public", "GET", requestParams);
     long long timestamp = response["timestamp"].get<long long>();
 
     return {
@@ -235,7 +235,7 @@ json Vertex::fetchOrderBook(const String& symbol, int limit, const json& params)
     };
 }
 
-json Vertex::fetchOHLCV(const String& symbol, const String& timeframe,
+json Vertex::fetchOHLCV(const std::string& symbol, const std::string& timeframe,
                        int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     json requestParams = params;
@@ -249,11 +249,11 @@ json Vertex::fetchOHLCV(const String& symbol, const String& timeframe,
         requestParams["limit"] = limit;
     }
 
-    auto response = fetch("/candles/" + market["id"].get<String>(), "public", "GET", requestParams);
+    auto response = fetch("/candles/" + market["id"].get<std::string>(), "public", "GET", requestParams);
     return parseOHLCVs(response["candles"], market, timeframe, since, limit);
 }
 
-json Vertex::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json Vertex::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     json requestParams = params;
     
@@ -264,14 +264,14 @@ json Vertex::fetchTrades(const String& symbol, int since, int limit, const json&
         requestParams["limit"] = limit;
     }
 
-    auto response = fetch("/trades/" + market["id"].get<String>(), "public", "GET", requestParams);
+    auto response = fetch("/trades/" + market["id"].get<std::string>(), "public", "GET", requestParams);
     return parseTrades(response["trades"], market, since, limit);
 }
 
 // Helper methods for parsing market data
 json Vertex::parseTicker(const json& ticker, const Market& market) {
     long long timestamp = ticker["timestamp"].get<long long>();
-    String symbol = market.symbol;
+    std::string symbol = market.symbol;
 
     return {
         {"symbol", symbol},

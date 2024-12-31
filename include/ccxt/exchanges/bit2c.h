@@ -65,7 +65,7 @@ private:
     nlohmann::json parseFee(const nlohmann::json& fee, const Market& market = Market());
     nlohmann::json parseDepositAddress(const nlohmann::json& depositAddress, const std::string& currency = "");
     std::string createSignature(const std::string& timestamp, const std::string& method,
-                              const std::string& path, const std::string& queryString);
+                              const std::string& path, const std::string& querystd::string);
 };
 
 } // namespace ccxt

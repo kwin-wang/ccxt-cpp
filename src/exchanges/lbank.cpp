@@ -121,19 +121,19 @@ json Lbank::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& pair : response) {
-        String id = pair.get<String>();
-        std::vector<String> parts;
+        std::string id = pair.get<std::string>();
+        std::vector<std::string> parts;
         std::stringstream ss(id);
-        String part;
+        std::string part;
         while (std::getline(ss, part, '_')) {
             parts.push_back(part);
         }
         
-        String baseId = parts[0];
-        String quoteId = parts[1];
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string baseId = parts[0];
+        std::string quoteId = parts[1];
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         json accuracy = fetch("/accuracy", "public", "GET", {{"symbol", id}});
         
@@ -188,8 +188,8 @@ json Lbank::parseBalance(const json& response) {
     json freezed = response["freezed"];
     
     for (const auto& [currency, balance] : free.items()) {
-        String code = this->safeCurrencyCode(currency);
-        String account = {
+        std::string code = this->safeCurrencyCode(currency);
+        std::string account = {
             {"free", this->safeFloat(free, currency)},
             {"used", this->safeFloat(freezed, currency)},
             {"total", this->safeFloat(free, currency) + this->safeFloat(freezed, currency)}
@@ -200,8 +200,8 @@ json Lbank::parseBalance(const json& response) {
     return result;
 }
 
-json Lbank::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Lbank::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -222,19 +222,19 @@ json Lbank::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Lbank::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Lbank::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api];
+    std::string url = this->urls["api"][api];
     url += "/" + this->implodeParams(path, params);
     
     if (api == "private") {
         this->checkRequiredCredentials();
-        String timestamp = std::to_string(this->milliseconds());
-        String query = this->urlencode(this->keysort(params));
-        String auth = query + "&secret_key=" + this->config_.secret;
-        String signature = this->hash(this->encode(auth), "md5");
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string query = this->urlencode(this->keysort(params));
+        std::string auth = query + "&secret_key=" + this->config_.secret;
+        std::string signature = this->hash(this->encode(auth), "md5");
         
         if (method == "GET") {
             if (!params.empty()) {
@@ -246,7 +246,7 @@ String Lbank::sign(const String& path, const String& api,
                 {"sign", signature},
                 {"timestamp", timestamp}
             });
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
         }
     } else if (!params.empty()) {
         url += "?" + this->urlencode(params);
@@ -255,22 +255,22 @@ String Lbank::sign(const String& path, const String& api,
     return url;
 }
 
-String Lbank::getNonce() {
+std::string Lbank::getNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Lbank::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "order_id");
-    String timestamp = this->safeString(order, "create_time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "order_id");
+    std::string timestamp = this->safeString(order, "create_time");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "side");
     
     return {
         {"id", id},
@@ -300,8 +300,8 @@ json Lbank::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Lbank::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Lbank::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"0", "open"},
         {"1", "closed"},
         {"2", "canceled"},
@@ -313,7 +313,7 @@ String Lbank::parseOrderStatus(const String& status) {
 }
 
 // Market Data API Implementation
-json Lbank::fetchTicker(const String& symbol, const json& params) {
+json Lbank::fetchTicker(const std::string& symbol, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {
         {"symbol", market["id"]}
@@ -322,13 +322,13 @@ json Lbank::fetchTicker(const String& symbol, const json& params) {
     return parseTicker(response, market);
 }
 
-json Lbank::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Lbank::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     loadMarkets();
     auto response = fetch("/ticker/24hr", "public", "GET", params);
     auto tickers = json::array();
     for (const auto& ticker : response) {
         if (!symbols.empty()) {
-            auto marketId = ticker["symbol"].get<String>();
+            auto marketId = ticker["symbol"].get<std::string>();
             if (marketIds.find(marketId) != marketIds.end()) {
                 auto market = markets_by_id[marketId];
                 if (std::find(symbols.begin(), symbols.end(), market["symbol"]) != symbols.end()) {
@@ -342,7 +342,7 @@ json Lbank::fetchTickers(const std::vector<String>& symbols, const json& params)
     return tickers;
 }
 
-json Lbank::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Lbank::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {
         {"symbol", market["id"]},
@@ -352,7 +352,7 @@ json Lbank::fetchOrderBook(const String& symbol, int limit, const json& params) 
     return parseOrderBook(response, market["symbol"], undefined, "bids", "asks", 0, 1);
 }
 
-json Lbank::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json Lbank::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {
         {"symbol", market["id"]},
@@ -362,7 +362,7 @@ json Lbank::fetchTrades(const String& symbol, int since, int limit, const json& 
     return parseTrades(response, market, since, limit);
 }
 
-json Lbank::fetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+json Lbank::fetchOHLCV(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {
         {"symbol", market["id"]},
@@ -383,38 +383,38 @@ AsyncPullType Lbank::asyncFetchMarkets(const json& params) {
     });
 }
 
-AsyncPullType Lbank::asyncFetchTicker(const String& symbol, const json& params) {
+AsyncPullType Lbank::asyncFetchTicker(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return fetchTicker(symbol, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchTickers(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Lbank::asyncFetchTickers(const std::vector<std::string>& symbols, const json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return fetchTickers(symbols, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchOrderBook(const String& symbol, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOrderBook(const std::string& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return fetchOrderBook(symbol, limit, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchTrades(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOHLCV(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return fetchOHLCV(symbol, timeframe, since, limit, params);
     });
 }
 
 // Trading API Implementation
-json Lbank::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Lbank::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("cancelOrder() requires a symbol argument");
     }
@@ -426,7 +426,7 @@ json Lbank::cancelOrder(const String& id, const String& symbol, const json& para
     return fetch("/cancel_order", "private", "POST", extend(request, params));
 }
 
-json Lbank::fetchOrder(const String& id, const String& symbol, const json& params) {
+json Lbank::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchOrder() requires a symbol argument");
     }
@@ -439,7 +439,7 @@ json Lbank::fetchOrder(const String& id, const String& symbol, const json& param
     return parseOrder(response, market);
 }
 
-json Lbank::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json Lbank::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchOrders() requires a symbol argument");
     }
@@ -457,7 +457,7 @@ json Lbank::fetchOrders(const String& symbol, int since, int limit, const json& 
     return parseOrders(response, market, since, limit);
 }
 
-json Lbank::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json Lbank::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchOpenOrders() requires a symbol argument");
     }
@@ -475,7 +475,7 @@ json Lbank::fetchOpenOrders(const String& symbol, int since, int limit, const js
     return parseOrders(response, market, since, limit);
 }
 
-json Lbank::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+json Lbank::fetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchClosedOrders() requires a symbol argument");
     }
@@ -500,45 +500,45 @@ AsyncPullType Lbank::asyncFetchBalance(const json& params) {
     });
 }
 
-AsyncPullType Lbank::asyncCreateOrder(const String& symbol, const String& type, const String& side,
+AsyncPullType Lbank::asyncCreateOrder(const std::string& symbol, const std::string& type, const std::string& side,
                                       double amount, double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-AsyncPullType Lbank::asyncCancelOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Lbank::asyncCancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return cancelOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Lbank::asyncFetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return fetchOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
 // Account API Implementation
-json Lbank::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json Lbank::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchMyTrades() requires a symbol argument");
     }
@@ -556,7 +556,7 @@ json Lbank::fetchMyTrades(const String& symbol, int since, int limit, const json
     return parseTrades(response, market, since, limit);
 }
 
-json Lbank::fetchDeposits(const String& code, int since, int limit, const json& params) {
+json Lbank::fetchDeposits(const std::string& code, int since, int limit, const json& params) {
     if (code.empty()) {
         throw ArgumentsRequired("fetchDeposits() requires a currency code argument");
     }
@@ -574,7 +574,7 @@ json Lbank::fetchDeposits(const String& code, int since, int limit, const json& 
     return parseTransactions(response, currency, since, limit, "deposit");
 }
 
-json Lbank::fetchWithdrawals(const String& code, int since, int limit, const json& params) {
+json Lbank::fetchWithdrawals(const std::string& code, int since, int limit, const json& params) {
     if (code.empty()) {
         throw ArgumentsRequired("fetchWithdrawals() requires a currency code argument");
     }
@@ -592,7 +592,7 @@ json Lbank::fetchWithdrawals(const String& code, int since, int limit, const jso
     return parseTransactions(response, currency, since, limit, "withdrawal");
 }
 
-json Lbank::fetchDepositAddress(const String& code, const json& params) {
+json Lbank::fetchDepositAddress(const std::string& code, const json& params) {
     if (code.empty()) {
         throw ArgumentsRequired("fetchDepositAddress() requires a currency code argument");
     }
@@ -604,7 +604,7 @@ json Lbank::fetchDepositAddress(const String& code, const json& params) {
     return parseDepositAddress(response, currency);
 }
 
-json Lbank::withdraw(const String& code, double amount, const String& address, const String& tag, const json& params) {
+json Lbank::withdraw(const std::string& code, double amount, const std::string& address, const std::string& tag, const json& params) {
     if (code.empty()) {
         throw ArgumentsRequired("withdraw() requires a currency code argument");
     }
@@ -622,31 +622,31 @@ json Lbank::withdraw(const String& code, double amount, const String& address, c
 }
 
 // Async Account API Implementation
-AsyncPullType Lbank::asyncFetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchMyTrades(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchDeposits(const String& code, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchDeposits(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return fetchDeposits(code, since, limit, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchWithdrawals(const String& code, int since, int limit, const json& params) {
+AsyncPullType Lbank::asyncFetchWithdrawals(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return fetchWithdrawals(code, since, limit, params);
     });
 }
 
-AsyncPullType Lbank::asyncFetchDepositAddress(const String& code, const json& params) {
+AsyncPullType Lbank::asyncFetchDepositAddress(const std::string& code, const json& params) {
     return std::async(std::launch::async, [this, code, params]() {
         return fetchDepositAddress(code, params);
     });
 }
 
-AsyncPullType Lbank::asyncWithdraw(const String& code, double amount, const String& address, const String& tag, const json& params) {
+AsyncPullType Lbank::asyncWithdraw(const std::string& code, double amount, const std::string& address, const std::string& tag, const json& params) {
     return std::async(std::launch::async, [this, code, amount, address, tag, params]() {
         return withdraw(code, amount, address, tag, params);
     });
@@ -768,7 +768,7 @@ json Lbank::parseTrade(const json& trade, const Market& market) {
     };
 }
 
-json Lbank::parseTransaction(const json& transaction, const String& currency) {
+json Lbank::parseTransaction(const json& transaction, const std::string& currency) {
     auto timestamp = transaction["timestamp"].get<int64_t>();
     return {
         {"id", safeString(transaction, "id")},
@@ -786,7 +786,7 @@ json Lbank::parseTransaction(const json& transaction, const String& currency) {
     };
 }
 
-json Lbank::parseDepositAddress(const json& depositAddress, const String& currency) {
+json Lbank::parseDepositAddress(const json& depositAddress, const std::string& currency) {
     return {
         {"currency", currency},
         {"address", safeString(depositAddress, "address")},

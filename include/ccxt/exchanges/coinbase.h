@@ -12,55 +12,55 @@ public:
 
     // Market Data API - Synchronous
     json fetchMarkets(const json& params = json::object()) override;
-    json fetchTicker(const String& symbol, const json& params = json::object()) override;
-    json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object()) override;
-    json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object()) override;
-    json fetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
+    json fetchTicker(const std::string& symbol, const json& params = json::object()) override;
+    json fetchTickers(const std::vector<std::string>& symbols = {}, const json& params = json::object()) override;
+    json fetchOrderBook(const std::string& symbol, int limit = 0, const json& params = json::object()) override;
+    json fetchTrades(const std::string& symbol, int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchOHLCV(const std::string& symbol, const std::string& timeframe = "1m",
                     int since = 0, int limit = 0, const json& params = json::object()) override;
 
     // Trading API - Synchronous
     json fetchBalance(const json& params = json::object()) override;
-    json createOrder(const String& symbol, const String& type, const String& side,
+    json createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                     double amount, double price = 0, const json& params = json::object()) override;
-    json cancelOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json cancelOrder(const std::string& id, const std::string& symbol = "", const json& params = json::object()) override;
+    json fetchOrder(const std::string& id, const std::string& symbol = "", const json& params = json::object()) override;
+    json fetchOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchOpenOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchClosedOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
 
     // Market Data API - Asynchronous
     boost::future<json> fetchMarketsAsync(const json& params = json::object()) const;
-    boost::future<json> fetchTickerAsync(const String& symbol, const json& params = json::object()) const;
-    boost::future<json> fetchTickersAsync(const std::vector<String>& symbols = {}, const json& params = json::object()) const;
-    boost::future<json> fetchOrderBookAsync(const String& symbol, int limit = 0, const json& params = json::object()) const;
-    boost::future<json> fetchTradesAsync(const String& symbol, int since = 0, int limit = 0, const json& params = json::object()) const;
-    boost::future<json> fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+    boost::future<json> fetchTickerAsync(const std::string& symbol, const json& params = json::object()) const;
+    boost::future<json> fetchTickersAsync(const std::vector<std::string>& symbols = {}, const json& params = json::object()) const;
+    boost::future<json> fetchOrderBookAsync(const std::string& symbol, int limit = 0, const json& params = json::object()) const;
+    boost::future<json> fetchTradesAsync(const std::string& symbol, int since = 0, int limit = 0, const json& params = json::object()) const;
+    boost::future<json> fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe = "1m",
                                      int since = 0, int limit = 0, const json& params = json::object()) const;
 
     // Trading API - Asynchronous
     boost::future<json> fetchBalanceAsync(const json& params = json::object()) const;
-    boost::future<json> createOrderAsync(const String& symbol, const String& type, const String& side,
+    boost::future<json> createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                      double amount, double price = 0, const json& params = json::object());
-    boost::future<json> cancelOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
-    boost::future<json> fetchOrderAsync(const String& id, const String& symbol = "", const json& params = json::object()) const;
-    boost::future<json> fetchOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) const;
-    boost::future<json> fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) const;
-    boost::future<json> fetchClosedOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) const;
+    boost::future<json> cancelOrderAsync(const std::string& id, const std::string& symbol = "", const json& params = json::object());
+    boost::future<json> fetchOrderAsync(const std::string& id, const std::string& symbol = "", const json& params = json::object()) const;
+    boost::future<json> fetchOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) const;
+    boost::future<json> fetchOpenOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) const;
+    boost::future<json> fetchClosedOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) const;
 
 protected:
-    String sign(const String& path, const String& api = "public",
-               const String& method = "GET", const json& params = json::object(),
-               const std::map<String, String>& headers = {}, const json& body = nullptr) override;
+    std::string sign(const std::string& path, const std::string& api = "public",
+               const std::string& method = "GET", const json& params = json::object(),
+               const std::map<std::string, std::string>& headers = {}, const json& body = nullptr) override;
 
 private:
     void initializeApiEndpoints();
-    String getTimestamp();
-    String createSignature(const String& timestamp, const String& method,
-                         const String& requestPath, const String& body = "");
-    std::map<String, String> getAuthHeaders(const String& method,
-                                          const String& requestPath,
-                                          const String& body = "");
+    std::string getTimestamp();
+    std::string createSignature(const std::string& timestamp, const std::string& method,
+                         const std::string& requestPath, const std::string& body = "");
+    std::map<std::string, std::string> getAuthHeaders(const std::string& method,
+                                          const std::string& requestPath,
+                                          const std::string& body = "");
 };
 
 } // namespace ccxt

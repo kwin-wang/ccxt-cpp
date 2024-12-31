@@ -125,12 +125,12 @@ json Bitso::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response["payload"]) {
-        String id = this->safeString(market, "book");
-        String baseId = id.substr(0, 3);
-        String quoteId = id.substr(3);
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "book");
+        std::string baseId = id.substr(0, 3);
+        std::string quoteId = id.substr(3);
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -195,7 +195,7 @@ json Bitso::parseBalance(const json& response) {
     return this->parseBalance(result);
 }
 
-json Bitso::createOrder(const String& symbol, const String& type, const String& side,
+json Bitso::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                        double amount, double price, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -212,7 +212,7 @@ json Bitso::createOrder(const String& symbol, const String& type, const String& 
     return this->parseOrder(response["payload"], market);
 }
 
-json Bitso::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Bitso::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     auto request = {
         "oid": id
     };
@@ -220,7 +220,7 @@ json Bitso::cancelOrder(const String& id, const String& symbol, const json& para
     return this->parseOrder(response["payload"]);
 }
 
-json Bitso::fetchOrder(const String& id, const String& symbol, const json& params) {
+json Bitso::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto request = {
         "oid": id
@@ -229,7 +229,7 @@ json Bitso::fetchOrder(const String& id, const String& symbol, const json& param
     return this->parseOrder(response["payload"]);
 }
 
-json Bitso::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json Bitso::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = undefined;
     auto request = {};
@@ -247,25 +247,25 @@ json Bitso::fetchOrders(const String& symbol, int since, int limit, const json& 
     return this->parseOrders(response["payload"], market, since, limit);
 }
 
-json Bitso::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json Bitso::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     auto request = this->extend({
         "status": "open"
     }, params);
     return this->fetchOrders(symbol, since, limit, request);
 }
 
-json Bitso::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+json Bitso::fetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     auto request = this->extend({
         "status": "completed"
     }, params);
     return this->fetchOrders(symbol, since, limit, request);
 }
 
-String Bitso::sign(const String& path, const String& api,
-                  const String& method, const json& params,
-                  const std::map<String, String>& headers,
+std::string Bitso::sign(const std::string& path, const std::string& api,
+                  const std::string& method, const json& params,
+                  const std::map<std::string, std::string>& headers,
                   const json& body) {
-    String url = this->urls["api"][api] + "/" + path;
+    std::string url = this->urls["api"][api] + "/" + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -273,8 +273,8 @@ String Bitso::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
-        String request = nonce + method + "/" + path;
+        std::string nonce = this->nonce().str();
+        std::string request = nonce + method + "/" + path;
         
         if (method == "POST") {
             if (!params.empty()) {
@@ -283,41 +283,41 @@ String Bitso::sign(const String& path, const String& api,
             }
         } else {
             if (!params.empty()) {
-                String query = this->urlencode(params);
+                std::string query = this->urlencode(params);
                 url += "?" + query;
                 request += "?" + query;
             }
         }
         
-        String signature = this->hmac(request, this->encode(this->config_.secret),
+        std::string signature = this->hmac(request, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bitso " + this->config_.apiKey + ":" + nonce + ":" + signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Authorization"] = "Bitso " + this->config_.apiKey + ":" + nonce + ":" + signature;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Bitso::createNonce() {
+std::string Bitso::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Bitso::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "oid");
-    String timestamp = this->safeString(order, "created_at");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "oid");
+    std::string timestamp = this->safeString(order, "created_at");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "side");
     
     return {
         {"id", id},
@@ -347,8 +347,8 @@ json Bitso::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Bitso::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Bitso::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"queued", "open"},
         {"active", "open"},
         {"partially filled", "open"},
@@ -359,7 +359,7 @@ String Bitso::parseOrderStatus(const String& status) {
     return this->safeString(statuses, status, status);
 }
 
-json Bitso::fetchTicker(const String& symbol, const json& params) {
+json Bitso::fetchTicker(const std::string& symbol, const json& params) {
     auto market = this->market(symbol);
     auto request = this->extend({
         "book": market["id"]
@@ -396,7 +396,7 @@ json Bitso::parseTicker(const json& ticker, const Market& market) {
     };
 }
 
-json Bitso::fetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+json Bitso::fetchOHLCV(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -424,7 +424,7 @@ json Bitso::parseOHLCV(const json& ohlcv, const Market& market) {
     };
 }
 
-json Bitso::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json Bitso::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -468,7 +468,7 @@ json Bitso::parseTrade(const json& trade, const Market& market) {
     };
 }
 
-json Bitso::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json Bitso::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = undefined;
     auto request = {};
@@ -486,7 +486,7 @@ json Bitso::fetchMyTrades(const String& symbol, int since, int limit, const json
     return this->parseTrades(response["payload"], market, since, limit);
 }
 
-json Bitso::fetchDeposits(const String& code, int since, int limit, const json& params) {
+json Bitso::fetchDeposits(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     auto currency = undefined;
     auto request = {};
@@ -504,7 +504,7 @@ json Bitso::fetchDeposits(const String& code, int since, int limit, const json& 
     return this->parseTransactions(response["payload"], currency, since, limit, {"deposit"});
 }
 
-json Bitso::fetchWithdrawals(const String& code, int since, int limit, const json& params) {
+json Bitso::fetchWithdrawals(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     auto currency = undefined;
     auto request = {};
@@ -522,7 +522,7 @@ json Bitso::fetchWithdrawals(const String& code, int since, int limit, const jso
     return this->parseTransactions(response["payload"], currency, since, limit, {"withdrawal"});
 }
 
-json Bitso::fetchDepositAddress(const String& code, const json& params) {
+json Bitso::fetchDepositAddress(const std::string& code, const json& params) {
     this->loadMarkets();
     auto currency = this->currency(code);
     auto request = {
@@ -539,8 +539,8 @@ json Bitso::fetchDepositAddress(const String& code, const json& params) {
     };
 }
 
-json Bitso::withdraw(const String& code, double amount, const String& address,
-                    const String& tag, const json& params) {
+json Bitso::withdraw(const std::string& code, double amount, const std::string& address,
+                    const std::string& tag, const json& params) {
     this->checkAddress(address);
     this->loadMarkets();
     auto currency = this->currency(code);

@@ -129,11 +129,11 @@ json Zaif::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response) {
-        String id = this->safeString(market, "currency_pair");
-        String baseId = this->safeString(market, "base_currency");
-        String quoteId = this->safeString(market, "quote_currency");
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
+        std::string id = this->safeString(market, "currency_pair");
+        std::string baseId = this->safeString(market, "base_currency");
+        std::string quoteId = this->safeString(market, "quote_currency");
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
         bool isToken = this->safeValue(market, "is_token", false);
         
         result.push_back({
@@ -188,7 +188,7 @@ json Zaif::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& [currency, balance] : funds.items()) {
-        String code = this->safeCurrencyCode(currency);
+        std::string code = this->safeCurrencyCode(currency);
         json account = {
             {"free", this->safeFloat(funds, currency)},
             {"used", 0.0},
@@ -201,8 +201,8 @@ json Zaif::parseBalance(const json& response) {
     return result;
 }
 
-json Zaif::createOrder(const String& symbol, const String& type,
-                      const String& side, double amount,
+json Zaif::createOrder(const std::string& symbol, const std::string& type,
+                      const std::string& side, double amount,
                       double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -222,12 +222,12 @@ json Zaif::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["return"], market);
 }
 
-String Zaif::sign(const String& path, const String& api,
-                 const String& method, const json& params,
-                 const std::map<String, String>& headers,
+std::string Zaif::sign(const std::string& path, const std::string& api,
+                 const std::string& method, const json& params,
+                 const std::map<std::string, std::string>& headers,
                  const json& body) {
-    String url = this->urls["api"][api];
-    String query = this->omit(params, this->extractParams(path));
+    std::string url = this->urls["api"][api];
+    std::string query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
         url += this->implodeParams(path, params);
@@ -236,42 +236,42 @@ String Zaif::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
+        std::string nonce = this->nonce().str();
         json request = this->extend({
             "method", path,
             "nonce", nonce
         }, query);
         
-        String body = this->urlencode(request);
-        String signature = this->hmac(body, this->encode(this->config_.secret),
+        std::string body = this->urlencode(request);
+        std::string signature = this->hmac(body, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Sign"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Sign"] = signature;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
         }
     }
     
     return url;
 }
 
-String Zaif::createNonce() {
+std::string Zaif::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Zaif::parseOrder(const json& order, const Market& market) {
-    String timestamp = this->safeString(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string timestamp = this->safeString(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "action");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "action");
     
     return {
         {"id", this->safeString(order, "order_id")},
@@ -297,8 +297,8 @@ json Zaif::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Zaif::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Zaif::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"active", "open"},
         {"cancelled", "canceled"},
         {"executed", "closed"},

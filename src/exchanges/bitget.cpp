@@ -118,18 +118,18 @@ void Bitget::initializeApiEndpoints() {
 }
 
 json Bitget::fetchMarkets(const json& params) {
-    String type = this->getDefaultType();
-    String path = type == "spot" ? "/api/spot/v1/public/products" : "/api/mix/v1/market/contracts";
+    std::string type = this->getDefaultType();
+    std::string path = type == "spot" ? "/api/spot/v1/public/products" : "/api/mix/v1/market/contracts";
     json response = fetch(path, "public", "GET", params);
     json markets = json::array();
     
     for (const auto& market : response["data"]) {
-        String id = market["symbol"];
-        String baseId = market["baseCoin"];
-        String quoteId = market["quoteCoin"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"];
+        std::string baseId = market["baseCoin"];
+        std::string quoteId = market["quoteCoin"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         bool active = market["status"] == "online";
         
         markets.push_back({
@@ -176,16 +176,16 @@ json Bitget::fetchMarkets(const json& params) {
 
 json Bitget::fetchBalance(const json& params) {
     this->loadMarkets();
-    String type = this->getDefaultType();
-    String path = type == "spot" ? "/api/spot/v1/account/assets" : "/api/mix/v1/account/accounts";
+    std::string type = this->getDefaultType();
+    std::string path = type == "spot" ? "/api/spot/v1/account/assets" : "/api/mix/v1/account/accounts";
     
     json response = fetch(path, "private", "GET", params);
     json balances = response["data"];
     json result = {"info", response};
     
     for (const auto& balance : balances) {
-        String currencyId = balance["coinName"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["coinName"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "available")},
@@ -197,12 +197,12 @@ json Bitget::fetchBalance(const json& params) {
     return result;
 }
 
-json Bitget::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Bitget::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String orderType = type == "market" ? "market" : "limit";
+    std::string orderType = type == "market" ? "market" : "limit";
     
     json request = {
         {"symbol", market.id},
@@ -215,17 +215,17 @@ json Bitget::createOrder(const String& symbol, const String& type,
         request["price"] = this->priceToPrecision(symbol, price);
     }
     
-    String path = market.type == "spot" ? "/api/spot/v1/trade/orders" : "/api/mix/v1/order/placeOrder";
+    std::string path = market.type == "spot" ? "/api/spot/v1/trade/orders" : "/api/mix/v1/order/placeOrder";
     json response = fetch(path, "private", "POST", this->extend(request, params));
     return this->parseOrder(response["data"], market);
 }
 
-String Bitget::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Bitget::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
-    String timestamp = this->getTimestamp();
+    std::string url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    std::string timestamp = this->getTimestamp();
     
     if (api == "public") {
         if (!params.empty()) {
@@ -234,7 +234,7 @@ String Bitget::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         
-        String query = "";
+        std::string query = "";
         if (method == "GET") {
             if (!params.empty()) {
                 query = this->urlencode(this->keysort(params));
@@ -247,38 +247,38 @@ String Bitget::sign(const String& path, const String& api,
             }
         }
         
-        String auth = timestamp + method + path + query;
-        String signature = this->hmac(auth, this->config_.secret, "sha256", "base64");
+        std::string auth = timestamp + method + path + query;
+        std::string signature = this->hmac(auth, this->config_.secret, "sha256", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["ACCESS-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["ACCESS-SIGN"] = signature;
-        const_cast<std::map<String, String>&>(headers)["ACCESS-TIMESTAMP"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["ACCESS-PASSPHRASE"] = this->password;
-        const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+        const_cast<std::map<std::string, std::string>&>(headers)["ACCESS-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["ACCESS-SIGN"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["ACCESS-TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["ACCESS-PASSPHRASE"] = this->password;
+        const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         
         if (!unifiedMargin) {
-            const_cast<std::map<String, String>&>(headers)["X-CHANNEL-API-CODE"] = this->safeString(this->options, "broker", "CCXT");
+            const_cast<std::map<std::string, std::string>&>(headers)["X-CHANNEL-API-CODE"] = this->safeString(this->options, "broker", "CCXT");
         }
     }
     
     return url;
 }
 
-String Bitget::getTimestamp() {
+std::string Bitget::getTimestamp() {
     return std::to_string(this->milliseconds());
 }
 
-String Bitget::getDefaultType() {
+std::string Bitget::getDefaultType() {
     return this->safeString(this->options, "defaultType", "spot");
 }
 
 json Bitget::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "orderId");
-    String timestamp = this->safeInteger(order, "cTime");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "orderType");
-    String side = this->safeStringLower(order, "side");
+    std::string id = this->safeString(order, "orderId");
+    std::string timestamp = this->safeInteger(order, "cTime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = market.symbol;
+    std::string type = this->safeStringLower(order, "orderType");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -301,8 +301,8 @@ json Bitget::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Bitget::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Bitget::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"new", "open"},
         {"partial-filled", "open"},
         {"filled", "closed"},

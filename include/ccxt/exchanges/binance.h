@@ -7,7 +7,6 @@
 #include <openssl/params.h>
 
 namespace ccxt {
-
 class Binance : public Exchange {
 public:
     static const std::string defaultHostname;
@@ -24,6 +23,8 @@ public:
 protected:
     std::string getMarketType(const std::string& symbol) const;
     std::string getEndpoint(const std::string& path, const std::string& type) const;
+    Market findMarket(const std::string& symbol) const;
+    std::string urlencode(const json& params) const;
 
     // Market Data API
     json fetchMarketsImpl() const override;
@@ -86,7 +87,16 @@ protected:
     json repayIsolatedMarginImpl(const std::string& symbol, const std::string& code, double amount) override;
     json transferImpl(const std::string& code, double amount, const std::string& fromAccount,
                    const std::string& toAccount) override;
+    json parseOrderBook(const json& orderbook, const std::string& symbol, const Market& market) const override;
+    json parseOHLCV(const json& ohlcv, const Market& market, const std::string& timeframe) const override;
+    json parseTicker(const json& ticker, const Market& market) const override;
 
+    json loadMarkets() const;
+
+    json privateGetAccount(const json& params = json::object()) const;
+
+    json parseMarket(const json& market) const;
+  
 private:
     // Helper methods
     std::string sign(const std::string& path, const std::string& api = "public",
@@ -100,16 +110,21 @@ private:
     std::string parseOrderType(const std::string& type) const;
     std::string parseOrderSide(const std::string& side) const;
     std::string parseOrderStatus(const std::string& status) const;
-    json parseOrder(const json& order, const Market& market = Market()) const;
-    json parseTrade(const json& trade, const Market& market = Market()) const;
-    json parseTicker(const json& ticker, const Market& market = Market()) const;
-    json parseOHLCV(const json& ohlcv, const Market& market = Market(), const std::string& timeframe = "1m") const;
-    json parseBalance(const json& response) const;
-    json parseFee(const json& fee, const Market& market = Market()) const;
-    json parsePosition(const json& position, const Market& market = Market()) const;
-    json parseFundingRate(const json& fundingRate, const Market& market = Market()) const;
-    json parseTransaction(const json& transaction, const std::string& currency = "") const;
-    json parseDepositAddress(const json& depositAddress, const std::string& currency = "") const;
+    std::string parseTransactionStatus(const std::string& status) const;
+    json parseBidsAsks(const json& bidasks, const json& market) const;
+    json parseOrder(const json& order, const Market& market = Market()) const override;
+    json parseTrade(const json& trade, const Market& market = Market()) const override;
+    json parseBalance(const json& response) const override;
+    json parseFee(const json& fee, const Market& market = Market()) const override;
+    json parsePosition(const json& position, const Market& market = Market()) const override;
+    json parseFundingRate(const json& fundingRate, const Market& market = Market()) const override;
+    json parseTransaction(const json& transaction, const std::string& currency = "") const override;
+    json parseDepositAddress(const json& depositAddress, const std::string& currency = "") const override;
+    json parseWithdrawal(const json& withdrawal, const std::string& currency = "") const override;
+    json parseDeposit(const json& deposit, const std::string& currency = "") const override;
+
+    mutable std::mutex markets_mutex;
+    mutable bool markets_loaded{false};
 
     // Member variables
     std::map<std::string, std::string> timeframes;

@@ -162,7 +162,7 @@ json Coincheck::fetchBalance(const json& params) {
 json Coincheck::parseBalance(const json& response) {
     json result = {{"info", response}};
     
-    std::map<String, String> currencyIds = {
+    std::map<std::string, std::string> currencyIds = {
         {"jpy", "JPY"},
         {"btc", "BTC"},
         {"etc", "ETC"},
@@ -172,8 +172,8 @@ json Coincheck::parseBalance(const json& response) {
     };
     
     for (const auto& [currencyId, code] : currencyIds) {
-        String available = currencyId + "_available";
-        String reserved = currencyId + "_reserved";
+        std::string available = currencyId + "_available";
+        std::string reserved = currencyId + "_reserved";
         
         if (response.contains(available) && response.contains(reserved)) {
             result[code] = {
@@ -188,8 +188,8 @@ json Coincheck::parseBalance(const json& response) {
     return result;
 }
 
-json Coincheck::createOrder(const String& symbol, const String& type,
-                          const String& side, double amount,
+json Coincheck::createOrder(const std::string& symbol, const std::string& type,
+                          const std::string& side, double amount,
                           double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -209,12 +209,12 @@ json Coincheck::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Coincheck::sign(const String& path, const String& api,
-                      const String& method, const json& params,
-                      const std::map<String, String>& headers,
+std::string Coincheck::sign(const std::string& path, const std::string& api,
+                      const std::string& method, const json& params,
+                      const std::map<std::string, std::string>& headers,
                       const json& body) {
-    String url = this->urls["api"][api] + path;
-    String nonce = this->createNonce();
+    std::string url = this->urls["api"][api] + path;
+    std::string nonce = this->createNonce();
     
     if (api == "public") {
         if (!params.empty()) {
@@ -223,48 +223,48 @@ String Coincheck::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         
-        String queryString = "";
+        std::string querystd::string = "";
         if (method == "GET") {
             if (!params.empty()) {
-                queryString = this->urlencode(params);
-                url += "?" + queryString;
+                querystd::string = this->urlencode(params);
+                url += "?" + querystd::string;
             }
         } else {
             if (!params.empty()) {
                 body = params;
-                queryString = this->json(params);
+                querystd::string = this->json(params);
             }
         }
         
-        String auth = nonce + url + (queryString.empty() ? "" : queryString);
-        String signature = this->hmac(auth, this->encode(this->config_.secret),
+        std::string auth = nonce + url + (querystd::string.empty() ? "" : querystd::string);
+        std::string signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["ACCESS-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["ACCESS-NONCE"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["ACCESS-SIGNATURE"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["ACCESS-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["ACCESS-NONCE"] = nonce;
+        const_cast<std::map<std::string, std::string>&>(headers)["ACCESS-SIGNATURE"] = signature;
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Coincheck::createNonce() {
+std::string Coincheck::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Coincheck::parseOrder(const json& order, const Market& market) {
-    String timestamp = this->safeString(order, "created_at");
-    String id = this->safeString(order, "id");
-    String type = this->safeString(order, "order_type");
-    String side = nullptr;
-    String price = nullptr;
+    std::string timestamp = this->safeString(order, "created_at");
+    std::string id = this->safeString(order, "id");
+    std::string type = this->safeString(order, "order_type");
+    std::string side = nullptr;
+    std::string price = nullptr;
     
     if (type != nullptr) {
-        std::vector<String> parts = this->split(type, "_");
+        std::vector<std::string> parts = this->split(type, "_");
         side = parts[0];
         type = parts[1];
     }
@@ -296,31 +296,31 @@ boost::future<json> Coincheck::fetchMarketsAsync(const json& params) {
     });
 }
 
-boost::future<json> Coincheck::fetchTickerAsync(const String& symbol, const json& params) {
+boost::future<json> Coincheck::fetchTickerAsync(const std::string& symbol, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-boost::future<json> Coincheck::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+boost::future<json> Coincheck::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return boost::async(boost::launch::async, [this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-boost::future<json> Coincheck::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+boost::future<json> Coincheck::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-boost::future<json> Coincheck::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Coincheck::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+boost::future<json> Coincheck::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                              int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
@@ -334,69 +334,69 @@ boost::future<json> Coincheck::fetchBalanceAsync(const json& params) {
     });
 }
 
-boost::future<json> Coincheck::createOrderAsync(const String& symbol, const String& type, const String& side,
+boost::future<json> Coincheck::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                               double amount, double price, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-boost::future<json> Coincheck::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Coincheck::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async(boost::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-boost::future<json> Coincheck::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Coincheck::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async(boost::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-boost::future<json> Coincheck::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Coincheck::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Coincheck::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
 // Async Account API
-boost::future<json> Coincheck::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchMyTrades(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Coincheck::fetchDepositsAsync(const String& code, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchDepositsAsync(const std::string& code, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, code, since, limit, params]() {
         return this->fetchDeposits(code, since, limit, params);
     });
 }
 
-boost::future<json> Coincheck::fetchWithdrawalsAsync(const String& code, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchWithdrawalsAsync(const std::string& code, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, code, since, limit, params]() {
         return this->fetchWithdrawals(code, since, limit, params);
     });
 }
 
-boost::future<json> Coincheck::fetchDepositAddressAsync(const String& code, const json& params) {
+boost::future<json> Coincheck::fetchDepositAddressAsync(const std::string& code, const json& params) {
     return boost::async(boost::launch::async, [this, code, params]() {
         return this->fetchDepositAddress(code, params);
     });
 }
 
-boost::future<json> Coincheck::withdrawAsync(const String& code, double amount, const String& address, const String& tag, const json& params) {
+boost::future<json> Coincheck::withdrawAsync(const std::string& code, double amount, const std::string& address, const std::string& tag, const json& params) {
     return boost::async(boost::launch::async, [this, code, amount, address, tag, params]() {
         return this->withdraw(code, amount, address, tag, params);
     });
@@ -409,14 +409,14 @@ boost::future<json> Coincheck::fetchLeverageBalanceAsync(const json& params) {
     });
 }
 
-boost::future<json> Coincheck::createLeverageOrderAsync(const String& symbol, const String& type, const String& side,
+boost::future<json> Coincheck::createLeverageOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                                       double amount, double price, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createLeverageOrder(symbol, type, side, amount, price, params);
     });
 }
 
-boost::future<json> Coincheck::cancelLeverageOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Coincheck::cancelLeverageOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async(boost::launch::async, [this, id, symbol, params]() {
         return this->cancelLeverageOrder(id, symbol, params);
     });
@@ -428,7 +428,7 @@ boost::future<json> Coincheck::fetchLeveragePositionsAsync(const json& params) {
     });
 }
 
-boost::future<json> Coincheck::fetchLeverageOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Coincheck::fetchLeverageOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchLeverageOrders(symbol, since, limit, params);
     });

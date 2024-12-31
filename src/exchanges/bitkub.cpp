@@ -123,12 +123,12 @@ json Bitkub::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response["result"]) {
-        String id = this->safeString(market, "symbol");
-        String baseId = this->safeString(market, "baseAsset");
-        String quoteId = this->safeString(market, "quoteAsset");
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "symbol");
+        std::string baseId = this->safeString(market, "baseAsset");
+        std::string quoteId = this->safeString(market, "quoteAsset");
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -180,8 +180,8 @@ json Bitkub::parseBalance(const json& response) {
     json balances = this->safeValue(response, "result", {});
     
     for (const auto& [currencyId, balance] : balances.items()) {
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "available")},
             {"used", this->safeFloat(balance, "reserved")},
             {"total", this->safeFloat(balance, "total")}
@@ -192,13 +192,13 @@ json Bitkub::parseBalance(const json& response) {
     return result;
 }
 
-json Bitkub::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Bitkub::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
-    String endpoint = (side == "buy") ? "/market/place-bid" : "/market/place-ask";
+    std::string endpoint = (side == "buy") ? "/market/place-bid" : "/market/place-ask";
     
     json request = {
         {"sym", market["id"]},
@@ -212,11 +212,11 @@ json Bitkub::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["result"], market);
 }
 
-String Bitkub::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Bitkub::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api] + "/" + this->version + path;
+    std::string url = this->urls["api"][api] + "/" + this->version + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -224,24 +224,24 @@ String Bitkub::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
-        String timestamp = std::to_string(this->milliseconds());
+        std::string nonce = this->nonce().str();
+        std::string timestamp = std::to_string(this->milliseconds());
         
         json request = this->extend({
             "ts", timestamp,
             "sig", this->config_.apiKey
         }, params);
         
-        String payload = this->urlencode(request);
-        String signature = this->hmac(payload, this->encode(this->config_.secret),
+        std::string payload = this->urlencode(request);
+        std::string signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-BTK-APIKEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-BTK-SIGN"] = signature;
-        const_cast<std::map<String, String>&>(headers)["X-BTK-TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BTK-APIKEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BTK-SIGN"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BTK-TIMESTAMP"] = timestamp;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
             body = payload;
         } else if (!params.empty()) {
             url += "?" + payload;
@@ -251,21 +251,21 @@ String Bitkub::sign(const String& path, const String& api,
     return url;
 }
 
-String Bitkub::createNonce() {
+std::string Bitkub::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Bitkub::parseOrder(const json& order, const Market& market) {
-    String timestamp = this->safeString(order, "ts");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string timestamp = this->safeString(order, "ts");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "side");
     
     return {
         {"id", this->safeString(order, "id")},
@@ -291,8 +291,8 @@ json Bitkub::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Bitkub::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Bitkub::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"filled", "closed"},
         {"partially_filled", "open"},
         {"cancelled", "canceled"},

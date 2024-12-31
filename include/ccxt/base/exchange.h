@@ -10,10 +10,6 @@
 #include "ccxt/base/exchange_base.h"
 
 namespace ccxt {
-
-using json = nlohmann::json;
-using String = std::string;
-
 class Exchange : public ExchangeBase {
 public:
     Exchange(boost::asio::io_context& context, const Config& config = Config());
@@ -39,80 +35,86 @@ public:
     virtual long long parse8601(const std::string& datetime);
     virtual long long milliseconds() const;
     virtual std::string uuid();
-    virtual std::string iso8601(long long timestamp);
+    virtual std::string iso8601(long long timestamp) const;
     virtual Market market(const std::string& symbol);
     virtual std::string marketId(const std::string& symbol);
 
     // Synchronous REST API methods
     virtual json fetchMarkets(const json& params = json::object());
-    virtual json fetchTicker(const String& symbol, const json& params = json::object());
-    virtual json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object());
-    virtual json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object());
-    virtual json fetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
-    virtual json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
+    virtual json fetchTicker(const std::string& symbol, const json& params = json::object());
+    virtual json fetchTickers(const std::vector<std::string>& symbols = {}, const json& params = json::object());
+    virtual json fetchOrderBook(const std::string& symbol, int limit = 0, const json& params = json::object());
+    virtual json fetchTrades(const std::string& symbol, int since = 0, int limit = 0, const json& params = json::object());
+    virtual json fetchOHLCV(const std::string& symbol, const std::string& timeframe = "1m",
                           int since = 0, int limit = 0, const json& params = json::object());
     virtual json fetchBalance(const json& params = json::object());
-    virtual json createOrder(const String& symbol, const String& type, const String& side,
+    virtual json createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                            double amount, double price = 0, const json& params = json::object());
-    virtual json cancelOrder(const String& id, const String& symbol = "", const json& params = json::object());
-    virtual json fetchOrder(const String& id, const String& symbol = "", const json& params = json::object());
-    virtual json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    virtual json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    virtual json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    virtual json cancelOrder(const std::string& id, const std::string& symbol = "", const json& params = json::object());
+    virtual json fetchOrder(const std::string& id, const std::string& symbol = "", const json& params = json::object());
+    virtual json fetchOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    virtual json fetchOpenOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    virtual json fetchClosedOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
     virtual void loadMarkets(bool reload = false);
     std::string symbol(const std::string& marketId);
 
     // Asynchronous REST API methods
     virtual AsyncPullType fetchMarketsAsync(const json& params = json::object());
-    virtual AsyncPullType fetchTickerAsync(const String& symbol, const json& params = json::object());
-    virtual AsyncPullType fetchTickersAsync(const std::vector<String>& symbols = {}, const json& params = json::object());
-    virtual AsyncPullType fetchOrderBookAsync(const String& symbol, int limit = 0, const json& params = json::object());
-    virtual AsyncPullType fetchTradesAsync(const String& symbol, int since = 0, int limit = 0, const json& params = json::object());
-    virtual AsyncPullType fetchOHLCVAsync(const String& symbol, const String& timeframe = "1m",
+    virtual AsyncPullType fetchTickerAsync(const std::string& symbol, const json& params = json::object());
+    virtual AsyncPullType fetchTickersAsync(const std::vector<std::string>& symbols = {}, const json& params = json::object());
+    virtual AsyncPullType fetchOrderBookAsync(const std::string& symbol, int limit = 0, const json& params = json::object());
+    virtual AsyncPullType fetchTradesAsync(const std::string& symbol, int since = 0, int limit = 0, const json& params = json::object());
+    virtual AsyncPullType fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe = "1m",
                                            int since = 0, int limit = 0, const json& params = json::object());
     virtual AsyncPullType fetchBalanceAsync(const json& params = json::object());
-    virtual AsyncPullType createOrderAsync(const String& symbol, const String& type, const String& side,
+    virtual AsyncPullType createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                            double amount, double price = 0, const json& params = json::object());
-    virtual AsyncPullType cancelOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
-    virtual AsyncPullType fetchOrderAsync(const String& id, const String& symbol = "", const json& params = json::object());
-    virtual AsyncPullType fetchOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    virtual AsyncPullType fetchOpenOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    virtual AsyncPullType fetchClosedOrdersAsync(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    virtual AsyncPullType cancelOrderAsync(const std::string& id, const std::string& symbol = "", const json& params = json::object());
+    virtual AsyncPullType fetchOrderAsync(const std::string& id, const std::string& symbol = "", const json& params = json::object());
+    virtual AsyncPullType fetchOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    virtual AsyncPullType fetchOpenOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    virtual AsyncPullType fetchClosedOrdersAsync(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
 
 protected:
     // Synchronous HTTP methods
-    virtual json fetch(const String& url,
-                      const String& method = "GET",
-                      const std::map<String, String>& headers = {},
-                      const String& body = "");
+    virtual json fetch(const std::string& url,
+                      const std::string& method = "GET",
+                      const std::map<std::string, std::string>& headers = {},
+                      const std::string& body = "");
 
     // Asynchronous HTTP methods
-    virtual AsyncPullType fetchAsync(const String& url,
-                                     const String& method = "GET",
-                                     const std::map<String, String>& headers = {},
-                                     const String& body = "");
+    virtual AsyncPullType fetchAsync(const std::string& url,
+                                     const std::string& method = "GET",
+                                     const std::map<std::string, std::string>& headers = {},
+                                     const std::string& body = "");
 
     // Utility methods
-    virtual String sign(const String& path, const String& api = "public",
-                     const String& method = "GET",
-                     const std::map<String, String>& params = {},
-                     const std::map<String, String>& headers = {});
+    virtual std::string sign(const std::string& path, const std::string& api = "public",
+                     const std::string& method = "GET",
+                     const std::map<std::string, std::string>& params = {},
+                     const std::map<std::string, std::string>& headers = {});
 
     // Safe type conversion helpers
-    std::string safeString(const json& obj, const std::string& key, const std::string& defaultValue ) const;
-    std::string safeString(const json& obj, const std::string& key1, const std::string& key2, const std::string& defaultValue ) const;
+    std::string safeString(const json& obj, const std::string& key, const std::string& defaultValue = "") const;
     double safeNumber(const json& obj, const std::string& key, double defaultValue = 0.0) const;
-    bool safeBool(const json& obj, const std::string& key, bool defaultValue = false) const;
-    json safeValue(const json& obj, const std::string& key, const json& defaultValue = nullptr) const;
+    long long safeInteger(const json& obj, const std::string& key, long long defaultValue = 0) const;
+    bool safeBoolean(const json& obj, const std::string& key, bool defaultValue = false) const;
 
     // Parsing methods
-    virtual json parseMarket(const json& market) const;
-    virtual json parseTicker(const json& ticker, const json& market = json::object()) const;
-    virtual json parseOrderBook(const json& orderbook, const String& symbol = "", const json& market = json::object()) const;
-    virtual json parseOHLCV(const json& ohlcv, const json& market = json::object()) const;
-    virtual json parseOrder(const json& order, const json& market = json::object()) const;
-    virtual json parseTrade(const json& trade, const json& market = json::object()) const;
-    virtual json parseBalance(const json& balance) const;
+    virtual json parseMarket(const json& market) const = 0;
+    virtual json parseTicker(const json& ticker, const Market& market = Market()) const = 0;
+    virtual json parseOrderBook(const json& orderbook, const std::string& symbol = "", const Market& market = Market()) const = 0;
+    virtual json parseOHLCV(const json& ohlcv, const Market& market = Market(), const std::string& timeframe = "1m") const = 0;
+    virtual json parseOrder(const json& order, const Market& market = Market()) const = 0;
+    virtual json parseTrade(const json& trade, const Market& market = Market()) const = 0;
+    virtual json parseBalance(const json& balance) const = 0;
+    virtual json parseFee(const json& fee, const Market& market = Market()) const = 0;
+    virtual json parsePosition(const json& position, const Market& market = Market()) const = 0;
+    virtual json parseFundingRate(const json& fundingRate, const Market& market = Market()) const = 0;
+    virtual json parseTransaction(const json& transaction, const std::string& currency = "") const = 0;
+    virtual json parseDepositAddress(const json& depositAddress, const std::string& currency = "") const = 0;
+    virtual json parseWithdrawal(const json& withdrawal, const std::string& currency = "") const = 0;
+    virtual json parseDeposit(const json& deposit, const std::string& currency = "") const = 0;
 
     // Protected virtual functions that derived classes must implement
     virtual json fetchMarketsImpl() const = 0;

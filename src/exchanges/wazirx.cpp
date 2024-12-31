@@ -126,12 +126,12 @@ json WazirX::fetchMarkets(const json& params) {
     json result = json::array();
 
     for (const auto& market : response["markets"]) {
-        String id = market["symbol"].get<String>();
-        String baseId = market["baseAsset"].get<String>();
-        String quoteId = market["quoteAsset"].get<String>();
-        String base = commonCurrencyCode(baseId);
-        String quote = commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"].get<std::string>();
+        std::string baseId = market["baseAsset"].get<std::string>();
+        std::string quoteId = market["quoteAsset"].get<std::string>();
+        std::string base = commonCurrencyCode(baseId);
+        std::string quote = commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
 
         result.push_back({
             {"id", id},
@@ -140,7 +140,7 @@ json WazirX::fetchMarkets(const json& params) {
             {"quote", quote},
             {"baseId", baseId},
             {"quoteId", quoteId},
-            {"active", market["status"].get<String>() == "trading"},
+            {"active", market["status"].get<std::string>() == "trading"},
             {"type", "spot"},
             {"spot", true},
             {"margin", false},
@@ -173,34 +173,34 @@ json WazirX::fetchMarkets(const json& params) {
     return result;
 }
 
-json WazirX::fetchTicker(const String& symbol, const json& params) {
+json WazirX::fetchTicker(const std::string& symbol, const json& params) {
     auto market = loadMarket(symbol);
-    auto response = fetch("/ticker/" + market["id"].get<String>(), "public", "GET", params);
+    auto response = fetch("/ticker/" + market["id"].get<std::string>(), "public", "GET", params);
     return parseTicker(response, market);
 }
 
-json WazirX::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json WazirX::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     auto response = fetch("/tickers", "public", "GET", params);
     json result = json::object();
 
     for (const auto& [marketId, ticker] : response.items()) {
         if (ticker.is_object()) {
             auto market = loadMarketById(marketId);
-            result[market["symbol"].get<String>()] = parseTicker(ticker, market);
+            result[market["symbol"].get<std::string>()] = parseTicker(ticker, market);
         }
     }
 
     return filterByArray(result, "symbol", symbols);
 }
 
-json WazirX::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json WazirX::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     auto market = loadMarket(symbol);
     json requestParams = params;
     if (limit > 0) {
         requestParams["limit"] = limit;
     }
 
-    auto response = fetch("/depth/" + market["id"].get<String>(), "public", "GET", requestParams);
+    auto response = fetch("/depth/" + market["id"].get<std::string>(), "public", "GET", requestParams);
     long long timestamp = response["timestamp"].get<long long>();
 
     return {
@@ -213,7 +213,7 @@ json WazirX::fetchOrderBook(const String& symbol, int limit, const json& params)
     };
 }
 
-json WazirX::fetchOHLCV(const String& symbol, const String& timeframe,
+json WazirX::fetchOHLCV(const std::string& symbol, const std::string& timeframe,
                        int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     json requestParams = {
@@ -233,21 +233,21 @@ json WazirX::fetchOHLCV(const String& symbol, const String& timeframe,
     return parseOHLCVs(response, market, timeframe, since, limit);
 }
 
-json WazirX::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json WazirX::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     json requestParams = params;
     if (limit > 0) {
         requestParams["limit"] = limit;
     }
 
-    auto response = fetch("/trades/" + market["id"].get<String>(), "public", "GET", requestParams);
+    auto response = fetch("/trades/" + market["id"].get<std::string>(), "public", "GET", requestParams);
     return parseTrades(response, market, since, limit);
 }
 
 // Helper methods for parsing market data
 json WazirX::parseTicker(const json& ticker, const Market& market) {
     long long timestamp = ticker["at"].get<long long>() * 1000;
-    String symbol = market.symbol;
+    std::string symbol = market.symbol;
 
     return {
         {"symbol", symbol},
@@ -295,8 +295,8 @@ json WazirX::parseBalance(const json& response) {
     json balances = response["balances"];
     
     for (const auto& balance : balances) {
-        String currencyId = balance["asset"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["asset"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "free")},
@@ -308,8 +308,8 @@ json WazirX::parseBalance(const json& response) {
     return result;
 }
 
-json WazirX::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json WazirX::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -330,12 +330,12 @@ json WazirX::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String WazirX::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string WazirX::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api] + path;
-    String timestamp = std::to_string(this->milliseconds());
+    std::string url = this->urls["api"][api] + path;
+    std::string timestamp = std::to_string(this->milliseconds());
     
     if (api == "public") {
         if (!params.empty()) {
@@ -349,7 +349,7 @@ String WazirX::sign(const String& path, const String& api,
             "recvWindow": this->options["recvWindow"]
         }, params);
         
-        String signature = this->createSignature(timestamp, method, path,
+        std::string signature = this->createSignature(timestamp, method, path,
                                                request.dump());
         request["signature"] = signature;
         
@@ -357,29 +357,29 @@ String WazirX::sign(const String& path, const String& api,
             url += "?" + this->urlencode(request);
         } else {
             body = request;
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
         
-        const_cast<std::map<String, String>&>(headers)["X-API-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-API-KEY"] = this->config_.apiKey;
     }
     
     return url;
 }
 
-String WazirX::createSignature(const String& timestamp, const String& method,
-                              const String& path, const String& body) {
-    String message = timestamp + method + path + body;
+std::string WazirX::createSignature(const std::string& timestamp, const std::string& method,
+                              const std::string& path, const std::string& body) {
+    std::string message = timestamp + method + path + body;
     return this->hmac(message, this->encode(this->config_.secret),
                      "sha256", "hex");
 }
 
 json WazirX::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "orderId");
-    String timestamp = this->safeString(order, "time");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+    std::string id = this->safeString(order, "orderId");
+    std::string timestamp = this->safeString(order, "time");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = market.symbol;
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -406,8 +406,8 @@ json WazirX::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json WazirX::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json WazirX::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"PARTIALLY_FILLED", "open"},
         {"FILLED", "closed"},

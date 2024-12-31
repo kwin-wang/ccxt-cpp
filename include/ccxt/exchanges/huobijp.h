@@ -56,19 +56,19 @@ protected:
     void init() override;
     Json describeImpl() const override;
 
-    String sign(const String& path, const String& api = "public",
-               const String& method = "GET", const Json& params = Json::object(),
-               const std::map<String, String>& headers = {}, const Json& body = nullptr) override;
+    std::string sign(const std::string& path, const std::string& api = "public",
+               const std::string& method = "GET", const Json& params = Json::object(),
+               const std::map<std::string, std::string>& headers = {}, const Json& body = nullptr) override;
 
 private:
     void initializeApiEndpoints();
-    String getTimestamp();
-    String createSignature(const String& method, const String& host,
-                         const String& path, const std::map<String, String>& params);
-    String getAccountId();
+    std::string getTimestamp();
+    std::string createSignature(const std::string& method, const std::string& host,
+                         const std::string& path, const std::map<std::string, std::string>& params);
+    std::string getAccountId();
 
-    String accountId;
-    std::map<String, String> timeframes;
+    std::string accountId;
+    std::map<std::string, std::string> timeframes;
 
     static const std::string defaultBaseURL;
     static const std::string defaultVersion;

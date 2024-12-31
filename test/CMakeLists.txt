@@ -3,10 +3,14 @@ cmake_minimum_required(VERSION 3.10)
 # Enable testing
 enable_testing()
 
-# Find GTest package
+# Find required packages
 find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
+find_package(Boost REQUIRED COMPONENTS system filesystem context)
 
+include_directories(
+    ${GTEST_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+)
 
 # Add test executable
 add_executable(ccxt_tests
@@ -19,6 +23,7 @@ target_link_libraries(ccxt_tests
     ${GTEST_BOTH_LIBRARIES}
     ccxt
     pthread
+    ${Boost_LIBRARIES}
 )
 
 # Add tests

@@ -100,13 +100,13 @@ json Poloniex::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response) {
-        String id = market["symbol"];
-        std::vector<String> parts = this->split(id, "_");
-        String baseId = parts[0];
-        String quoteId = parts[1];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"];
+        std::vector<std::string> parts = this->split(id, "_");
+        std::string baseId = parts[0];
+        std::string quoteId = parts[1];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         bool active = market["state"] == "ONLINE";
         
         markets.push_back({
@@ -154,8 +154,8 @@ json Poloniex::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : response) {
-        String currencyId = balance["currency"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currency"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "available")},
@@ -167,8 +167,8 @@ json Poloniex::fetchBalance(const json& params) {
     return result;
 }
 
-json Poloniex::createOrder(const String& symbol, const String& type,
-                          const String& side, double amount,
+json Poloniex::createOrder(const std::string& symbol, const std::string& type,
+                          const std::string& side, double amount,
                           double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -191,12 +191,12 @@ json Poloniex::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Poloniex::sign(const String& path, const String& api,
-                      const String& method, const json& params,
-                      const std::map<String, String>& headers,
+std::string Poloniex::sign(const std::string& path, const std::string& api,
+                      const std::string& method, const json& params,
+                      const std::map<std::string, std::string>& headers,
                       const json& body) {
-    String url = this->urls["api"][api];
-    String endpoint = "/" + this->version + "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api];
+    std::string endpoint = "/" + this->version + "/" + this->implodeParams(path, params);
     url += endpoint;
     
     json query = this->omit(params, this->extractParams(path));
@@ -207,8 +207,8 @@ String Poloniex::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->getNonce();
-        String auth = endpoint + nonce;
+        std::string nonce = this->getNonce();
+        std::string auth = endpoint + nonce;
         
         if (method == "GET" || method == "DELETE") {
             if (!query.empty()) {
@@ -222,22 +222,22 @@ String Poloniex::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
+        std::string signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Signature"] = signature;
-        const_cast<std::map<String, String>&>(headers)["Nonce"] = nonce;
+        const_cast<std::map<std::string, std::string>&>(headers)["Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Nonce"] = nonce;
         
         if (body != nullptr) {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Poloniex::getNonce() {
+std::string Poloniex::getNonce() {
     int64_t currentNonce = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
@@ -250,12 +250,12 @@ String Poloniex::getNonce() {
 }
 
 json Poloniex::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "state"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "state"));
+    std::string symbol = market.symbol;
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -281,8 +281,8 @@ json Poloniex::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Poloniex::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Poloniex::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"OPEN", "open"},
         {"PENDING", "open"},
         {"FILLED", "closed"},

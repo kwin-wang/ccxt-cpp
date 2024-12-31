@@ -98,11 +98,11 @@ json Gemini::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response) {
-        String id = market["symbol"];
-        String baseId = market["base_currency"];
-        String quoteId = market["quote_currency"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
+        std::string id = market["symbol"];
+        std::string baseId = market["base_currency"];
+        std::string quoteId = market["quote_currency"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
         bool active = true;  // Gemini doesn't provide status
         
         markets.push_back({
@@ -143,7 +143,7 @@ json Gemini::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Gemini::fetchTicker(const String& symbol, const json& params) {
+json Gemini::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
@@ -181,8 +181,8 @@ json Gemini::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : response) {
-        String currencyId = balance["currency"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currency"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", balance["available"]},
@@ -194,8 +194,8 @@ json Gemini::fetchBalance(const json& params) {
     return result;
 }
 
-json Gemini::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Gemini::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -223,12 +223,12 @@ json Gemini::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Gemini::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Gemini::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
-    String query = this->omit(params, this->extractParams(path));
+    std::string url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    std::string query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
         if (!query.empty()) {
@@ -237,34 +237,34 @@ String Gemini::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         
-        String nonce = this->nonce().str();
-        String request_path = "/" + this->version + "/" + path;
+        std::string nonce = this->nonce().str();
+        std::string request_path = "/" + this->version + "/" + path;
         
         body = this->extend({
             "request": request_path,
             "nonce": nonce
         }, query);
         
-        String payload = this->json(body);
-        String base64_payload = this->base64Encode(payload);
-        String signature = this->hmac(base64_payload, this->base64ToBinary(this->config_.secret),
+        std::string payload = this->json(body);
+        std::string base64_payload = this->base64Encode(payload);
+        std::string signature = this->hmac(base64_payload, this->base64ToBinary(this->config_.secret),
                                     "sha384", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["Content-Type"] = "text/plain";
-        const_cast<std::map<String, String>&>(headers)["X-GEMINI-APIKEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-GEMINI-PAYLOAD"] = base64_payload;
-        const_cast<std::map<String, String>&>(headers)["X-GEMINI-SIGNATURE"] = signature;
-        const_cast<std::map<String, String>&>(headers)["Cache-Control"] = "no-cache";
+        const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "text/plain";
+        const_cast<std::map<std::string, std::string>&>(headers)["X-GEMINI-APIKEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-GEMINI-PAYLOAD"] = base64_payload;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-GEMINI-SIGNATURE"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Cache-Control"] = "no-cache";
     }
     
     return url;
 }
 
 json Gemini::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "order_id");
-    String timestamp = this->safeInteger(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "is_live"));
-    String symbol = market.symbol;
+    std::string id = this->safeString(order, "order_id");
+    std::string timestamp = this->safeInteger(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "is_live"));
+    std::string symbol = market.symbol;
     
     return {
         {"id", id},
@@ -287,8 +287,8 @@ json Gemini::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Gemini::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Gemini::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"true", "open"},
         {"false", "closed"}
     };
@@ -303,25 +303,25 @@ AsyncPullType Gemini::fetchMarketsAsync(const json& params) {
     });
 }
 
-AsyncPullType Gemini::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType Gemini::fetchTickerAsync(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-AsyncPullType Gemini::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+AsyncPullType Gemini::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-AsyncPullType Gemini::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Gemini::fetchOHLCVAsync(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
     });
@@ -334,76 +334,76 @@ AsyncPullType Gemini::fetchBalanceAsync(const json& params) {
     });
 }
 
-AsyncPullType Gemini::createOrderAsync(const String& symbol, const String& type, const String& side,
+AsyncPullType Gemini::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                          double amount, double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-AsyncPullType Gemini::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Gemini::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Gemini::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+AsyncPullType Gemini::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Gemini::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Gemini::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Gemini::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
 // Async Gemini specific methods
-AsyncPullType Gemini::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchMyTrades(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Gemini::fetchDepositsAsync(const String& code, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchDepositsAsync(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return this->fetchDeposits(code, since, limit, params);
     });
 }
 
-AsyncPullType Gemini::fetchWithdrawalsAsync(const String& code, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchWithdrawalsAsync(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return this->fetchWithdrawals(code, since, limit, params);
     });
 }
 
-AsyncPullType Gemini::fetchTransfersAsync(const String& code, int since, int limit, const json& params) {
+AsyncPullType Gemini::fetchTransfersAsync(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return this->fetchTransfers(code, since, limit, params);
     });
 }
 
-AsyncPullType Gemini::transferAsync(const String& code, double amount, const String& fromAccount,
-                                      const String& toAccount, const json& params) {
+AsyncPullType Gemini::transferAsync(const std::string& code, double amount, const std::string& fromAccount,
+                                      const std::string& toAccount, const json& params) {
     return std::async(std::launch::async, [this, code, amount, fromAccount, toAccount, params]() {
         return this->transfer(code, amount, fromAccount, toAccount, params);
     });
 }
 
-AsyncPullType Gemini::fetchDepositAddressAsync(const String& code, const json& params) {
+AsyncPullType Gemini::fetchDepositAddressAsync(const std::string& code, const json& params) {
     return std::async(std::launch::async, [this, code, params]() {
         return this->fetchDepositAddress(code, params);
     });

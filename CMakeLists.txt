@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system filesystem context)
 
 # Include directories
 include_directories(
@@ -16,6 +17,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CURL_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIRS}
 )
 
 # Base source files
@@ -31,11 +33,10 @@ set(EXCHANGE_SOURCES
     src/exchanges/binance.cpp
 )
 
-#
+# WebSocket source files
 set(EXChange_WS_SOURCES
     src/exchanges/ws/binance_ws.cpp
 )
-
 
 # Add library
 add_library(ccxt
@@ -50,7 +51,7 @@ target_link_libraries(ccxt
     ${CURL_LIBRARIES}
     OpenSSL::SSL
     OpenSSL::Crypto
-    nlohmann_json::nlohmann_json
+    ${Boost_LIBRARIES}
 )
 
 # Install

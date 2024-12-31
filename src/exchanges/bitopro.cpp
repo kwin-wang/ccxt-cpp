@@ -99,12 +99,12 @@ json Bitopro::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response) {
-        String id = market["pair"].get<String>();
-        String baseId = market["base"].get<String>();
-        String quoteId = market["quote"].get<String>();
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["pair"].get<std::string>();
+        std::string baseId = market["base"].get<std::string>();
+        std::string quoteId = market["quote"].get<std::string>();
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -149,9 +149,9 @@ json Bitopro::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String currencyId = balance["currency"].get<String>();
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = balance["currency"].get<std::string>();
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "available")},
             {"used", this->safeFloat(balance, "locked")},
             {"total", this->safeFloat(balance, "total")}
@@ -162,12 +162,12 @@ json Bitopro::parseBalance(const json& response) {
     return result;
 }
 
-json Bitopro::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
+json Bitopro::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String uppercaseType = type.toUpperCase();
+    std::string uppercaseType = type.toUpperCase();
     
     json request = {
         {"type", uppercaseType},
@@ -179,22 +179,22 @@ json Bitopro::createOrder(const String& symbol, const String& type,
         request["price"] = this->priceToPrecision(symbol, price);
     }
     
-    String path = "/orders/" + market["id"];
+    std::string path = "/orders/" + market["id"];
     json response = fetch(path, "private", "POST",
                          this->extend(request, params));
     return this->parseOrder(response, market);
 }
 
-String Bitopro::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Bitopro::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api] + path;
+    std::string url = this->urls["api"][api] + path;
     
     if (api == "private") {
         this->checkRequiredCredentials();
-        String nonce = this->getNonce();
-        String payload = "";
+        std::string nonce = this->getNonce();
+        std::string payload = "";
         
         if (method == "POST") {
             if (!params.empty()) {
@@ -203,15 +203,15 @@ String Bitopro::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(payload, this->encode(this->config_.secret),
+        std::string signature = this->hmac(payload, this->encode(this->config_.secret),
                                     "sha384", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-BITOPRO-APIKEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-BITOPRO-PAYLOAD"] = payload;
-        const_cast<std::map<String, String>&>(headers)["X-BITOPRO-SIGNATURE"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BITOPRO-APIKEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BITOPRO-PAYLOAD"] = payload;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-BITOPRO-SIGNATURE"] = signature;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     } else {
         if (!params.empty()) {
@@ -222,22 +222,22 @@ String Bitopro::sign(const String& path, const String& api,
     return url;
 }
 
-String Bitopro::getNonce() {
+std::string Bitopro::getNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Bitopro::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "createdTimestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "createdTimestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "action");
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "action");
     
     return {
         {"id", id},
@@ -262,8 +262,8 @@ json Bitopro::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Bitopro::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Bitopro::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"PARTIALLY_FILLED", "open"},
         {"FILLED", "closed"},

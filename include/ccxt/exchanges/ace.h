@@ -19,35 +19,35 @@ public:
 
   // Market Data API - Sync
   json fetchMarkets(const json &params = json::object()) override;
-  json fetchTicker(const String &symbol,
+  json fetchTicker(const std::string &symbol,
                    const json &params = json::object()) override;
-  json fetchTickers(const std::vector<String> &symbols = std::vector<String>(),
+  json fetchTickers(const std::vector<std::string> &symbols = std::vector<std::string>(),
                     const json &params = json::object()) override;
-  json fetchOrderBook(const String &symbol, const long *limit = nullptr,
+  json fetchOrderBook(const std::string &symbol, const long *limit = nullptr,
                       const json &params = json::object()) override
                       {
                         return json::object();
                       }
-  json fetchOHLCV(const String &symbol, const String &timeframe = "1m",
+  json fetchOHLCV(const std::string &symbol, const std::string &timeframe = "1m",
                   const long *since = nullptr, const long *limit = nullptr,
                   const json &params = json::object()) override{
                     return json::object();
                   }
 
   // Trading API - Sync
-  // json createOrder(const String& symbol, const String& type, const String&
+  // json createOrder(const std::string& symbol, const std::string& type, const std::string&
   // side,
   //                  const double& amount, const Nullable<Number>& price =
   //                  nullptr, const json& params = json::object()) override;
-  json cancelOrder(const String &id, const String &symbol = "",
+  json cancelOrder(const std::string &id, const std::string &symbol = "",
                    const json &params = json::object()) override;
-  json fetchOrder(const String &id, const String &symbol = "",
+  json fetchOrder(const std::string &id, const std::string &symbol = "",
                   const json &params = json::object()) override;
-  // json fetchOpenOrders(const String& symbol = "", const long* since =
+  // json fetchOpenOrders(const std::string& symbol = "", const long* since =
   // nullptr,
   //                     const long* limit = nullptr, const json& params =
   //                     json::object()) override;
-  // json fetchMyTrades(const String& symbol = "", const long* since = nullptr,
+  // json fetchMyTrades(const std::string& symbol = "", const long* since = nullptr,
   //                     const json& params = json::object()) override;
 
   // Account API - Sync
@@ -55,11 +55,11 @@ public:
 
   // Market Data API - Async
   AsyncPullType fetchMarketsAsync(const json &params = json::object());
-  AsyncPullType fetchTickerAsync(const String &symbol,
+  AsyncPullType fetchTickerAsync(const std::string &symbol,
                                  const json &params = json::object());
-  AsyncPullType fetchTickersAsync(const std::vector<String> &symbols = std::vector<String>(),
+  AsyncPullType fetchTickersAsync(const std::vector<std::string> &symbols = std::vector<std::string>(),
                     const json &params = json::object());
-  // AsyncPullType fetchOrderBookAsync(const String& symbol,
+  // AsyncPullType fetchOrderBookAsync(const std::string& symbol,
   //                                                                     const
   //                                                                     long*
   //                                                                     limit =
@@ -69,23 +69,23 @@ public:
   //                                                                     params
   //                                                                     =
   //                                                                     json::object());
-  AsyncPullType fetchOHLCVAsync(const String &symbol,
-                                const String &timeframe = "1m",
+  AsyncPullType fetchOHLCVAsync(const std::string &symbol,
+                                const std::string &timeframe = "1m",
                                 const long *since = nullptr,
                                 const long *limit = nullptr,
                                 const json &params = json::object());
 
-  AsyncPullType withdrawAsync(const String &code, const double &amount,
-                              const String &address, const String &tag,
+  AsyncPullType withdrawAsync(const std::string &code, const double &amount,
+                              const std::string &address, const std::string &tag,
                               const json &params);
 
   // Trading API - Async
-  // AsyncPullType createOrderAsync(const String& symbol,
+  // AsyncPullType createOrderAsync(const std::string& symbol,
   //                                                                  const
-  //                                                                  String&
+  //                                                                  std::string&
   //                                                                  type,
   //                                                                  const
-  //                                                                  String&
+  //                                                                  std::string&
   //                                                                  side,
   //                                                                  const
   //                                                                  double&
@@ -98,11 +98,11 @@ public:
   //                                                                  json&
   //                                                                  params =
   //                                                                  json::object());
-  AsyncPullType cancelOrderAsync(const String &id, const String &symbol = "",
+  AsyncPullType cancelOrderAsync(const std::string &id, const std::string &symbol = "",
                                  const json &params = json::object());
-  AsyncPullType fetchOrderAsync(const String &id, const String &symbol = "",
+  AsyncPullType fetchOrderAsync(const std::string &id, const std::string &symbol = "",
                                 const json &params = json::object());
-  // AsyncPullType fetchOpenOrdersAsync(const String& symbol = "",
+  // AsyncPullType fetchOpenOrdersAsync(const std::string& symbol = "",
   //                                                                      const
   //                                                                      long*
   //                                                                      since
@@ -118,7 +118,7 @@ public:
   //                                                                      params
   //                                                                      =
   //                                                                      json::object());
-  // AsyncPullType fetchMyTradesAsync(const String& symbol = "",
+  // AsyncPullType fetchMyTradesAsync(const std::string& symbol = "",
   //                                                                  const
   //                                                                  long*
   //                                                                  since =
@@ -144,13 +144,13 @@ protected:
   json parseOHLCV(const json &ohlcv, const Market &market = Market()) const {
     return json::object();
   }
-  String parseOrderStatus(const String &status) const;
+  std::string parseOrderStatus(const std::string &status) const;
 
   // Request Helpers
-  String
-  sign(const String &path, const String &api = "public",
-       const String &method = "GET", const json &params = json::object(),
-       const std::map<String, String> &headers = std::map<String, String>(),
+  std::string
+  sign(const std::string &path, const std::string &api = "public",
+       const std::string &method = "GET", const json &params = json::object(),
+       const std::map<std::string, std::string> &headers = std::map<std::string, std::string>(),
        const json &body = json::object()) const override;
 };
 

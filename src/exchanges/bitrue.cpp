@@ -163,12 +163,12 @@ json Bitrue::fetchMarkets(const json& params) {
             continue;
         }
         
-        String id = market["symbol"];
-        String baseId = market["baseAsset"];
-        String quoteId = market["quoteAsset"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"];
+        std::string baseId = market["baseAsset"];
+        std::string quoteId = market["quoteAsset"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         json filters = this->indexBy(market["filters"], "filterType");
         
@@ -176,8 +176,8 @@ json Bitrue::fetchMarkets(const json& params) {
         json lotSize = filters["LOT_SIZE"];
         
         int precision = {
-            {"amount", this->precisionFromString(this->safeString(lotSize, "minQty"))},
-            {"price", this->precisionFromString(this->safeString(priceFilter, "minPrice"))}
+            {"amount", this->precisionFromstd::string(this->safeString(lotSize, "minQty"))},
+            {"price", this->precisionFromstd::string(this->safeString(priceFilter, "minPrice"))}
         };
         
         result.push_back({
@@ -225,9 +225,9 @@ json Bitrue::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : balances) {
-        String currencyId = balance["asset"];
-        String code = this->commonCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = balance["asset"];
+        std::string code = this->commonCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "free")},
             {"used", this->safeFloat(balance, "locked")},
             {"total", nullptr}
@@ -239,12 +239,12 @@ json Bitrue::parseBalance(const json& response) {
     return result;
 }
 
-json Bitrue::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Bitrue::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String uppercaseType = type.upper();
+    std::string uppercaseType = type.upper();
     
     json request = {
         {"symbol", market["id"]},
@@ -263,12 +263,12 @@ json Bitrue::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Bitrue::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Bitrue::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api] + path;
-    String timestamp = std::to_string(this->milliseconds());
+    std::string url = this->urls["api"][api] + path;
+    std::string timestamp = std::to_string(this->milliseconds());
     
     if (api == "public") {
         if (!params.empty()) {
@@ -282,33 +282,33 @@ String Bitrue::sign(const String& path, const String& api,
             "recvWindow": this->options["recvWindow"]
         }, params);
         
-        String queryString = this->urlencode(request);
-        String signature = this->hmac(queryString, this->encode(this->config_.secret),
+        std::string querystd::string = this->urlencode(request);
+        std::string signature = this->hmac(querystd::string, this->encode(this->config_.secret),
                                     "sha256", "hex");
-        queryString += "&signature=" + signature;
+        querystd::string += "&signature=" + signature;
         
         if (method == "GET") {
-            url += "?" + queryString;
+            url += "?" + querystd::string;
         } else {
             body = request;
             body["signature"] = signature;
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
         }
         
-        const_cast<std::map<String, String>&>(headers)["X-MBX-APIKEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-MBX-APIKEY"] = this->config_.apiKey;
     }
     
     return url;
 }
 
 json Bitrue::parseOrder(const json& order, const Market& market) {
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market["symbol"];
-    String timestamp = this->safeString(order, "time");
-    String price = this->safeString(order, "price");
-    String amount = this->safeString(order, "origQty");
-    String filled = this->safeString(order, "executedQty");
-    String remaining = nullptr;
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = market["symbol"];
+    std::string timestamp = this->safeString(order, "time");
+    std::string price = this->safeString(order, "price");
+    std::string amount = this->safeString(order, "origQty");
+    std::string filled = this->safeString(order, "executedQty");
+    std::string remaining = nullptr;
     
     if (amount != nullptr && filled != nullptr) {
         remaining = std::to_string(std::stod(amount) - std::stod(filled));
@@ -336,8 +336,8 @@ json Bitrue::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Bitrue::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Bitrue::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"PARTIALLY_FILLED", "open"},
         {"FILLED", "closed"},

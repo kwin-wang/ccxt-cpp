@@ -58,7 +58,7 @@ json Bitstamp::fetchMarkets(const json& params) {
     return this->parseMarkets(response);
 }
 
-json Bitstamp::fetchTicker(const String& symbol, const json& params) {
+json Bitstamp::fetchTicker(const std::string& symbol, const json& params) {
     auto market = this->market(symbol);
     auto request = this->extend(params, {
         "pair": market["id"]
@@ -69,13 +69,13 @@ json Bitstamp::fetchTicker(const String& symbol, const json& params) {
     return ticker;
 }
 
-json Bitstamp::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Bitstamp::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     auto response = this->publicGetTicker(params);
     auto result = json::object();
     for (const auto& market : this->markets) {
-        auto symbol = market["symbol"].get<String>();
+        auto symbol = market["symbol"].get<std::string>();
         if (symbols.empty() || std::find(symbols.begin(), symbols.end(), symbol) != symbols.end()) {
-            auto ticker = this->parseTicker(response[market["id"].get<String>()], market);
+            auto ticker = this->parseTicker(response[market["id"].get<std::string>()], market);
             ticker["symbol"] = symbol;
             result[symbol] = ticker;
         }
@@ -92,31 +92,31 @@ boost::future<json> Bitstamp::fetchMarketsAsync(const json& params) {
     });
 }
 
-boost::future<json> Bitstamp::fetchTickerAsync(const String& symbol, const json& params) {
+boost::future<json> Bitstamp::fetchTickerAsync(const std::string& symbol, const json& params) {
     return boost::async([this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-boost::future<json> Bitstamp::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+boost::future<json> Bitstamp::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return boost::async([this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-boost::future<json> Bitstamp::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+boost::future<json> Bitstamp::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return boost::async([this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-boost::future<json> Bitstamp::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitstamp::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async([this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Bitstamp::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+boost::future<json> Bitstamp::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                              int since, int limit, const json& params) {
     return boost::async([this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
@@ -129,31 +129,31 @@ boost::future<json> Bitstamp::fetchBalanceAsync(const json& params) {
     });
 }
 
-boost::future<json> Bitstamp::createOrderAsync(const String& symbol, const String& type,
-                                             const String& side, double amount,
+boost::future<json> Bitstamp::createOrderAsync(const std::string& symbol, const std::string& type,
+                                             const std::string& side, double amount,
                                              double price, const json& params) {
     return boost::async([this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-boost::future<json> Bitstamp::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Bitstamp::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async([this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-boost::future<json> Bitstamp::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Bitstamp::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async([this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
 // Helper methods
-String Bitstamp::sign(const String& path, const String& api, const String& method,
-                     const json& params, const std::map<String, String>& headers,
+std::string Bitstamp::sign(const std::string& path, const std::string& api, const std::string& method,
+                     const json& params, const std::map<std::string, std::string>& headers,
                      const json& body) {
-    auto url = this->urls["api"][api].get<String>() + path;
+    auto url = this->urls["api"][api].get<std::string>() + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -182,7 +182,7 @@ String Bitstamp::sign(const String& path, const String& api, const String& metho
     return url;
 }
 
-String Bitstamp::getNonce() {
+std::string Bitstamp::getNonce() {
     return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count());
@@ -216,8 +216,8 @@ json Bitstamp::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Bitstamp::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Bitstamp::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"In Queue", "open"},
         {"Open", "open"},
         {"Finished", "closed"},

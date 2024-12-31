@@ -4,17 +4,12 @@
 #include <map>
 #include <vector>
 #include <optional>
-#include <nlohmann/json.hpp>
-#include "ccxt/base/types.h"
-#include "ccxt/base/config.h"
+#include <ccxt/base/types.h>
+#include <ccxt/base/config.h>
 #include <boost/asio.hpp>
 #include <curl/curl.h>
 
 namespace ccxt {
-
-using json = nlohmann::json;
-using String = std::string;
-
 class ExchangeBase {
 public:
     ExchangeBase( boost::asio::io_context& context, const Config& config = Config()) : config_(config), context_(context) {}

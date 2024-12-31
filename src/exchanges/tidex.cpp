@@ -129,13 +129,13 @@ json Tidex::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& entry : pairs.items()) {
-        String id = entry.key();
+        std::string id = entry.key();
         json market = entry.value();
-        String baseId = id.substr(0, 3);
-        String quoteId = id.substr(3);
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string baseId = id.substr(0, 3);
+        std::string quoteId = id.substr(3);
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -187,8 +187,8 @@ json Tidex::parseBalance(const json& response) {
     json funds = response["funds"];
     
     for (const auto& [currency, balance] : funds.items()) {
-        String code = this->safeCurrencyCode(currency);
-        String account = {
+        std::string code = this->safeCurrencyCode(currency);
+        std::string account = {
             {"free", this->safeFloat(balance, "value")},
             {"used", this->safeFloat(balance, "inOrders")},
             {"total", this->safeFloat(balance, "value") + this->safeFloat(balance, "inOrders")}
@@ -199,8 +199,8 @@ json Tidex::parseBalance(const json& response) {
     return result;
 }
 
-json Tidex::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Tidex::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -217,11 +217,11 @@ json Tidex::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["return"], market);
 }
 
-String Tidex::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Tidex::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api];
+    std::string url = this->urls["api"][api];
     
     if (api == "public") {
         url += "/" + this->implodeParams(path, params);
@@ -231,41 +231,41 @@ String Tidex::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = this->nonce().str();
+        std::string nonce = this->nonce().str();
         json request = this->extend({
             "method", path,
             "nonce", nonce
         }, params);
         
-        String requestString = this->urlencode(request);
-        String signature = this->hmac(requestString, this->encode(this->config_.secret),
+        std::string requeststd::string = this->urlencode(request);
+        std::string signature = this->hmac(requeststd::string, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        body = requestString;
-        const_cast<std::map<String, String>&>(headers)["Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Sign"] = signature;
-        const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
+        body = requeststd::string;
+        const_cast<std::map<std::string, std::string>&>(headers)["Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Sign"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/x-www-form-urlencoded";
     }
     
     return url;
 }
 
-String Tidex::getNonce() {
+std::string Tidex::getNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Tidex::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "order_id");
-    String timestamp = this->safeString(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "order_id");
+    std::string timestamp = this->safeString(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = "limit";
-    String side = this->safeString(order, "type");
+    std::string type = "limit";
+    std::string side = this->safeString(order, "type");
     
     return {
         {"id", id},
@@ -295,8 +295,8 @@ json Tidex::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Tidex::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Tidex::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"0", "open"},
         {"1", "closed"},
         {"2", "canceled"},

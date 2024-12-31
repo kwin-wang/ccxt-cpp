@@ -176,12 +176,12 @@ json Btcex::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : markets) {
-        String id = market["symbol"];
-        String baseId = market["baseAsset"];
-        String quoteId = market["quoteAsset"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"];
+        std::string baseId = market["baseAsset"];
+        std::string quoteId = market["quoteAsset"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -233,9 +233,9 @@ json Btcex::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : balances) {
-        String currencyId = balance["asset"];
-        String code = this->commonCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = balance["asset"];
+        std::string code = this->commonCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "free")},
             {"used", this->safeFloat(balance, "locked")},
             {"total", this->safeFloat(balance, "total")}
@@ -246,8 +246,8 @@ json Btcex::parseBalance(const json& response) {
     return result;
 }
 
-json Btcex::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Btcex::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -269,12 +269,12 @@ json Btcex::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["data"], market);
 }
 
-String Btcex::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Btcex::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String endpoint = "/" + this->version + path;
-    String url = this->urls["api"][api] + endpoint;
+    std::string endpoint = "/" + this->version + path;
+    std::string url = this->urls["api"][api] + endpoint;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -283,31 +283,31 @@ String Btcex::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         
-        String timestamp = std::to_string(this->milliseconds());
-        String queryString = this->urlencode(this->extend({
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string querystd::string = this->urlencode(this->extend({
             "timestamp": timestamp,
             "recvWindow": this->options["recvWindow"]
         }, params));
         
-        String auth = timestamp + method + endpoint;
-        if (!queryString.empty()) {
-            auth += "?" + queryString;
+        std::string auth = timestamp + method + endpoint;
+        if (!querystd::string.empty()) {
+            auth += "?" + querystd::string;
         }
         
-        String signature = this->hmac(auth, this->encode(this->config_.secret),
+        std::string signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["BTCEX-ACCESS-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["BTCEX-ACCESS-SIGN"] = signature;
-        const_cast<std::map<String, String>&>(headers)["BTCEX-ACCESS-TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["BTCEX-ACCESS-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["BTCEX-ACCESS-SIGN"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["BTCEX-ACCESS-TIMESTAMP"] = timestamp;
         
         if (method == "GET") {
-            url += "?" + queryString;
+            url += "?" + querystd::string;
         } else {
             body = this->extend(params, {
                 "timestamp": timestamp
             });
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
@@ -315,13 +315,13 @@ String Btcex::sign(const String& path, const String& api,
 }
 
 json Btcex::parseOrder(const json& order, const Market& market) {
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market["symbol"];
-    String timestamp = this->safeString(order, "time");
-    String price = this->safeString(order, "price");
-    String amount = this->safeString(order, "quantity");
-    String filled = this->safeString(order, "executedQty");
-    String cost = this->safeString(order, "cumQuote");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = market["symbol"];
+    std::string timestamp = this->safeString(order, "time");
+    std::string price = this->safeString(order, "price");
+    std::string amount = this->safeString(order, "quantity");
+    std::string filled = this->safeString(order, "executedQty");
+    std::string cost = this->safeString(order, "cumQuote");
     
     return {
         {"id", this->safeString(order, "orderId")},
@@ -348,8 +348,8 @@ json Btcex::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Btcex::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Btcex::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"PARTIALLY_FILLED", "open"},
         {"FILLED", "closed"},

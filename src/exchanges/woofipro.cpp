@@ -254,7 +254,7 @@ json WooFiPro::fetchTime(const json& params) {
     return this->safeInteger(response, "timestamp");
 }
 
-json WooFiPro::fetchTicker(const String& symbol, const json& params) {
+json WooFiPro::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -264,7 +264,7 @@ json WooFiPro::fetchTicker(const String& symbol, const json& params) {
     return this->parseTicker(response, market);
 }
 
-json WooFiPro::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json WooFiPro::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     this->loadMarkets();
     auto response = this->publicGetV1PublicTicker(params);
     auto data = this->safeValue(response, "data", json::array());
@@ -272,7 +272,7 @@ json WooFiPro::fetchTickers(const std::vector<String>& symbols, const json& para
     return this->parseTickers(rows, symbols);
 }
 
-json WooFiPro::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json WooFiPro::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -285,7 +285,7 @@ json WooFiPro::fetchOrderBook(const String& symbol, int limit, const json& param
     return this->parseOrderBook(response, market["symbol"]);
 }
 
-json WooFiPro::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json WooFiPro::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -313,24 +313,24 @@ AsyncPullType WooFiPro::fetchTimeAsync(const json& params) {
     return async(&WooFiPro::fetchTime, params);
 }
 
-AsyncPullType WooFiPro::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType WooFiPro::fetchTickerAsync(const std::string& symbol, const json& params) {
     return async(&WooFiPro::fetchTicker, symbol, params);
 }
 
-AsyncPullType WooFiPro::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+AsyncPullType WooFiPro::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return async(&WooFiPro::fetchTickers, symbols, params);
 }
 
-AsyncPullType WooFiPro::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+AsyncPullType WooFiPro::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return async(&WooFiPro::fetchOrderBook, symbol, limit, params);
 }
 
-AsyncPullType WooFiPro::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType WooFiPro::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return async(&WooFiPro::fetchTrades, symbol, since, limit, params);
 }
 
 // Trading Methods - Sync
-json WooFiPro::createOrder(const String& symbol, const String& type, const String& side,
+json WooFiPro::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                           double amount, double price, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -352,7 +352,7 @@ json WooFiPro::createOrder(const String& symbol, const String& type, const Strin
     return this->parseOrder(response, market);
 }
 
-json WooFiPro::cancelOrder(const String& id, const String& symbol, const json& params) {
+json WooFiPro::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto request = {
         {"order_id", id}
@@ -365,7 +365,7 @@ json WooFiPro::cancelOrder(const String& id, const String& symbol, const json& p
     return this->parseOrder(response);
 }
 
-json WooFiPro::cancelAllOrders(const String& symbol, const json& params) {
+json WooFiPro::cancelAllOrders(const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto request = json::object();
     if (!symbol.empty()) {
@@ -376,7 +376,7 @@ json WooFiPro::cancelAllOrders(const String& symbol, const json& params) {
     return response;
 }
 
-json WooFiPro::fetchOrder(const String& id, const String& symbol, const json& params) {
+json WooFiPro::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto request = {
         {"order_id", id}
@@ -389,7 +389,7 @@ json WooFiPro::fetchOrder(const String& id, const String& symbol, const json& pa
     return this->parseOrder(response);
 }
 
-json WooFiPro::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json WooFiPro::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto request = json::object();
     auto market = nullptr;
@@ -408,37 +408,37 @@ json WooFiPro::fetchOrders(const String& symbol, int since, int limit, const jso
 }
 
 // Trading Methods - Async
-AsyncPullType WooFiPro::createOrderAsync(const String& symbol, const String& type,
-                                           const String& side, double amount, double price,
+AsyncPullType WooFiPro::createOrderAsync(const std::string& symbol, const std::string& type,
+                                           const std::string& side, double amount, double price,
                                            const json& params) {
     return async(&WooFiPro::createOrder, symbol, type, side, amount, price, params);
 }
 
-AsyncPullType WooFiPro::cancelOrderAsync(const String& id, const String& symbol,
+AsyncPullType WooFiPro::cancelOrderAsync(const std::string& id, const std::string& symbol,
                                            const json& params) {
     return async(&WooFiPro::cancelOrder, id, symbol, params);
 }
 
-AsyncPullType WooFiPro::cancelAllOrdersAsync(const String& symbol, const json& params) {
+AsyncPullType WooFiPro::cancelAllOrdersAsync(const std::string& symbol, const json& params) {
     return async(&WooFiPro::cancelAllOrders, symbol, params);
 }
 
-AsyncPullType WooFiPro::fetchOrderAsync(const String& id, const String& symbol,
+AsyncPullType WooFiPro::fetchOrderAsync(const std::string& id, const std::string& symbol,
                                           const json& params) {
     return async(&WooFiPro::fetchOrder, id, symbol, params);
 }
 
-AsyncPullType WooFiPro::fetchOrdersAsync(const String& symbol, int since, int limit,
+AsyncPullType WooFiPro::fetchOrdersAsync(const std::string& symbol, int since, int limit,
                                            const json& params) {
     return async(&WooFiPro::fetchOrders, symbol, since, limit, params);
 }
 
-AsyncPullType WooFiPro::fetchOpenOrdersAsync(const String& symbol, int since, int limit,
+AsyncPullType WooFiPro::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit,
                                                const json& params) {
     return async(&WooFiPro::fetchOpenOrders, symbol, since, limit, params);
 }
 
-AsyncPullType WooFiPro::fetchClosedOrdersAsync(const String& symbol, int since, int limit,
+AsyncPullType WooFiPro::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit,
                                                  const json& params) {
     return async(&WooFiPro::fetchClosedOrders, symbol, since, limit, params);
 }
@@ -450,7 +450,7 @@ json WooFiPro::fetchBalance(const json& params) {
     return this->parseBalance(response);
 }
 
-json WooFiPro::fetchDeposits(const String& code, int since, int limit, const json& params) {
+json WooFiPro::fetchDeposits(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     auto request = json::object();
     auto currency = nullptr;
@@ -468,7 +468,7 @@ json WooFiPro::fetchDeposits(const String& code, int since, int limit, const jso
     return this->parseTransactions(response, currency, since, limit, {"deposit"});
 }
 
-json WooFiPro::fetchWithdrawals(const String& code, int since, int limit, const json& params) {
+json WooFiPro::fetchWithdrawals(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     auto request = json::object();
     auto currency = nullptr;
@@ -491,18 +491,18 @@ AsyncPullType WooFiPro::fetchBalanceAsync(const json& params) {
     return async(&WooFiPro::fetchBalance, params);
 }
 
-AsyncPullType WooFiPro::fetchDepositsAsync(const String& code, int since, int limit,
+AsyncPullType WooFiPro::fetchDepositsAsync(const std::string& code, int since, int limit,
                                              const json& params) {
     return async(&WooFiPro::fetchDeposits, code, since, limit, params);
 }
 
-AsyncPullType WooFiPro::fetchWithdrawalsAsync(const String& code, int since, int limit,
+AsyncPullType WooFiPro::fetchWithdrawalsAsync(const std::string& code, int since, int limit,
                                                 const json& params) {
     return async(&WooFiPro::fetchWithdrawals, code, since, limit, params);
 }
 
 // Margin Trading Methods - Sync
-json WooFiPro::setLeverage(int leverage, const String& symbol, const json& params) {
+json WooFiPro::setLeverage(int leverage, const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -513,7 +513,7 @@ json WooFiPro::setLeverage(int leverage, const String& symbol, const json& param
 }
 
 // Margin Trading Methods - Async
-AsyncPullType WooFiPro::setLeverageAsync(int leverage, const String& symbol,
+AsyncPullType WooFiPro::setLeverageAsync(int leverage, const std::string& symbol,
                                            const json& params) {
     return async(&WooFiPro::setLeverage, leverage, symbol, params);
 }
@@ -554,7 +554,7 @@ json WooFiPro::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String WooFiPro::parseOrderStatus(const String& status) {
+std::string WooFiPro::parseOrderStatus(const std::string& status) {
     auto statuses = {
         {"NEW", "open"},
         {"FILLED", "closed"},
@@ -566,7 +566,7 @@ String WooFiPro::parseOrderStatus(const String& status) {
     return this->safeString(statuses, status, status);
 }
 
-String WooFiPro::parseTimeInForce(const String& timeInForce) {
+std::string WooFiPro::parseTimeInForce(const std::string& timeInForce) {
     auto timeInForces = {
         {"GTC", "GTC"},
         {"IOC", "IOC"},
@@ -650,8 +650,8 @@ json WooFiPro::parseBalance(const json& response) {
     return result;
 }
 
-String WooFiPro::sign(const String& path, const String& api, const String& method,
-                     const json& params, const json& headers, const String& body) {
+std::string WooFiPro::sign(const std::string& path, const std::string& api, const std::string& method,
+                     const json& params, const json& headers, const std::string& body) {
     auto url = this->urls["api"][api];
     url = this->implodeParams(url, {{"hostname", this->hostname}});
     auto query = this->omit(params, this->extractParams(path));
@@ -672,9 +672,9 @@ String WooFiPro::sign(const String& path, const String& api, const String& metho
             }
         } else {
             if (!query.empty()) {
-                auto queryString = this->urlencode(query);
-                auth += "?" + queryString;
-                url += "?" + queryString;
+                auto querystd::string = this->urlencode(query);
+                auth += "?" + querystd::string;
+                url += "?" + querystd::string;
             }
         }
         auto signature = this->hmac(this->encode(auth), this->encode(this->config_.secret));
@@ -803,7 +803,7 @@ json WooFiPro::parseCurrency(const json& currency) {
     };
 }
 
-json WooFiPro::fetchOHLCV(const String& symbol, const String& timeframe,
+json WooFiPro::fetchOHLCV(const std::string& symbol, const std::string& timeframe,
                          int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -833,7 +833,7 @@ json WooFiPro::parseOHLCV(const json& ohlcv, const Market& market) {
 }
 
 // OHLCV - Async
-AsyncPullType WooFiPro::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+AsyncPullType WooFiPro::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                           int since, int limit, const json& params) {
     return async(&WooFiPro::fetchOHLCV, symbol, timeframe, since, limit, params);
 }

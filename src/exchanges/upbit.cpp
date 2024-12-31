@@ -93,13 +93,13 @@ json Upbit::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response) {
-        String id = market["market"];
-        std::vector<String> parts = this->split(id, "-");
-        String quoteId = parts[0];
-        String baseId = parts[1];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["market"];
+        std::vector<std::string> parts = this->split(id, "-");
+        std::string quoteId = parts[0];
+        std::string baseId = parts[1];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         bool active = market["state"] == "active";
         
         markets.push_back({
@@ -147,8 +147,8 @@ json Upbit::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : response) {
-        String currencyId = balance["currency"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currency"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "balance")},
@@ -160,8 +160,8 @@ json Upbit::fetchBalance(const json& params) {
     return result;
 }
 
-json Upbit::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json Upbit::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -188,12 +188,12 @@ json Upbit::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Upbit::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Upbit::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
-    String query = this->omit(params, this->extractParams(path));
+    std::string url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    std::string query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
         if (!query.empty()) {
@@ -203,8 +203,8 @@ String Upbit::sign(const String& path, const String& api,
         this->checkRequiredCredentials();
         
         if (isJwtAuth) {
-            String token = this->createJWT();
-            const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bearer " + token;
+            std::string token = this->createJWT();
+            const_cast<std::map<std::string, std::string>&>(headers)["Authorization"] = "Bearer " + token;
         }
         
         if (method == "GET" || method == "DELETE") {
@@ -212,7 +212,7 @@ String Upbit::sign(const String& path, const String& api,
                 url += "?" + this->urlencode(query);
             }
         } else {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
             if (!query.empty()) {
                 body = this->json(query);
             }
@@ -222,7 +222,7 @@ String Upbit::sign(const String& path, const String& api,
     return url;
 }
 
-String Upbit::createJWT() {
+std::string Upbit::createJWT() {
     auto token = jwt::create()
         .set_issuer("upbit")
         .set_type("JWT")
@@ -235,11 +235,11 @@ String Upbit::createJWT() {
 }
 
 json Upbit::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "uuid");
-    String timestamp = this->safeString(order, "created_at");
-    String type = this->safeString(order, "ord_type");
-    String side = this->parseOrderSide(this->safeString(order, "side"));
-    String status = this->parseOrderStatus(this->safeString(order, "state"));
+    std::string id = this->safeString(order, "uuid");
+    std::string timestamp = this->safeString(order, "created_at");
+    std::string type = this->safeString(order, "ord_type");
+    std::string side = this->parseOrderSide(this->safeString(order, "side"));
+    std::string status = this->parseOrderStatus(this->safeString(order, "state"));
     
     if (type == "price") {
         type = "market";
@@ -269,8 +269,8 @@ json Upbit::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Upbit::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Upbit::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"wait", "open"},
         {"done", "closed"},
         {"cancel", "canceled"}
@@ -279,7 +279,7 @@ json Upbit::parseOrderStatus(const String& status) {
     return statuses.contains(status) ? statuses.at(status) : status;
 }
 
-json Upbit::parseOrderSide(const String& side) {
+json Upbit::parseOrderSide(const std::string& side) {
     if (side == "ask") {
         return "sell";
     } else if (side == "bid") {

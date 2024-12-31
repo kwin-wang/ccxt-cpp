@@ -124,12 +124,12 @@ json Novadax::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response["data"]) {
-        String id = market["symbol"].get<String>();
-        String baseId = market["baseCurrency"].get<String>();
-        String quoteId = market["quoteCurrency"].get<String>();
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"].get<std::string>();
+        std::string baseId = market["baseCurrency"].get<std::string>();
+        std::string quoteId = market["quoteCurrency"].get<std::string>();
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -180,9 +180,9 @@ json Novadax::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String currencyId = balance["currency"].get<String>();
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = balance["currency"].get<std::string>();
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "available")},
             {"used", this->safeFloat(balance, "hold")},
             {"total", this->safeFloat(balance, "total")}
@@ -193,8 +193,8 @@ json Novadax::parseBalance(const json& response) {
     return result;
 }
 
-json Novadax::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
+json Novadax::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -215,37 +215,37 @@ json Novadax::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["data"], market);
 }
 
-String Novadax::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+std::string Novadax::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
-    String url = this->urls["api"][api] + path;
+    std::string url = this->urls["api"][api] + path;
     
     if (api == "private") {
         this->checkRequiredCredentials();
-        String timestamp = std::to_string(this->milliseconds());
-        String auth = timestamp + method + path;
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string auth = timestamp + method + path;
         
         if (method == "POST") {
             body = this->json(params);
             auth += body;
         } else {
             if (!params.empty()) {
-                String query = this->urlencode(this->keysort(params));
+                std::string query = this->urlencode(this->keysort(params));
                 url += "?" + query;
                 auth += "?" + query;
             }
         }
         
-        String signature = this->hmac(auth, this->encode(this->config_.secret),
+        std::string signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["X-Nova-Access-Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["X-Nova-Signature"] = signature;
-        const_cast<std::map<String, String>&>(headers)["X-Nova-Timestamp"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-Nova-Access-Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-Nova-Signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["X-Nova-Timestamp"] = timestamp;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     } else {
         if (!params.empty()) {
@@ -256,22 +256,22 @@ String Novadax::sign(const String& path, const String& api,
     return url;
 }
 
-String Novadax::getNonce() {
+std::string Novadax::getNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Novadax::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -301,8 +301,8 @@ json Novadax::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Novadax::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Novadax::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"SUBMITTED", "open"},
         {"PROCESSING", "open"},
         {"PARTIAL_FILLED", "open"},

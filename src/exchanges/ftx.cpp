@@ -120,12 +120,12 @@ json FTX::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response["result"]) {
-        String id = market["name"];
-        String type = market["type"];
-        String baseId = market["baseCurrency"];
-        String quoteId = market["quoteCurrency"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
+        std::string id = market["name"];
+        std::string type = market["type"];
+        std::string baseId = market["baseCurrency"];
+        std::string quoteId = market["quoteCurrency"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
         bool active = market["enabled"];
         
         markets.push_back({
@@ -174,16 +174,16 @@ json FTX::fetchMarkets(const json& params) {
 
 json FTX::fetchBalance(const json& params) {
     this->loadMarkets();
-    String subAccount = this->getSubAccountName(params);
-    String path = subAccount.empty() ? "/wallet/balances" : "/subaccounts/" + subAccount + "/balances";
+    std::string subAccount = this->getSubAccountName(params);
+    std::string path = subAccount.empty() ? "/wallet/balances" : "/subaccounts/" + subAccount + "/balances";
     
     json response = fetch(path, "private", "GET", params);
     json balances = response["result"];
     json result = {"info", response};
     
     for (const auto& balance : balances) {
-        String currencyId = balance["coin"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["coin"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", balance["free"]},
@@ -195,8 +195,8 @@ json FTX::fetchBalance(const json& params) {
     return result;
 }
 
-json FTX::createOrder(const String& symbol, const String& type,
-                     const String& side, double amount,
+json FTX::createOrder(const std::string& symbol, const std::string& type,
+                     const std::string& side, double amount,
                      double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -219,12 +219,12 @@ json FTX::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["result"], market);
 }
 
-String FTX::sign(const String& path, const String& api,
-                 const String& method, const json& params,
-                 const std::map<String, String>& headers,
+std::string FTX::sign(const std::string& path, const std::string& api,
+                 const std::string& method, const json& params,
+                 const std::map<std::string, std::string>& headers,
                  const json& body) {
-    String url = this->urls["api"][api] + path;
-    String timestamp = std::to_string(this->milliseconds());
+    std::string url = this->urls["api"][api] + path;
+    std::string timestamp = std::to_string(this->milliseconds());
     
     if (api == "public") {
         if (!params.empty()) {
@@ -233,11 +233,11 @@ String FTX::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         
-        String auth = timestamp + method + path;
+        std::string auth = timestamp + method + path;
         
         if (method == "GET") {
             if (!params.empty()) {
-                String query = this->urlencode(this->keysort(params));
+                std::string query = this->urlencode(this->keysort(params));
                 url += "?" + query;
                 auth += "?" + query;
             }
@@ -248,33 +248,33 @@ String FTX::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
+        std::string signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["FTX-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["FTX-SIGN"] = signature;
-        const_cast<std::map<String, String>&>(headers)["FTX-TS"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["FTX-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["FTX-SIGN"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["FTX-TS"] = timestamp;
         
         if (!subAccountName.empty()) {
-            const_cast<std::map<String, String>&>(headers)["FTX-SUBACCOUNT"] = 
+            const_cast<std::map<std::string, std::string>&>(headers)["FTX-SUBACCOUNT"] = 
                 this->urlencode(subAccountName);
         }
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String FTX::getSubAccountName(const json& params) {
+std::string FTX::getSubAccountName(const json& params) {
     return this->safeString(params, "subAccountName", subAccountName);
 }
 
 json FTX::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeInteger(order, "createdAt");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeInteger(order, "createdAt");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
     
     return {
         {"id", id},
@@ -301,8 +301,8 @@ json FTX::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json FTX::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json FTX::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"new", "open"},
         {"open", "open"},
         {"closed", "closed"},

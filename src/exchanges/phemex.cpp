@@ -115,12 +115,12 @@ json Phemex::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response["data"]["products"]) {
-        String id = market["symbol"];
-        String baseId = market["baseCurrency"];
-        String quoteId = market["quoteCurrency"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String type = market["type"].get<String>();
+        std::string id = market["symbol"];
+        std::string baseId = market["baseCurrency"];
+        std::string quoteId = market["quoteCurrency"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string type = market["type"].get<std::string>();
         bool linear = market["settlementCurrency"] == "USD";
         bool inverse = market["settlementCurrency"] == baseId;
         bool active = market["status"] == "Listed";
@@ -167,7 +167,7 @@ json Phemex::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Phemex::fetchTicker(const String& symbol, const json& params) {
+json Phemex::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
@@ -207,8 +207,8 @@ json Phemex::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : balances) {
-        String currencyId = balance["currency"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currency"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->parseNumber(balance["freeBalance"])},
@@ -220,8 +220,8 @@ json Phemex::fetchBalance(const json& params) {
     return result;
 }
 
-json Phemex::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Phemex::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -245,12 +245,12 @@ json Phemex::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["data"], market);
 }
 
-String Phemex::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Phemex::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api] + "/" + this->version + path;
-    String timestamp = std::to_string(this->milliseconds());
+    std::string url = this->urls["api"][api] + "/" + this->version + path;
+    std::string timestamp = std::to_string(this->milliseconds());
     
     if (api == "public") {
         if (!params.empty()) {
@@ -259,11 +259,11 @@ String Phemex::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         
-        String auth = timestamp + method + path;
+        std::string auth = timestamp + method + path;
         
         if (method == "GET") {
             if (!params.empty()) {
-                String query = this->urlencode(this->keysort(params));
+                std::string query = this->urlencode(this->keysort(params));
                 url += "?" + query;
                 auth += "?" + query;
             }
@@ -274,32 +274,32 @@ String Phemex::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
+        std::string signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["x-phemex-access-token"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["x-phemex-request-signature"] = signature;
-        const_cast<std::map<String, String>&>(headers)["x-phemex-request-expiry"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["x-phemex-access-token"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["x-phemex-request-signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["x-phemex-request-expiry"] = timestamp;
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-double Phemex::parseNumber(const String& numberString) {
-    return std::stod(numberString) / scale;
+double Phemex::parseNumber(const std::string& numberstd::string) {
+    return std::stod(numberstd::string) / scale;
 }
 
-String Phemex::formatNumber(double number) {
+std::string Phemex::formatNumber(double number) {
     return std::to_string(static_cast<int64_t>(number * scale));
 }
 
 json Phemex::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "orderID");
-    String timestamp = this->safeInteger(order, "createTime");
-    String status = this->parseOrderStatus(this->safeString(order, "ordStatus"));
+    std::string id = this->safeString(order, "orderID");
+    std::string timestamp = this->safeInteger(order, "createTime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "ordStatus"));
     
     return {
         {"id", id},
@@ -323,8 +323,8 @@ json Phemex::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Phemex::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Phemex::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"Created", "open"},
         {"Untriggered", "open"},
         {"Deactivated", "closed"},

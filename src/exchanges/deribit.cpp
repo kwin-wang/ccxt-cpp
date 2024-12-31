@@ -155,14 +155,14 @@ json Deribit::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response["result"]) {
-        String id = market["instrument_name"];
-        String baseId = market["base_currency"];
-        String quoteId = market["quote_currency"];
-        String settleId = market["settlement_currency"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String settle = this->commonCurrencyCode(settleId);
-        String type = market["kind"].get<String>();
+        std::string id = market["instrument_name"];
+        std::string baseId = market["base_currency"];
+        std::string quoteId = market["quote_currency"];
+        std::string settleId = market["settlement_currency"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string settle = this->commonCurrencyCode(settleId);
+        std::string type = market["kind"].get<std::string>();
         bool future = type == "future";
         bool option = type == "option";
         bool active = market["is_active"];
@@ -215,7 +215,7 @@ json Deribit::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Deribit::fetchTicker(const String& symbol, const json& params) {
+json Deribit::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
@@ -250,7 +250,7 @@ json Deribit::fetchTicker(const String& symbol, const json& params) {
 
 json Deribit::fetchBalance(const json& params) {
     this->loadMarkets();
-    String currency = this->safeString(params, "currency", defaultSettlement);
+    std::string currency = this->safeString(params, "currency", defaultSettlement);
     
     json request = {{"currency", currency}};
     json response = fetch("/api/v2/private/get_account_summary", "private", "GET",
@@ -269,8 +269,8 @@ json Deribit::fetchBalance(const json& params) {
     };
 }
 
-json Deribit::createOrder(const String& symbol, const String& type,
-                         const String& side, double amount,
+json Deribit::createOrder(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("createOrder() requires a symbol argument");
@@ -285,12 +285,12 @@ json Deribit::createOrder(const String& symbol, const String& type,
         request["price"] = this->priceToPrecision(symbol, price);
     }
 
-    String method = side;  // "buy" or "sell"
+    std::string method = side;  // "buy" or "sell"
     auto response = this->privatePostUserTrades(this->extend(request, params));
     return this->parseOrder(response, market);
 }
 
-json Deribit::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Deribit::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("cancelOrder() requires a symbol argument");
     }
@@ -303,7 +303,7 @@ json Deribit::cancelOrder(const String& id, const String& symbol, const json& pa
     return this->parseOrder(response, market);
 }
 
-json Deribit::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Deribit::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     auto market = this->market(symbol);
     auto request = json::object();
     request["instrument_name"] = market["id"];
@@ -335,7 +335,7 @@ json Deribit::fetchBalance(const json& params) {
     return this->parseBalance(result);
 }
 
-json Deribit::fetchPosition(const String& symbol, const json& params) {
+json Deribit::fetchPosition(const std::string& symbol, const json& params) {
     auto market = this->market(symbol);
     auto request = json::object();
     request["instrument_name"] = market["id"];
@@ -344,7 +344,7 @@ json Deribit::fetchPosition(const String& symbol, const json& params) {
     return this->parsePosition(response["result"], market);
 }
 
-json Deribit::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json Deribit::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     auto market = this->market(symbol);
     auto request = json::object();
     request["instrument_name"] = market["id"];
@@ -360,9 +360,9 @@ json Deribit::fetchMyTrades(const String& symbol, int since, int limit, const js
     return this->parseTrades(response["result"]["trades"], market, since, limit);
 }
 
-String Deribit::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+std::string Deribit::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
     auto request = "/" + this->version + "/" + path;
     auto query = this->omit(params, this->extractParams(path));
@@ -402,8 +402,8 @@ String Deribit::sign(const String& path, const String& api,
     return url;
 }
 
-void Deribit::handleErrors(const json& httpCode, const String& reason, const String& url, const String& method,
-                          const std::map<String, String>& headers, const String& body, const json& response,
+void Deribit::handleErrors(const json& httpCode, const std::string& reason, const std::string& url, const std::string& method,
+                          const std::map<std::string, std::string>& headers, const std::string& body, const json& response,
                           const json& requestHeaders, const json& requestBody) {
     if (response.empty()) {
         return;
@@ -418,7 +418,7 @@ void Deribit::handleErrors(const json& httpCode, const String& reason, const Str
     auto message = this->safeString(error, "message");
 
     if (errorCode != nullptr) {
-        const std::map<String, ExceptionType> exceptions = {
+        const std::map<std::string, ExceptionType> exceptions = {
             {"invalid_request", BadRequest},
             {"insufficient_funds", InsufficientFunds},
             {"not_found", OrderNotFound},
@@ -436,8 +436,8 @@ void Deribit::handleErrors(const json& httpCode, const String& reason, const Str
     }
 }
 
-json Deribit::parseOrderStatus(const String& status) {
-    const std::map<String, String> statuses = {
+json Deribit::parseOrderStatus(const std::string& status) {
+    const std::map<std::string, std::string> statuses = {
         {"open", "open"},
         {"filled", "closed"},
         {"rejected", "rejected"},

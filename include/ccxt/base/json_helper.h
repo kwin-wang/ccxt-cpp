@@ -2,14 +2,12 @@
 
 #include <nlohmann/json.hpp>
 #include "ccxt/base/types.h"
+#include "ccxt/base/config.h"
 
 namespace ccxt {
-
-using json = nlohmann::json;
-
 // Helper functions for JSON operations
-inline String get_string(const json& j, const char* key, const String& default_value = "") {
-    return j.contains(key) ? j[key].get<String>() : default_value;
+inline std::string get_string(const json& j, const char* key, const std::string& default_value = "") {
+    return j.contains(key) ? j[key].get<std::string>() : default_value;
 }
 
 inline double get_double(const json& j, const char* key, double default_value = 0.0) {

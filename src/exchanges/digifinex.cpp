@@ -118,12 +118,12 @@ json Digifinex::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : response["data"]) {
-        String id = this->safeString(market, "symbol");
-        String baseId = this->safeString(market, "base_currency");
-        String quoteId = this->safeString(market, "quote_currency");
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = this->safeString(market, "symbol");
+        std::string baseId = this->safeString(market, "base_currency");
+        std::string quoteId = this->safeString(market, "quote_currency");
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -175,8 +175,8 @@ json Digifinex::parseBalance(const json& response) {
     json balances = response["data"];
     
     for (const auto& balance : balances) {
-        String currencyId = balance["currency"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currency"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "free")},
@@ -188,8 +188,8 @@ json Digifinex::parseBalance(const json& response) {
     return result;
 }
 
-json Digifinex::createOrder(const String& symbol, const String& type,
-                           const String& side, double amount,
+json Digifinex::createOrder(const std::string& symbol, const std::string& type,
+                           const std::string& side, double amount,
                            double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -210,12 +210,12 @@ json Digifinex::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["data"], market);
 }
 
-String Digifinex::sign(const String& path, const String& api,
-                       const String& method, const json& params,
-                       const std::map<String, String>& headers,
+std::string Digifinex::sign(const std::string& path, const std::string& api,
+                       const std::string& method, const json& params,
+                       const std::map<std::string, std::string>& headers,
                        const json& body) {
-    String url = this->urls["api"][api] + path;
-    String timestamp = std::to_string(this->milliseconds());
+    std::string url = this->urls["api"][api] + path;
+    std::string timestamp = std::to_string(this->milliseconds());
     
     if (api == "public") {
         if (!params.empty()) {
@@ -229,7 +229,7 @@ String Digifinex::sign(const String& path, const String& api,
             "timestamp": timestamp
         }, params);
         
-        String signature = this->createSignature(timestamp, method, path,
+        std::string signature = this->createSignature(timestamp, method, path,
                                                request.dump());
         request["sign"] = signature;
         
@@ -237,27 +237,27 @@ String Digifinex::sign(const String& path, const String& api,
             url += "?" + this->urlencode(request);
         } else {
             body = request;
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Digifinex::createSignature(const String& timestamp, const String& method,
-                                 const String& path, const String& body) {
-    String message = timestamp + method + path + body;
+std::string Digifinex::createSignature(const std::string& timestamp, const std::string& method,
+                                 const std::string& path, const std::string& body) {
+    std::string message = timestamp + method + path + body;
     return this->hmac(message, this->encode(this->config_.secret),
                      "sha256", "hex");
 }
 
 json Digifinex::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "order_id");
-    String timestamp = this->safeString(order, "created_date");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+    std::string id = this->safeString(order, "order_id");
+    std::string timestamp = this->safeString(order, "created_date");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = market.symbol;
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -284,8 +284,8 @@ json Digifinex::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json Digifinex::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Digifinex::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"0", "open"},
         {"1", "closed"},
         {"2", "canceled"},

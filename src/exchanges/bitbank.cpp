@@ -113,9 +113,9 @@ json Bitbank::fetchMarkets(const json& params) {
     auto result = json::array();
 
     for (const auto& market : markets) {
-        auto id = market["name"].get<String>();
-        auto baseId = market["base_asset"].get<String>();
-        auto quoteId = market["quote_asset"].get<String>();
+        auto id = market["name"].get<std::string>();
+        auto baseId = market["base_asset"].get<std::string>();
+        auto quoteId = market["quote_asset"].get<std::string>();
         auto base = this->safeCurrencyCode(baseId);
         auto quote = this->safeCurrencyCode(quoteId);
         auto symbol = base + "/" + quote;
@@ -155,7 +155,7 @@ json Bitbank::fetchMarkets(const json& params) {
     return result;
 }
 
-json Bitbank::fetchTicker(const String& symbol, const json& params) {
+json Bitbank::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {{"pair", market["id"]}};
@@ -187,9 +187,9 @@ json Bitbank::fetchTicker(const String& symbol, const json& params) {
     };
 }
 
-String Bitbank::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string Bitbank::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
     auto query = this->omit(params, this->extractParams(path));
     auto url = this->urls["api"][api];
@@ -201,14 +201,14 @@ String Bitbank::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         auto nonce = this->nonce().toString();
-        auto queryString = this->urlencode(query);
+        auto querystd::string = this->urlencode(query);
         
         if (method == "GET") {
             if (!query.empty()) {
-                url += "?" + queryString;
+                url += "?" + querystd::string;
             }
         } else {
-            body = queryString;
+            body = querystd::string;
         }
         
         auto auth = nonce + url + (body.empty() ? "" : body);
@@ -223,12 +223,12 @@ String Bitbank::sign(const String& path, const String& api,
     return url;
 }
 
-String Bitbank::createNonce() {
+std::string Bitbank::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
-String Bitbank::createSignature(const String& nonce, const String& method,
-                              const String& path, const String& body) {
+std::string Bitbank::createSignature(const std::string& nonce, const std::string& method,
+                              const std::string& path, const std::string& body) {
     auto message = nonce + method + path + body;
     unsigned char* digest = HMAC(EVP_sha256(), this->config_.secret.c_str(), this->config_.secret.length(),
                                 reinterpret_cast<const unsigned char*>(message.c_str()),
@@ -246,29 +246,29 @@ boost::future<json> Bitbank::fetchMarketsAsync(const json& params) {
     return requestAsync("", "public", "GET", params);
 }
 
-boost::future<json> Bitbank::fetchTickerAsync(const String& symbol, const json& params) {
-    String market = getBitbankSymbol(symbol);
-    String path = market + "/ticker";
+boost::future<json> Bitbank::fetchTickerAsync(const std::string& symbol, const json& params) {
+    std::string market = getBitbankSymbol(symbol);
+    std::string path = market + "/ticker";
     return requestAsync(path, "public", "GET", params);
 }
 
-boost::future<json> Bitbank::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
-    String market = getBitbankSymbol(symbol);
-    String path = market + "/depth";
+boost::future<json> Bitbank::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
+    std::string market = getBitbankSymbol(symbol);
+    std::string path = market + "/depth";
     return requestAsync(path, "public", "GET", params);
 }
 
-boost::future<json> Bitbank::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
-    String market = getBitbankSymbol(symbol);
-    String path = market + "/transactions";
+boost::future<json> Bitbank::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
+    std::string market = getBitbankSymbol(symbol);
+    std::string path = market + "/transactions";
     return requestAsync(path, "public", "GET", params);
 }
 
-boost::future<json> Bitbank::fetchOHLCVAsync(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
-    String market = getBitbankSymbol(symbol);
-    String candleType = timeframes[timeframe];
-    String date = getYYYYMMDD(since);
-    String path = market + "/candlestick/" + candleType + "/" + date;
+boost::future<json> Bitbank::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
+    std::string market = getBitbankSymbol(symbol);
+    std::string candleType = timeframes[timeframe];
+    std::string date = getYYYYMMDD(since);
+    std::string path = market + "/candlestick/" + candleType + "/" + date;
     return requestAsync(path, "public", "GET", params);
 }
 
@@ -281,7 +281,7 @@ boost::future<json> Bitbank::fetchBalanceAsync(const json& params) {
     return requestAsync("user/assets", "private", "GET", params);
 }
 
-boost::future<json> Bitbank::createOrderAsync(const String& symbol, const String& type, const String& side,
+boost::future<json> Bitbank::createOrderAsync(const std::string& symbol, const std::string& type, const std::string& side,
                                           double amount, double price, const json& params) {
     json request = {
         {"pair", getBitbankSymbol(symbol)},
@@ -297,7 +297,7 @@ boost::future<json> Bitbank::createOrderAsync(const String& symbol, const String
     return requestAsync("user/spot/order", "private", "POST", request);
 }
 
-boost::future<json> Bitbank::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Bitbank::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     json request = {
         {"pair", getBitbankSymbol(symbol)},
         {"order_id", id}
@@ -305,7 +305,7 @@ boost::future<json> Bitbank::cancelOrderAsync(const String& id, const String& sy
     return requestAsync("user/spot/cancel_order", "private", "POST", request);
 }
 
-boost::future<json> Bitbank::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Bitbank::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     json request = {
         {"pair", getBitbankSymbol(symbol)},
         {"order_id", id}
@@ -313,23 +313,23 @@ boost::future<json> Bitbank::fetchOrderAsync(const String& id, const String& sym
     return requestAsync("user/spot/order", "private", "GET", request);
 }
 
-boost::future<json> Bitbank::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitbank::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     json request = {{"pair", getBitbankSymbol(symbol)}};
     return requestAsync("user/spot/active_orders", "private", "GET", request);
 }
 
-boost::future<json> Bitbank::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitbank::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     json request = {{"pair", getBitbankSymbol(symbol)}};
     return requestAsync("user/spot/trade_history", "private", "GET", request);
 }
 
 // Async Account API
-boost::future<json> Bitbank::fetchDepositAddressAsync(const String& code, const json& params) {
+boost::future<json> Bitbank::fetchDepositAddressAsync(const std::string& code, const json& params) {
     return requestAsync("user/withdrawal_account", "private", "GET", params);
 }
 
-boost::future<json> Bitbank::withdrawAsync(const String& code, double amount, const String& address,
-                                       const String& tag, const json& params) {
+boost::future<json> Bitbank::withdrawAsync(const std::string& code, double amount, const std::string& address,
+                                       const std::string& tag, const json& params) {
     json request = {
         {"asset", code.toLower()},
         {"amount", std::to_string(amount)},

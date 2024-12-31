@@ -118,11 +118,11 @@ json Korbit::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& [id, market] : response["exchange"]["markets"].items()) {
-        String baseId = this->safeString(market, "baseAsset");
-        String quoteId = this->safeString(market, "quoteAsset");
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string baseId = this->safeString(market, "baseAsset");
+        std::string quoteId = this->safeString(market, "quoteAsset");
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -173,9 +173,9 @@ json Korbit::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String currencyId = this->safeString(balance, "currency");
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = this->safeString(balance, "currency");
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "available")},
             {"used", this->safeFloat(balance, "trade_in_use")},
             {"total", nullptr}
@@ -187,8 +187,8 @@ json Korbit::parseBalance(const json& response) {
     return result;
 }
 
-json Korbit::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json Korbit::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -224,11 +224,11 @@ void Korbit::refreshAccessToken() {
     }
 }
 
-String Korbit::sign(const String& path, const String& api,
-                   const String& method, const json& params,
-                   const std::map<String, String>& headers,
+std::string Korbit::sign(const std::string& path, const std::string& api,
+                   const std::string& method, const json& params,
+                   const std::map<std::string, std::string>& headers,
                    const json& body) {
-    String url = this->urls["api"][api] + "/" + this->version + "/" + path;
+    std::string url = this->urls["api"][api] + "/" + this->version + "/" + path;
     
     if (api == "public") {
         if (!params.empty()) {
@@ -238,8 +238,8 @@ String Korbit::sign(const String& path, const String& api,
         this->checkRequiredCredentials();
         this->refreshAccessToken();
         
-        String nonce = this->nonce().str();
-        String auth = nonce + method + "/" + path;
+        std::string nonce = this->nonce().str();
+        std::string auth = nonce + method + "/" + path;
         
         if (method == "POST") {
             if (!params.empty()) {
@@ -248,44 +248,44 @@ String Korbit::sign(const String& path, const String& api,
             }
         } else {
             if (!params.empty()) {
-                String query = this->urlencode(params);
+                std::string query = this->urlencode(params);
                 url += "?" + query;
                 auth += "?" + query;
             }
         }
         
-        String signature = this->hmac(auth, this->encode(this->config_.secret),
+        std::string signature = this->hmac(auth, this->encode(this->config_.secret),
                                     "sha512", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["API-Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["API-Nonce"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["API-Signature"] = signature;
-        const_cast<std::map<String, String>&>(headers)["Authorization"] = "Bearer " + accessToken;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Nonce"] = nonce;
+        const_cast<std::map<std::string, std::string>&>(headers)["API-Signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Authorization"] = "Bearer " + accessToken;
         
         if (method == "POST") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String Korbit::createNonce() {
+std::string Korbit::createNonce() {
     return std::to_string(this->milliseconds());
 }
 
 json Korbit::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "id");
-    String timestamp = this->safeString(order, "timestamp");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "id");
+    std::string timestamp = this->safeString(order, "timestamp");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     }
     
-    String type = this->safeString(order, "type");
-    String side = this->safeString(order, "side");
+    std::string type = this->safeString(order, "type");
+    std::string side = this->safeString(order, "side");
     
     return {
         {"id", id},
@@ -315,8 +315,8 @@ json Korbit::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Korbit::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Korbit::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"pending", "open"},
         {"unfilled", "open"},
         {"partially_filled", "open"},

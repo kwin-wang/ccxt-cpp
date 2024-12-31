@@ -151,7 +151,7 @@ json Exmo::fetchMarkets(const json& params) {
     return result;
 }
 
-json Exmo::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Exmo::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -166,7 +166,7 @@ json Exmo::fetchOrderBook(const String& symbol, int limit, const json& params) {
     return this->parseOrderBook(orderbook, symbol);
 }
 
-json Exmo::fetchTicker(const String& symbol, const json& params) {
+json Exmo::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto response = this->publicGetTicker(params);
@@ -189,8 +189,8 @@ json Exmo::fetchTicker(const String& symbol, const json& params) {
     };
 }
 
-json Exmo::createOrder(const String& symbol, const String& type,
-                      const String& side, double amount,
+json Exmo::createOrder(const std::string& symbol, const std::string& type,
+                      const std::string& side, double amount,
                       double price, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -213,7 +213,7 @@ json Exmo::createOrder(const String& symbol, const String& type,
     };
 }
 
-json Exmo::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Exmo::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     auto request = {
         {"order_id", id}
     };
@@ -309,7 +309,7 @@ json Exmo::parseTrade(const json& trade, const Market& market) {
     };
 }
 
-json Exmo::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json Exmo::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -325,7 +325,7 @@ json Exmo::fetchMyTrades(const String& symbol, int since, int limit, const json&
     return this->parseTrades(trades, market, since, limit);
 }
 
-json Exmo::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json Exmo::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -337,7 +337,7 @@ json Exmo::fetchOpenOrders(const String& symbol, int since, int limit, const jso
     return this->parseOrders(orders, market, since, limit);
 }
 
-json Exmo::fetchOrderTrades(const String& id, const String& symbol, int since, int limit, const json& params) {
+json Exmo::fetchOrderTrades(const std::string& id, const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -349,9 +349,9 @@ json Exmo::fetchOrderTrades(const String& id, const String& symbol, int since, i
     return this->parseTrades(trades, market, since, limit);
 }
 
-String Exmo::sign(const String& path, const String& api,
-                  const String& method, const json& params,
-                  const std::map<String, String>& headers,
+std::string Exmo::sign(const std::string& path, const std::string& api,
+                  const std::string& method, const json& params,
+                  const std::map<std::string, std::string>& headers,
                   const json& body) {
     auto url = this->urls["api"][api] + "/" + this->version + "/" + path;
     
@@ -379,9 +379,9 @@ String Exmo::sign(const String& path, const String& api,
     return url;
 }
 
-void Exmo::handleErrors(const json& httpCode, const String& reason, const String& url,
-                       const String& method, const std::map<String, String>& headers,
-                       const String& body, const json& response,
+void Exmo::handleErrors(const json& httpCode, const std::string& reason, const std::string& url,
+                       const std::string& method, const std::map<std::string, std::string>& headers,
+                       const std::string& body, const json& response,
                        const json& requestHeaders, const json& requestBody) {
     if (response.empty()) {
         return;

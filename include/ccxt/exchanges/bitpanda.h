@@ -10,14 +10,14 @@ public:
     ~Bitpanda() override = default;
 
 protected:
-    String sign(const String& path, const String& api = "public",
-               const String& method = "GET", const json& params = json::object(),
-               const std::map<String, String>& headers = {}, const json& body = nullptr) override;
+    std::string sign(const std::string& path, const std::string& api = "public",
+               const std::string& method = "GET", const json& params = json::object(),
+               const std::map<std::string, std::string>& headers = {}, const json& body = nullptr) override;
 
 private:
-    String get_signature(const String& timestamp, const String& method,
-                        const String& path, const String& body = "");
-    String get_nonce();
+    std::string get_signature(const std::string& timestamp, const std::string& method,
+                        const std::string& path, const std::string& body = "");
+    std::string get_nonce();
 };
 
 } // namespace ccxt

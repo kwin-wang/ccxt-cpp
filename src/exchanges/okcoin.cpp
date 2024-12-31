@@ -131,12 +131,12 @@ json OKCoin::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response["data"]) {
-        String id = market["instId"];
-        String baseId = market["baseCcy"];
-        String quoteId = market["quoteCcy"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["instId"];
+        std::string baseId = market["baseCcy"];
+        std::string quoteId = market["quoteCcy"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         bool active = market["state"] == "live";
         
         markets.push_back({
@@ -184,8 +184,8 @@ json OKCoin::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : response["data"][0]["details"]) {
-        String currencyId = balance["ccy"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["ccy"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", this->safeFloat(balance, "availBal")},
@@ -197,8 +197,8 @@ json OKCoin::fetchBalance(const json& params) {
     return result;
 }
 
-json OKCoin::createOrder(const String& symbol, const String& type,
-                        const String& side, double amount,
+json OKCoin::createOrder(const std::string& symbol, const std::string& type,
+                        const std::string& side, double amount,
                         double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -220,12 +220,12 @@ json OKCoin::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["data"][0], market);
 }
 
-String OKCoin::sign(const String& path, const String& api,
-                    const String& method, const json& params,
-                    const std::map<String, String>& headers,
+std::string OKCoin::sign(const std::string& path, const std::string& api,
+                    const std::string& method, const json& params,
+                    const std::map<std::string, std::string>& headers,
                     const json& body) {
-    String url = this->urls["api"][api] + "/" + this->version + "/" + this->implodeParams(path, params);
-    String query = this->omit(params, this->extractParams(path));
+    std::string url = this->urls["api"][api] + "/" + this->version + "/" + this->implodeParams(path, params);
+    std::string query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
         if (!query.empty()) {
@@ -233,8 +233,8 @@ String OKCoin::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String timestamp = this->getTimestamp();
-        String auth = timestamp + method + "/" + path;
+        std::string timestamp = this->getTimestamp();
+        std::string auth = timestamp + method + "/" + path;
         
         if (method == "GET") {
             if (!query.empty()) {
@@ -248,36 +248,36 @@ String OKCoin::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
+        std::string signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
                                     "sha256", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["OK-ACCESS-KEY"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["OK-ACCESS-SIGN"] = signature;
-        const_cast<std::map<String, String>&>(headers)["OK-ACCESS-TIMESTAMP"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["OK-ACCESS-PASSPHRASE"] = this->password;
+        const_cast<std::map<std::string, std::string>&>(headers)["OK-ACCESS-KEY"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["OK-ACCESS-SIGN"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["OK-ACCESS-TIMESTAMP"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["OK-ACCESS-PASSPHRASE"] = this->password;
         
         if (!body.empty()) {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
     return url;
 }
 
-String OKCoin::getTimestamp() {
+std::string OKCoin::getTimestamp() {
     return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count());
 }
 
 json OKCoin::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "ordId");
-    String timestamp = this->safeString(order, "cTime");
-    String lastTradeTimestamp = this->safeString(order, "uTime");
-    String status = this->parseOrderStatus(this->safeString(order, "state"));
-    String symbol = market.symbol;
-    String type = this->safeStringLower(order, "ordType");
-    String side = this->safeStringLower(order, "side");
+    std::string id = this->safeString(order, "ordId");
+    std::string timestamp = this->safeString(order, "cTime");
+    std::string lastTradeTimestamp = this->safeString(order, "uTime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "state"));
+    std::string symbol = market.symbol;
+    std::string type = this->safeStringLower(order, "ordType");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -303,8 +303,8 @@ json OKCoin::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json OKCoin::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json OKCoin::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"live", "open"},
         {"partially_filled", "open"},
         {"filled", "closed"},
@@ -317,7 +317,7 @@ json OKCoin::parseOrderStatus(const String& status) {
 }
 
 // Async REST API methods
-json OKCoin::fetchTickerAsync(const String& symbol, const json& params) {
+json OKCoin::fetchTickerAsync(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
@@ -329,50 +329,50 @@ json OKCoin::fetchBalanceAsync(const json& params) {
     });
 }
 
-json OKCoin::createOrderAsync(const String& symbol, const String& type,
-                            const String& side, double amount,
+json OKCoin::createOrderAsync(const std::string& symbol, const std::string& type,
+                            const std::string& side, double amount,
                             double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-json OKCoin::cancelOrderAsync(const String& id, const String& symbol,
+json OKCoin::cancelOrderAsync(const std::string& id, const std::string& symbol,
                             const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-json OKCoin::fetchOrderAsync(const String& id, const String& symbol,
+json OKCoin::fetchOrderAsync(const std::string& id, const std::string& symbol,
                            const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-json OKCoin::fetchOrdersAsync(const String& symbol, int since,
+json OKCoin::fetchOrdersAsync(const std::string& symbol, int since,
                             int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-json OKCoin::fetchOpenOrdersAsync(const String& symbol, int since,
+json OKCoin::fetchOpenOrdersAsync(const std::string& symbol, int since,
                                 int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-json OKCoin::fetchClosedOrdersAsync(const String& symbol, int since,
+json OKCoin::fetchClosedOrdersAsync(const std::string& symbol, int since,
                                   int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
-json OKCoin::fetchMyTradesAsync(const String& symbol, int since,
+json OKCoin::fetchMyTradesAsync(const std::string& symbol, int since,
                                int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchMyTrades(symbol, since, limit, params);
@@ -385,14 +385,14 @@ json OKCoin::fetchMarketsAsync(const json& params) {
     });
 }
 
-json OKCoin::fetchOrderBookAsync(const String& symbol, int limit,
+json OKCoin::fetchOrderBookAsync(const std::string& symbol, int limit,
                                const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-json OKCoin::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+json OKCoin::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                             int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);

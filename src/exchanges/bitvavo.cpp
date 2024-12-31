@@ -112,7 +112,7 @@ json Bitvavo::fetchBalance(const json& params) {
     return this->parseBalance(response);
 }
 
-json Bitvavo::createOrder(const String& symbol, const String& type, const String& side,
+json Bitvavo::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                          double amount, double price, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
@@ -142,8 +142,8 @@ boost::future<json> Bitvavo::fetchBalanceAsync(const json& params) {
     });
 }
 
-boost::future<json> Bitvavo::createOrderAsync(const String& symbol, const String& type,
-                                            const String& side, double amount,
+boost::future<json> Bitvavo::createOrderAsync(const std::string& symbol, const std::string& type,
+                                            const std::string& side, double amount,
                                             double price, const json& params) {
     return boost::async(boost::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
@@ -151,9 +151,9 @@ boost::future<json> Bitvavo::createOrderAsync(const String& symbol, const String
 }
 
 // Helper Methods
-String Bitvavo::sign(const String& path, const String& api,
-                     const String& method, const json& params,
-                     const std::map<String, String>& headers,
+std::string Bitvavo::sign(const std::string& path, const std::string& api,
+                     const std::string& method, const json& params,
+                     const std::map<std::string, std::string>& headers,
                      const json& body) {
     auto url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
     auto query = this->omit(params, this->extractParams(path));
@@ -190,7 +190,7 @@ String Bitvavo::sign(const String& path, const String& api,
     return url;
 }
 
-String Bitvavo::getNonce() {
+std::string Bitvavo::getNonce() {
     return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count());
@@ -234,8 +234,8 @@ json Bitvavo::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Bitvavo::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Bitvavo::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"new", "open"},
         {"canceled", "canceled"},
         {"filled", "closed"},
@@ -245,8 +245,8 @@ String Bitvavo::parseOrderStatus(const String& status) {
     return this->safeString(statuses, status, status);
 }
 
-String Bitvavo::parseOrderType(const String& type) {
-    static const std::map<String, String> types = {
+std::string Bitvavo::parseOrderType(const std::string& type) {
+    static const std::map<std::string, std::string> types = {
         {"limit", "limit"},
         {"market", "market"},
         {"stop", "stop"},

@@ -150,7 +150,7 @@ json cex::fetchMarkets(const json& params) {
     return result;
 }
 
-json cex::fetchTicker(const String& symbol, const json& params) {
+json cex::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -160,7 +160,7 @@ json cex::fetchTicker(const String& symbol, const json& params) {
     return this->parseTicker(response, market);
 }
 
-json cex::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json cex::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -173,7 +173,7 @@ json cex::fetchOrderBook(const String& symbol, int limit, const json& params) {
     return this->parseOrderBook(response, market["symbol"]);
 }
 
-json cex::createOrder(const String& symbol, const String& type, const String& side,
+json cex::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                      double amount, double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -191,12 +191,12 @@ json cex::createOrder(const String& symbol, const String& type, const String& si
         request["price"] = this->priceToPrecision(symbol, price);
     }
     
-    String endpoint = "/place_order/" + market["id"];
+    std::string endpoint = "/place_order/" + market["id"];
     json response = this->fetch(endpoint, "private", "POST", this->extend(request, params));
     return this->parseOrder(response, market);
 }
 
-json cex::cancelOrder(const String& id, const String& symbol, const json& params) {
+json cex::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     json request = {
         {"id", id}
     };
@@ -216,7 +216,7 @@ json cex::fetchBalance(const json& params) {
     };
     
     for (const auto& balance : response.items()) {
-        String currencyId = balance.key();
+        std::string currencyId = balance.key();
         json account = this->account();
         
         if (balance.value().contains("available")) {
@@ -226,7 +226,7 @@ json cex::fetchBalance(const json& params) {
             account["used"] = this->safeString(balance.value(), "orders");
         }
         
-        String code = this->safeCurrencyCode(currencyId);
+        std::string code = this->safeCurrencyCode(currencyId);
         result[code] = account;
     }
     
@@ -235,7 +235,7 @@ json cex::fetchBalance(const json& params) {
 
 json cex::parseTicker(const json& ticker, const json& market) {
     long timestamp = this->safeTimestamp(ticker, "timestamp");
-    String symbol = this->safeString(market, "symbol");
+    std::string symbol = this->safeString(market, "symbol");
     
     return {
         {"symbol", symbol},
@@ -261,9 +261,9 @@ json cex::parseTicker(const json& ticker, const json& market) {
     };
 }
 
-String cex::sign(const String& path, const String& api, const String& method,
+std::string cex::sign(const std::string& path, const std::string& api, const std::string& method,
                 const json& params, const json& headers, const json& body) {
-    String url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
+    std::string url = this->urls["api"][api] + "/" + this->implodeParams(path, params);
     json query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
@@ -273,8 +273,8 @@ String cex::sign(const String& path, const String& api, const String& method,
     } else {
         this->checkRequiredCredentials();
         long nonce = this->nonce();
-        String auth = std::to_string(nonce) + this->config_.apiKey;
-        String signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
+        std::string auth = std::to_string(nonce) + this->config_.apiKey;
+        std::string signature = this->hmac(auth, this->config_.secret, "sha256", "hex");
         
         json request = this->extend({
             {"key", this->config_.apiKey},

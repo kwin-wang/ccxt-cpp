@@ -104,11 +104,11 @@ json Bitfinex::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response[0]) {
-        String id = market[0];
-        String baseId = market[1];
-        String quoteId = market[2];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
+        std::string id = market[0];
+        std::string baseId = market[1];
+        std::string quoteId = market[2];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
         bool active = true;
         
         markets.push_back({
@@ -150,10 +150,10 @@ json Bitfinex::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Bitfinex::fetchTicker(const String& symbol, const json& params) {
+json Bitfinex::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String request = {{"symbol", "t" + market.id}};
+    std::string request = {{"symbol", "t" + market.id}};
     
     json response = fetch("/v2/ticker/" + market.id, "public", "GET",
                          this->extend(request, params));
@@ -192,8 +192,8 @@ json Bitfinex::fetchBalance(const json& params) {
     };
     
     for (const auto& balance : response) {
-        String type = balance[0];
-        String currency = this->commonCurrencyCode(balance[1]);
+        std::string type = balance[0];
+        std::string currency = this->commonCurrencyCode(balance[1]);
         double total = balance[2];
         double available = type == "exchange" ? balance[4] : balance[2];
         
@@ -216,13 +216,13 @@ json Bitfinex::fetchBalance(const json& params) {
     return result;
 }
 
-json Bitfinex::createOrder(const String& symbol, const String& type,
-                          const String& side, double amount,
+json Bitfinex::createOrder(const std::string& symbol, const std::string& type,
+                          const std::string& side, double amount,
                           double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
-    String orderType = type;
+    std::string orderType = type;
     if (type == "limit") {
         orderType = "EXCHANGE LIMIT";
     } else if (type == "market") {
@@ -239,7 +239,7 @@ json Bitfinex::createOrder(const String& symbol, const String& type,
         {"sell", -1}
     };
     
-    String request = {
+    std::string request = {
         {"symbol", "t" + market.id},
         {"type", orderType},
         {"side", orderSides[side]},
@@ -257,12 +257,12 @@ json Bitfinex::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response, market);
 }
 
-String Bitfinex::sign(const String& path, const String& api,
-                      const String& method, const json& params,
-                      const std::map<String, String>& headers,
+std::string Bitfinex::sign(const std::string& path, const std::string& api,
+                      const std::string& method, const json& params,
+                      const std::map<std::string, std::string>& headers,
                       const json& body) {
-    String url = this->urls["api"][api] + "/" + this->version + "/" + this->implodeParams(path, params);
-    String query = this->omit(params, this->extractParams(path));
+    std::string url = this->urls["api"][api] + "/" + this->version + "/" + this->implodeParams(path, params);
+    std::string query = this->omit(params, this->extractParams(path));
     
     if (api == "public") {
         if (!query.empty()) {
@@ -270,28 +270,28 @@ String Bitfinex::sign(const String& path, const String& api,
         }
     } else {
         this->checkRequiredCredentials();
-        String nonce = std::to_string(this->nonce());
-        String request = "/" + this->version + "/" + path;
+        std::string nonce = std::to_string(this->nonce());
+        std::string request = "/" + this->version + "/" + path;
         
         body = this->json(this->extend({
             {"request", request},
             {"nonce", nonce}
         }, query));
         
-        String signature = this->hmac(body, this->config_.secret, "sha384", "hex");
+        std::string signature = this->hmac(body, this->config_.secret, "sha384", "hex");
         
-        const_cast<std::map<String, String>&>(headers)["bfx-nonce"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["bfx-apikey"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["bfx-signature"] = signature;
-        const_cast<std::map<String, String>&>(headers)["content-type"] = "application/json";
+        const_cast<std::map<std::string, std::string>&>(headers)["bfx-nonce"] = nonce;
+        const_cast<std::map<std::string, std::string>&>(headers)["bfx-apikey"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["bfx-signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["content-type"] = "application/json";
     }
     
     return url;
 }
 
-String Bitfinex::createSignature(const String& path, const String& nonce,
-                               const String& body) {
-    String message = "/api/" + path + nonce + body;
+std::string Bitfinex::createSignature(const std::string& path, const std::string& nonce,
+                               const std::string& body) {
+    std::string message = "/api/" + path + nonce + body;
     
     unsigned char* hmac = nullptr;
     unsigned int hmacLen = 0;
@@ -305,8 +305,8 @@ String Bitfinex::createSignature(const String& path, const String& nonce,
     return this->toHex(hmac, hmacLen);
 }
 
-json Bitfinex::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json Bitfinex::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"ACTIVE", "open"},
         {"PARTIALLY FILLED", "open"},
         {"EXECUTED", "closed"},
@@ -320,12 +320,12 @@ json Bitfinex::parseOrderStatus(const String& status) {
 }
 
 json Bitfinex::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, 0);
-    String symbol = market.symbol;
-    String timestamp = this->safeString(order, 4);
-    String side = order[6] > 0 ? "buy" : "sell";
-    String type = this->safeString(order, 8);
-    String status = this->parseOrderStatus(this->safeString(order, 13));
+    std::string id = this->safeString(order, 0);
+    std::string symbol = market.symbol;
+    std::string timestamp = this->safeString(order, 4);
+    std::string side = order[6] > 0 ? "buy" : "sell";
+    std::string type = this->safeString(order, 8);
+    std::string status = this->parseOrderStatus(this->safeString(order, 13));
     
     return {
         {"id", id},
@@ -355,31 +355,31 @@ boost::future<json> Bitfinex::fetchMarketsAsync(const json& params) {
     });
 }
 
-boost::future<json> Bitfinex::fetchTickerAsync(const String& symbol, const json& params) {
+boost::future<json> Bitfinex::fetchTickerAsync(const std::string& symbol, const json& params) {
     return boost::async([this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+boost::future<json> Bitfinex::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return boost::async([this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return boost::async([this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async([this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+boost::future<json> Bitfinex::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                                            int since, int limit, const json& params) {
     return boost::async([this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
@@ -393,82 +393,82 @@ boost::future<json> Bitfinex::fetchBalanceAsync(const json& params) {
     });
 }
 
-boost::future<json> Bitfinex::createOrderAsync(const String& symbol, const String& type,
-                                           const String& side, double amount,
+boost::future<json> Bitfinex::createOrderAsync(const std::string& symbol, const std::string& type,
+                                           const std::string& side, double amount,
                                            double price, const json& params) {
     return boost::async([this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-boost::future<json> Bitfinex::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Bitfinex::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async([this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+boost::future<json> Bitfinex::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return boost::async([this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async([this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async([this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async([this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
 // Bitfinex specific methods - Async
-boost::future<json> Bitfinex::fetchPositionsAsync(const String& symbol, const json& params) {
+boost::future<json> Bitfinex::fetchPositionsAsync(const std::string& symbol, const json& params) {
     return boost::async([this, symbol, params]() {
         return this->fetchPositions(symbol, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async([this, symbol, since, limit, params]() {
         return this->fetchMyTrades(symbol, since, limit, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchLedgerAsync(const String& code, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchLedgerAsync(const std::string& code, int since, int limit, const json& params) {
     return boost::async([this, code, since, limit, params]() {
         return this->fetchLedger(code, since, limit, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchFundingRatesAsync(const std::vector<String>& symbols, const json& params) {
+boost::future<json> Bitfinex::fetchFundingRatesAsync(const std::vector<std::string>& symbols, const json& params) {
     return boost::async([this, symbols, params]() {
         return this->fetchFundingRates(symbols, params);
     });
 }
 
-boost::future<json> Bitfinex::setLeverageAsync(const String& symbol, double leverage, const json& params) {
+boost::future<json> Bitfinex::setLeverageAsync(const std::string& symbol, double leverage, const json& params) {
     return boost::async([this, symbol, leverage, params]() {
         return this->setLeverage(symbol, leverage, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchDepositsAsync(const String& code, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchDepositsAsync(const std::string& code, int since, int limit, const json& params) {
     return boost::async([this, code, since, limit, params]() {
         return this->fetchDeposits(code, since, limit, params);
     });
 }
 
-boost::future<json> Bitfinex::fetchWithdrawalsAsync(const String& code, int since, int limit, const json& params) {
+boost::future<json> Bitfinex::fetchWithdrawalsAsync(const std::string& code, int since, int limit, const json& params) {
     return boost::async([this, code, since, limit, params]() {
         return this->fetchWithdrawals(code, since, limit, params);
     });

@@ -197,8 +197,8 @@ Json gate::sign(const std::string &path, const std::string &api, const std::stri
     } else {
         this->checkRequiredCredentials();
         auto nonce = std::to_string(this->nonce());
-        auto bodyString = body.empty() ? "" : this->json(body);
-        auto auth = method + "\n" + url + "\n" + bodyString + "\n" + nonce;
+        auto bodystd::string = body.empty() ? "" : this->json(body);
+        auto auth = method + "\n" + url + "\n" + bodystd::string + "\n" + nonce;
         auto signature = this->hmac(auth, this->config_.secret, "SHA512", "hex");
         
         auto newHeaders = Json::object();
@@ -206,11 +206,11 @@ Json gate::sign(const std::string &path, const std::string &api, const std::stri
         newHeaders["Timestamp"] = nonce;
         newHeaders["SIGN"] = signature;
         
-        if (!bodyString.empty()) {
+        if (!bodystd::string.empty()) {
             newHeaders["Content-Type"] = "application/json";
         }
         
-        return {"url": url, "method": method, "body": bodyString, "headers": newHeaders};
+        return {"url": url, "method": method, "body": bodystd::string, "headers": newHeaders};
     }
     
     return {"url": url, "method": method};

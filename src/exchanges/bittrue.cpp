@@ -105,18 +105,18 @@ void BitTrue::sign(Request& request, const std::string& path, const std::string&
         }
 
         std::string timestamp = getNonce();
-        std::string queryString = "";
+        std::string querystd::string = "";
 
         if (!params.empty()) {
-            queryString = this->urlencode(params);
+            querystd::string = this->urlencode(params);
         }
 
         std::string payload = timestamp + method + path;
-        if (!queryString.empty()) {
-            payload += "?" + queryString;
+        if (!querystd::string.empty()) {
+            payload += "?" + querystd::string;
         }
 
-        std::string signature = getSignature(timestamp, method, path, queryString);
+        std::string signature = getSignature(timestamp, method, path, querystd::string);
 
         request.headers["X-BT-APIKEY"] = this->config_.apiKey;
         request.headers["X-BT-TIMESTAMP"] = timestamp;

@@ -15,7 +15,8 @@ protected:
 };
 
 TEST_F(BaseTest, ExchangeCreation) {
-    //ccxt::Binance exchange(config);
+    boost::asio::io_context context;
+    ccxt::Binance exchange(context, config);
    
 }
 

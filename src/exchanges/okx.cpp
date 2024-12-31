@@ -87,16 +87,16 @@ json OKX::fetchMarkets(const json& params) {
             {"quoteId", market["quoteCcy"]},
             {"active", market["state"] == "live"},
             {"precision", {
-                {"amount", std::stoi(market["lotSz"].get<String>())},
-                {"price", std::stoi(market["tickSz"].get<String>())}
+                {"amount", std::stoi(market["lotSz"].get<std::string>())},
+                {"price", std::stoi(market["tickSz"].get<std::string>())}
             }},
             {"limits", {
                 {"amount", {
-                    {"min", std::stod(market["minSz"].get<String>())},
-                    {"max", std::stod(market["maxSz"].get<String>())}
+                    {"min", std::stod(market["minSz"].get<std::string>())},
+                    {"max", std::stod(market["maxSz"].get<std::string>())}
                 }},
                 {"price", {
-                    {"min", std::stod(market["tickSz"].get<String>())}
+                    {"min", std::stod(market["tickSz"].get<std::string>())}
                 }}
             }},
             {"info", market}
@@ -115,9 +115,9 @@ json OKX::fetchBalance(const json& params) {
     };
     
     for (const auto& balance : response["data"][0]["details"]) {
-        String currency = balance["ccy"].get<String>();
-        double free = std::stod(balance["availBal"].get<String>());
-        double used = std::stod(balance["frozenBal"].get<String>());
+        std::string currency = balance["ccy"].get<std::string>();
+        double free = std::stod(balance["availBal"].get<std::string>());
+        double used = std::stod(balance["frozenBal"].get<std::string>());
         double total = free + used;
         
         if (total > 0) {
@@ -132,8 +132,8 @@ json OKX::fetchBalance(const json& params) {
     return result;
 }
 
-json OKX::createOrder(const String& symbol, const String& type,
-                     const String& side, double amount,
+json OKX::createOrder(const std::string& symbol, const std::string& type,
+                     const std::string& side, double amount,
                      double price, const json& params) {
     Market market = this->market(symbol);
     
@@ -155,42 +155,42 @@ json OKX::createOrder(const String& symbol, const String& type,
     return fetch("/api/v5/trade/order", "private", "POST", order);
 }
 
-String OKX::sign(const String& path, const String& api,
-                 const String& method, const json& params,
-                 const std::map<String, String>& headers,
+std::string OKX::sign(const std::string& path, const std::string& api,
+                 const std::string& method, const json& params,
+                 const std::map<std::string, std::string>& headers,
                  const json& body) {
-    String url = baseUrl + path;
+    std::string url = baseUrl + path;
     
     if (api == "private") {
         auto authHeaders = getAuthHeaders(method, path, body.dump());
         for (const auto& [key, value] : authHeaders) {
-            const_cast<std::map<String, String>&>(headers)[key] = value;
+            const_cast<std::map<std::string, std::string>&>(headers)[key] = value;
         }
     }
     
     if (!params.empty()) {
-        std::stringstream queryString;
+        std::stringstream querystd::string;
         bool first = true;
         for (const auto& [key, value] : params.items()) {
-            if (!first) queryString << "&";
-            queryString << key << "=" << value.get<String>();
+            if (!first) querystd::string << "&";
+            querystd::string << key << "=" << value.get<std::string>();
             first = false;
         }
-        url += "?" + queryString.str();
+        url += "?" + querystd::string.str();
     }
     
     return url;
 }
 
-String OKX::getTimestamp() {
+std::string OKX::getTimestamp() {
     auto now = std::chrono::system_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
     return std::to_string(ms.count());
 }
 
-String OKX::createSignature(const String& timestamp, const String& method,
-                          const String& requestPath, const String& body) {
-    String message = timestamp + method + requestPath + body;
+std::string OKX::createSignature(const std::string& timestamp, const std::string& method,
+                          const std::string& requestPath, const std::string& body) {
+    std::string message = timestamp + method + requestPath + body;
     
     unsigned char* digest = nullptr;
     unsigned int digestLen = 0;
@@ -204,11 +204,11 @@ String OKX::createSignature(const String& timestamp, const String& method,
     return base64_encode(digest, digestLen);
 }
 
-std::map<String, String> OKX::getAuthHeaders(const String& method,
-                                           const String& requestPath,
-                                           const String& body) {
-    String timestamp = getTimestamp();
-    String signature = createSignature(timestamp, method, requestPath, body);
+std::map<std::string, std::string> OKX::getAuthHeaders(const std::string& method,
+                                           const std::string& requestPath,
+                                           const std::string& body) {
+    std::string timestamp = getTimestamp();
+    std::string signature = createSignature(timestamp, method, requestPath, body);
     
     return {
         {"OK-ACCESS-KEY", apiKey},
@@ -218,7 +218,7 @@ std::map<String, String> OKX::getAuthHeaders(const String& method,
     };
 }
 
-json OKX::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchMyTrades requires a symbol argument");
     }
@@ -237,10 +237,10 @@ json OKX::fetchMyTrades(const String& symbol, int since, int limit, const json& 
     return this->parseTrades(response["data"], market, since, limit);
 }
 
-json OKX::fetchLedger(const String& code, int since, int limit, const json& params) {
+json OKX::fetchLedger(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     json request = {};
-    String currency;
+    std::string currency;
     if (!code.empty()) {
         currency = this->currency(code).id;
         request["ccy"] = currency;
@@ -255,10 +255,10 @@ json OKX::fetchLedger(const String& code, int since, int limit, const json& para
     return this->parseLedger(response["data"], currency, since, limit);
 }
 
-json OKX::fetchDeposits(const String& code, int since, int limit, const json& params) {
+json OKX::fetchDeposits(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     json request = {};
-    String currency;
+    std::string currency;
     if (!code.empty()) {
         currency = this->currency(code).id;
         request["ccy"] = currency;
@@ -273,10 +273,10 @@ json OKX::fetchDeposits(const String& code, int since, int limit, const json& pa
     return this->parseTransactions(response["data"], currency, since, limit, "deposit");
 }
 
-json OKX::fetchWithdrawals(const String& code, int since, int limit, const json& params) {
+json OKX::fetchWithdrawals(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     json request = {};
-    String currency;
+    std::string currency;
     if (!code.empty()) {
         currency = this->currency(code).id;
         request["ccy"] = currency;
@@ -291,9 +291,9 @@ json OKX::fetchWithdrawals(const String& code, int since, int limit, const json&
     return this->parseTransactions(response["data"], currency, since, limit, "withdrawal");
 }
 
-json OKX::fetchDepositAddress(const String& code, const json& params) {
+json OKX::fetchDepositAddress(const std::string& code, const json& params) {
     this->loadMarkets();
-    String currency = this->currency(code).id;
+    std::string currency = this->currency(code).id;
     json request = {
         {"ccy", currency}
     };
@@ -301,7 +301,7 @@ json OKX::fetchDepositAddress(const String& code, const json& params) {
     return this->parseDepositAddress(response["data"][0]);
 }
 
-json OKX::fetchFundingRate(const String& symbol, const json& params) {
+json OKX::fetchFundingRate(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -311,7 +311,7 @@ json OKX::fetchFundingRate(const String& symbol, const json& params) {
     return this->parseFundingRate(response["data"][0], market);
 }
 
-json OKX::fetchFundingRateHistory(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchFundingRateHistory(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -327,7 +327,7 @@ json OKX::fetchFundingRateHistory(const String& symbol, int since, int limit, co
     return this->parseFundingRateHistory(response["data"], market, since, limit);
 }
 
-json OKX::setLeverage(int leverage, const String& symbol, const String& type, const json& params) {
+json OKX::setLeverage(int leverage, const std::string& symbol, const std::string& type, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -340,7 +340,7 @@ json OKX::setLeverage(int leverage, const String& symbol, const String& type, co
     return fetch("/api/v5/account/set-leverage", "private", "POST", request);
 }
 
-json OKX::setMarginMode(const String& marginMode, const String& symbol, const json& params) {
+json OKX::setMarginMode(const std::string& marginMode, const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     json request = {
@@ -356,31 +356,31 @@ json OKX::fetchMarketsAsync(const json& params) {
     });
 }
 
-json OKX::fetchTickerAsync(const String& symbol, const json& params) {
+json OKX::fetchTickerAsync(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-json OKX::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+json OKX::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return this->fetchTickers(symbols, params);
     });
 }
 
-json OKX::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+json OKX::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-json OKX::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
 }
 
-json OKX::fetchOHLCVAsync(const String& symbol, const String& timeframe,
+json OKX::fetchOHLCVAsync(const std::string& symbol, const std::string& timeframe,
                          int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return this->fetchOHLCV(symbol, timeframe, since, limit, params);
@@ -393,93 +393,93 @@ json OKX::fetchBalanceAsync(const json& params) {
     });
 }
 
-json OKX::createOrderAsync(const String& symbol, const String& type,
-                         const String& side, double amount,
+json OKX::createOrderAsync(const std::string& symbol, const std::string& type,
+                         const std::string& side, double amount,
                          double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-json OKX::cancelOrderAsync(const String& id, const String& symbol, const json& params) {
+json OKX::cancelOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->cancelOrder(id, symbol, params);
     });
 }
 
-json OKX::fetchOrderAsync(const String& id, const String& symbol, const json& params) {
+json OKX::fetchOrderAsync(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return this->fetchOrder(id, symbol, params);
     });
 }
 
-json OKX::fetchOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOrders(symbol, since, limit, params);
     });
 }
 
-json OKX::fetchOpenOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchOpenOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-json OKX::fetchClosedOrdersAsync(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchClosedOrdersAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
-json OKX::fetchMyTradesAsync(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchMyTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchMyTrades(symbol, since, limit, params);
     });
 }
 
-json OKX::fetchLedgerAsync(const String& code, int since, int limit, const json& params) {
+json OKX::fetchLedgerAsync(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return this->fetchLedger(code, since, limit, params);
     });
 }
 
-json OKX::fetchDepositsAsync(const String& code, int since, int limit, const json& params) {
+json OKX::fetchDepositsAsync(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return this->fetchDeposits(code, since, limit, params);
     });
 }
 
-json OKX::fetchWithdrawalsAsync(const String& code, int since, int limit, const json& params) {
+json OKX::fetchWithdrawalsAsync(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return this->fetchWithdrawals(code, since, limit, params);
     });
 }
 
-json OKX::fetchDepositAddressAsync(const String& code, const json& params) {
+json OKX::fetchDepositAddressAsync(const std::string& code, const json& params) {
     return std::async(std::launch::async, [this, code, params]() {
         return this->fetchDepositAddress(code, params);
     });
 }
 
-json OKX::fetchFundingRateAsync(const String& symbol, const json& params) {
+json OKX::fetchFundingRateAsync(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return this->fetchFundingRate(symbol, params);
     });
 }
 
-json OKX::fetchFundingRateHistoryAsync(const String& symbol, int since, int limit, const json& params) {
+json OKX::fetchFundingRateHistoryAsync(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return this->fetchFundingRateHistory(symbol, since, limit, params);
     });
 }
 
-json OKX::setLeverageAsync(int leverage, const String& symbol, const String& type, const json& params) {
+json OKX::setLeverageAsync(int leverage, const std::string& symbol, const std::string& type, const json& params) {
     return std::async(std::launch::async, [this, leverage, symbol, type, params]() {
         return this->setLeverage(leverage, symbol, type, params);
     });
 }
 
-json OKX::setMarginModeAsync(const String& marginMode, const String& symbol, const json& params) {
+json OKX::setMarginModeAsync(const std::string& marginMode, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, marginMode, symbol, params]() {
         return this->setMarginMode(marginMode, symbol, params);
     });

@@ -146,21 +146,21 @@ json Luno::fetchMarkets(const json& params) {
     return markets;
 }
 
-json Luno::fetchTicker(const String& symbol, const json& params) {
+json Luno::fetchTicker(const std::string& symbol, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {{"pair", market["id"]}};
     auto response = fetch("/exchange/ticker", "exchange", "GET", extend(request, params));
     return parseTicker(response, market);
 }
 
-json Luno::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Luno::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     auto response = fetch("/exchange/tickers", "exchange", "GET", params);
     auto result = json::object();
     for (const auto& ticker : response["tickers"]) {
-        auto marketId = ticker["market"].get<String>();
+        auto marketId = ticker["market"].get<std::string>();
         if (markets_by_id.find(marketId) != markets_by_id.end()) {
             auto market = markets_by_id[marketId];
-            auto symbol = market["symbol"].get<String>();
+            auto symbol = market["symbol"].get<std::string>();
             if (symbols.empty() || std::find(symbols.begin(), symbols.end(), symbol) != symbols.end()) {
                 result[symbol] = parseTicker(ticker, market);
             }
@@ -169,7 +169,7 @@ json Luno::fetchTickers(const std::vector<String>& symbols, const json& params) 
     return result;
 }
 
-json Luno::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Luno::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {{"pair", market["id"]}};
     if (limit) {
@@ -179,7 +179,7 @@ json Luno::fetchOrderBook(const String& symbol, int limit, const json& params) {
     return parseOrderBook(response, market["symbol"], undefined, "bids", "asks", "price", "volume");
 }
 
-json Luno::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json Luno::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {{"pair", market["id"]}};
     if (since) {
@@ -192,7 +192,7 @@ json Luno::fetchTrades(const String& symbol, int since, int limit, const json& p
     return parseTrades(response["trades"], market, since, limit);
 }
 
-json Luno::fetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+json Luno::fetchOHLCV(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     auto market = loadMarket(symbol);
     auto request = {
         {"pair", market["id"]},
@@ -215,31 +215,31 @@ AsyncPullType Luno::asyncFetchMarkets(const json& params) {
     });
 }
 
-AsyncPullType Luno::asyncFetchTicker(const String& symbol, const json& params) {
+AsyncPullType Luno::asyncFetchTicker(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return fetchTicker(symbol, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchTickers(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Luno::asyncFetchTickers(const std::vector<std::string>& symbols, const json& params) {
     return std::async(std::launch::async, [this, symbols, params]() {
         return fetchTickers(symbols, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchOrderBook(const String& symbol, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOrderBook(const std::string& symbol, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, limit, params]() {
         return fetchOrderBook(symbol, limit, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchTrades(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchOHLCV(const String& symbol, const String& timeframe, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOHLCV(const std::string& symbol, const std::string& timeframe, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, timeframe, since, limit, params]() {
         return fetchOHLCV(symbol, timeframe, since, limit, params);
     });
@@ -345,7 +345,7 @@ json Luno::fetchBalance(const json& params) {
     return parseBalance(response);
 }
 
-json Luno::createOrder(const String& symbol, const String& type, const String& side,
+json Luno::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                       double amount, double price, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
@@ -370,19 +370,19 @@ json Luno::createOrder(const String& symbol, const String& type, const String& s
     return parseOrder(response);
 }
 
-json Luno::cancelOrder(const String& id, const String& symbol, const json& params) {
+json Luno::cancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     checkRequiredCredentials();
     return fetch("/exchange/orders/" + id, "exchangePrivate", "DELETE", params);
 }
 
-json Luno::fetchOrder(const String& id, const String& symbol, const json& params) {
+json Luno::fetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     checkRequiredCredentials();
     auto request = {{"id", id}};
     auto response = fetch("/exchange/order", "exchangePrivate", "GET", extend(request, params));
     return parseOrder(response);
 }
 
-json Luno::fetchOrders(const String& symbol, int since, int limit, const json& params) {
+json Luno::fetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
     auto request = {{"pair", market["id"]}};
@@ -396,19 +396,19 @@ json Luno::fetchOrders(const String& symbol, int since, int limit, const json& p
     return parseOrders(response["orders"], market, since, limit);
 }
 
-json Luno::fetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+json Luno::fetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     auto request = params;
     request["state"] = "PENDING";
     return fetchOrders(symbol, since, limit, request);
 }
 
-json Luno::fetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+json Luno::fetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     auto request = params;
     request["state"] = "COMPLETE";
     return fetchOrders(symbol, since, limit, request);
 }
 
-json Luno::fetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+json Luno::fetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
     auto request = {{"pair", market["id"]}};
@@ -429,7 +429,7 @@ json Luno::fetchAccounts(const json& params) {
     return response["accounts"];
 }
 
-json Luno::fetchLedger(const String& code, int since, int limit, const json& params) {
+json Luno::fetchLedger(const std::string& code, int since, int limit, const json& params) {
     checkRequiredCredentials();
     auto currency = loadCurrency(code);
     auto accountId = getAccountId("spot", currency["id"]);
@@ -444,7 +444,7 @@ json Luno::fetchLedger(const String& code, int since, int limit, const json& par
     return parseLedger(response["transactions"], currency, since, limit);
 }
 
-json Luno::fetchTradingFee(const String& symbol, const json& params) {
+json Luno::fetchTradingFee(const std::string& symbol, const json& params) {
     checkRequiredCredentials();
     auto market = loadMarket(symbol);
     auto response = fetch("/exchange/fee_info", "exchangePrivate", "GET", params);
@@ -571,7 +571,7 @@ json Luno::parseTradingFee(const json& fee, const Market& market) {
     };
 }
 
-String Luno::getAccountId(const String& type, const String& currency) {
+std::string Luno::getAccountId(const std::string& type, const std::string& currency) {
     auto accounts = fetchAccounts();
     for (const auto& account : accounts) {
         if (account["type"] == type && account["currency"] == currency) {
@@ -588,13 +588,13 @@ AsyncPullType Luno::asyncFetchAccounts(const json& params) {
     });
 }
 
-AsyncPullType Luno::asyncFetchLedger(const String& code, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchLedger(const std::string& code, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, code, since, limit, params]() {
         return fetchLedger(code, since, limit, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchTradingFee(const String& symbol, const json& params) {
+AsyncPullType Luno::asyncFetchTradingFee(const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, symbol, params]() {
         return fetchTradingFee(symbol, params);
     });
@@ -607,44 +607,44 @@ AsyncPullType Luno::asyncFetchBalance(const json& params) {
     });
 }
 
-AsyncPullType Luno::asyncCreateOrder(const String& symbol, const String& type, const String& side,
+AsyncPullType Luno::asyncCreateOrder(const std::string& symbol, const std::string& type, const std::string& side,
                                        double amount, double price, const json& params) {
     return std::async(std::launch::async, [this, symbol, type, side, amount, price, params]() {
         return createOrder(symbol, type, side, amount, price, params);
     });
 }
 
-AsyncPullType Luno::asyncCancelOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Luno::asyncCancelOrder(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return cancelOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchOrder(const String& id, const String& symbol, const json& params) {
+AsyncPullType Luno::asyncFetchOrder(const std::string& id, const std::string& symbol, const json& params) {
     return std::async(std::launch::async, [this, id, symbol, params]() {
         return fetchOrder(id, symbol, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOrders(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchOpenOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchOpenOrders(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchOpenOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchClosedOrders(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchClosedOrders(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchClosedOrders(symbol, since, limit, params);
     });
 }
 
-AsyncPullType Luno::asyncFetchMyTrades(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Luno::asyncFetchMyTrades(const std::string& symbol, int since, int limit, const json& params) {
     return std::async(std::launch::async, [this, symbol, since, limit, params]() {
         return fetchMyTrades(symbol, since, limit, params);
     });

@@ -11,65 +11,65 @@ public:
 
     // Market Data API
     json fetchMarkets(const json& params = json::object()) override;
-    json fetchTicker(const String& symbol, const json& params = json::object()) override;
-    json fetchTickers(const std::vector<String>& symbols = {}, const json& params = json::object()) override;
-    json fetchOrderBook(const String& symbol, int limit = 0, const json& params = json::object()) override;
-    json fetchTrades(const String& symbol, int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOHLCV(const String& symbol, const String& timeframe = "1m",
+    json fetchTicker(const std::string& symbol, const json& params = json::object()) override;
+    json fetchTickers(const std::vector<std::string>& symbols = {}, const json& params = json::object()) override;
+    json fetchOrderBook(const std::string& symbol, int limit = 0, const json& params = json::object()) override;
+    json fetchTrades(const std::string& symbol, int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchOHLCV(const std::string& symbol, const std::string& timeframe = "1m",
                     int since = 0, int limit = 0, const json& params = json::object()) override;
 
     // Trading API
     json fetchBalance(const json& params = json::object()) override;
-    json createOrder(const String& symbol, const String& type, const String& side,
+    json createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                     double amount, double price = 0, const json& params = json::object()) override;
-    json cancelOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrder(const String& id, const String& symbol = "", const json& params = json::object()) override;
-    json fetchOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchOpenOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
-    json fetchClosedOrders(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json cancelOrder(const std::string& id, const std::string& symbol = "", const json& params = json::object()) override;
+    json fetchOrder(const std::string& id, const std::string& symbol = "", const json& params = json::object()) override;
+    json fetchOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchOpenOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
+    json fetchClosedOrders(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object()) override;
 
     // Kraken Pro specific methods
-    json fetchPositions(const String& symbol = "", const json& params = json::object());
-    json fetchLeverage(const String& symbol, const json& params = json::object());
-    json setLeverage(const String& symbol, double leverage, const json& params = json::object());
-    json setMarginMode(const String& symbol, const String& marginMode, const json& params = json::object());
-    json fetchFundingRate(const String& symbol, const json& params = json::object());
-    json fetchFundingRates(const std::vector<String>& symbols = {}, const json& params = json::object());
-    json fetchFundingHistory(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchIndexOHLCV(const String& symbol, const String& timeframe = "1m",
+    json fetchPositions(const std::string& symbol = "", const json& params = json::object());
+    json fetchLeverage(const std::string& symbol, const json& params = json::object());
+    json setLeverage(const std::string& symbol, double leverage, const json& params = json::object());
+    json setMarginMode(const std::string& symbol, const std::string& marginMode, const json& params = json::object());
+    json fetchFundingRate(const std::string& symbol, const json& params = json::object());
+    json fetchFundingRates(const std::vector<std::string>& symbols = {}, const json& params = json::object());
+    json fetchFundingHistory(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    json fetchIndexOHLCV(const std::string& symbol, const std::string& timeframe = "1m",
                         int since = 0, int limit = 0, const json& params = json::object());
-    json fetchMarkOHLCV(const String& symbol, const String& timeframe = "1m",
+    json fetchMarkOHLCV(const std::string& symbol, const std::string& timeframe = "1m",
                        int since = 0, int limit = 0, const json& params = json::object());
-    json fetchPremiumIndexOHLCV(const String& symbol, const String& timeframe = "1m",
+    json fetchPremiumIndexOHLCV(const std::string& symbol, const std::string& timeframe = "1m",
                                int since = 0, int limit = 0, const json& params = json::object());
-    json fetchMyTrades(const String& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchDeposits(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
-    json fetchWithdrawals(const String& code = "", int since = 0, int limit = 0, const json& params = json::object());
+    json fetchMyTrades(const std::string& symbol = "", int since = 0, int limit = 0, const json& params = json::object());
+    json fetchDeposits(const std::string& code = "", int since = 0, int limit = 0, const json& params = json::object());
+    json fetchWithdrawals(const std::string& code = "", int since = 0, int limit = 0, const json& params = json::object());
 
 protected:
-    String sign(const String& path, const String& api = "public",
-               const String& method = "GET", const json& params = json::object(),
-               const std::map<String, String>& headers = {}, const json& body = nullptr) override;
+    std::string sign(const std::string& path, const std::string& api = "public",
+               const std::string& method = "GET", const json& params = json::object(),
+               const std::map<std::string, std::string>& headers = {}, const json& body = nullptr) override;
 
 private:
     void initializeApiEndpoints();
-    String getTimestamp();
-    String createSignature(const String& timestamp, const String& method,
-                         const String& path, const String& body = "");
-    String getKrakenSymbol(const String& symbol);
-    String getCommonSymbol(const String& krakenSymbol);
+    std::string getTimestamp();
+    std::string createSignature(const std::string& timestamp, const std::string& method,
+                         const std::string& path, const std::string& body = "");
+    std::string getKrakenSymbol(const std::string& symbol);
+    std::string getCommonSymbol(const std::string& krakenSymbol);
     json parseOrder(const json& order, const Market& market = Market());
     json parseTrade(const json& trade, const Market& market = Market());
     json parsePosition(const json& position, const Market& market = Market());
-    json parseOrderStatus(const String& status);
-    double parseNumber(const String& numberString);
-    String formatNumber(double number);
-    String getOrderId(const json& order);
+    json parseOrderStatus(const std::string& status);
+    double parseNumber(const std::string& numberstd::string);
+    std::string formatNumber(double number);
+    std::string getOrderId(const json& order);
 
-    std::map<String, String> timeframes;
+    std::map<std::string, std::string> timeframes;
     bool testnet;
-    String defaultType;  // "spot" or "futures"
-    std::map<String, String> options;
+    std::string defaultType;  // "spot" or "futures"
+    std::map<std::string, std::string> options;
 };
 
 } // namespace ccxt

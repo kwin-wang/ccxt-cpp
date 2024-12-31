@@ -102,13 +102,13 @@ json Bithumbglobal::fetchMarkets(const json& params) {
     json result = json::array();
     
     for (const auto& market : spotConfig["spotConfig"]) {
-        String id = market["symbol"].get<String>();
-        std::vector<String> parts = this->split(id, "-");
-        String baseId = parts[0];
-        String quoteId = parts[1];
-        String base = this->safeCurrencyCode(baseId);
-        String quote = this->safeCurrencyCode(quoteId);
-        String symbol = base + "/" + quote;
+        std::string id = market["symbol"].get<std::string>();
+        std::vector<std::string> parts = this->split(id, "-");
+        std::string baseId = parts[0];
+        std::string quoteId = parts[1];
+        std::string base = this->safeCurrencyCode(baseId);
+        std::string quote = this->safeCurrencyCode(quoteId);
+        std::string symbol = base + "/" + quote;
         
         result.push_back({
             {"id", id},
@@ -153,9 +153,9 @@ json Bithumbglobal::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : response) {
-        String currencyId = balance["coinType"].get<String>();
-        String code = this->safeCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = balance["coinType"].get<std::string>();
+        std::string code = this->safeCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "available")},
             {"used", this->safeFloat(balance, "frozen")},
             {"total", this->safeFloat(balance, "total")}
@@ -166,12 +166,12 @@ json Bithumbglobal::parseBalance(const json& response) {
     return result;
 }
 
-json Bithumbglobal::createOrder(const String& symbol, const String& type,
-                              const String& side, double amount,
+json Bithumbglobal::createOrder(const std::string& symbol, const std::string& type,
+                              const std::string& side, double amount,
                               double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
-    String uppercaseType = type.toUpperCase();
+    std::string uppercaseType = type.toUpperCase();
     
     json request = {
         {"symbol", market["id"]},
@@ -189,16 +189,16 @@ json Bithumbglobal::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["data"], market);
 }
 
-String Bithumbglobal::sign(const String& path, const String& api,
-                          const String& method, const json& params,
-                          const std::map<String, String>& headers,
+std::string Bithumbglobal::sign(const std::string& path, const std::string& api,
+                          const std::string& method, const json& params,
+                          const std::map<std::string, std::string>& headers,
                           const json& body) {
-    String url = this->urls["api"][api] + path;
+    std::string url = this->urls["api"][api] + path;
     
     if (api == "private") {
         this->checkRequiredCredentials();
-        String timestamp = std::to_string(this->milliseconds());
-        String nonce = this->uuid();
+        std::string timestamp = std::to_string(this->milliseconds());
+        std::string nonce = this->uuid();
         
         json payload = {
             {"apiKey", this->config_.apiKey},
@@ -217,8 +217,8 @@ String Bithumbglobal::sign(const String& path, const String& api,
             body = this->json(payload);
         }
         
-        String payloadString = this->json(this->keysort(payload));
-        String signature = this->hmac(payloadString, this->encode(this->config_.secret),
+        std::string payloadstd::string = this->json(this->keysort(payload));
+        std::string signature = this->hmac(payloadstd::string, this->encode(this->config_.secret),
                                     "sha256", "hex");
         
         if (method == "GET") {
@@ -227,13 +227,13 @@ String Bithumbglobal::sign(const String& path, const String& api,
             }
         }
         
-        const_cast<std::map<String, String>&>(headers)["Api-Key"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Api-Timestamp"] = timestamp;
-        const_cast<std::map<String, String>&>(headers)["Api-Nonce"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["Api-Signature"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Key"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Timestamp"] = timestamp;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Nonce"] = nonce;
+        const_cast<std::map<std::string, std::string>&>(headers)["Api-Signature"] = signature;
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     } else {
         if (!params.empty()) {
@@ -244,20 +244,20 @@ String Bithumbglobal::sign(const String& path, const String& api,
     return url;
 }
 
-String Bithumbglobal::getNonce() {
+std::string Bithumbglobal::getNonce() {
     return this->uuid();
 }
 
 json Bithumbglobal::parseOrder(const json& order, const Market& market) {
-    String id = this->safeString(order, "orderId");
-    String timestamp = this->safeString(order, "createTime");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = nullptr;
+    std::string id = this->safeString(order, "orderId");
+    std::string timestamp = this->safeString(order, "createTime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = nullptr;
     
     if (!market.empty()) {
         symbol = market["symbol"];
     } else {
-        String marketId = this->safeString(order, "symbol");
+        std::string marketId = this->safeString(order, "symbol");
         if (marketId != nullptr) {
             if (this->markets_by_id.contains(marketId)) {
                 market = this->markets_by_id[marketId];
@@ -268,8 +268,8 @@ json Bithumbglobal::parseOrder(const json& order, const Market& market) {
         }
     }
     
-    String type = this->safeStringLower(order, "type");
-    String side = this->safeStringLower(order, "side");
+    std::string type = this->safeStringLower(order, "type");
+    std::string side = this->safeStringLower(order, "side");
     
     return {
         {"id", id},
@@ -294,8 +294,8 @@ json Bithumbglobal::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String Bithumbglobal::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+std::string Bithumbglobal::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"PARTIALLY_FILLED", "open"},
         {"FILLED", "closed"},

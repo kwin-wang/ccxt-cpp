@@ -273,7 +273,7 @@ json Woo::fetchTime(const json& params) {
     return this->safeInteger(response, "timestamp");
 }
 
-json Woo::fetchTicker(const String& symbol, const json& params) {
+json Woo::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -283,7 +283,7 @@ json Woo::fetchTicker(const String& symbol, const json& params) {
     return this->parseTicker(response, market);
 }
 
-json Woo::fetchTickers(const std::vector<String>& symbols, const json& params) {
+json Woo::fetchTickers(const std::vector<std::string>& symbols, const json& params) {
     this->loadMarkets();
     auto response = this->publicGetV1PublicTicker(params);
     auto data = this->safeValue(response, "data", json::array());
@@ -291,7 +291,7 @@ json Woo::fetchTickers(const std::vector<String>& symbols, const json& params) {
     return this->parseTickers(rows, symbols);
 }
 
-json Woo::fetchOrderBook(const String& symbol, int limit, const json& params) {
+json Woo::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -304,7 +304,7 @@ json Woo::fetchOrderBook(const String& symbol, int limit, const json& params) {
     return this->parseOrderBook(response, market["symbol"]);
 }
 
-json Woo::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+json Woo::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     this->loadMarkets();
     auto market = this->market(symbol);
     auto request = {
@@ -332,19 +332,19 @@ AsyncPullType Woo::fetchTimeAsync(const json& params) {
     return async(&Woo::fetchTime, params);
 }
 
-AsyncPullType Woo::fetchTickerAsync(const String& symbol, const json& params) {
+AsyncPullType Woo::fetchTickerAsync(const std::string& symbol, const json& params) {
     return async(&Woo::fetchTicker, symbol, params);
 }
 
-AsyncPullType Woo::fetchTickersAsync(const std::vector<String>& symbols, const json& params) {
+AsyncPullType Woo::fetchTickersAsync(const std::vector<std::string>& symbols, const json& params) {
     return async(&Woo::fetchTickers, symbols, params);
 }
 
-AsyncPullType Woo::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+AsyncPullType Woo::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return async(&Woo::fetchOrderBook, symbol, limit, params);
 }
 
-AsyncPullType Woo::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+AsyncPullType Woo::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return async(&Woo::fetchTrades, symbol, since, limit, params);
 }
 
@@ -364,7 +364,7 @@ json Woo::fetchBalance(const json& params) {
     return this->parseBalance(holding);
 }
 
-json Woo::fetchLedger(const String& code, int since, int limit, const json& params) {
+json Woo::fetchLedger(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     auto request = json::object();
     Currency currency;
@@ -384,7 +384,7 @@ json Woo::fetchLedger(const String& code, int since, int limit, const json& para
     return this->parseLedger(rows, currency, since, limit);
 }
 
-json Woo::fetchDepositAddress(const String& code, const json& params) {
+json Woo::fetchDepositAddress(const std::string& code, const json& params) {
     this->loadMarkets();
     auto currency = this->currency(code);
     auto request = {
@@ -395,7 +395,7 @@ json Woo::fetchDepositAddress(const String& code, const json& params) {
     return this->parseDepositAddress(data, currency);
 }
 
-json Woo::fetchDeposits(const String& code, int since, int limit, const json& params) {
+json Woo::fetchDeposits(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     auto request = json::object();
     Currency currency;
@@ -415,7 +415,7 @@ json Woo::fetchDeposits(const String& code, int since, int limit, const json& pa
     return this->parseTransactions(rows, currency, since, limit, "deposit");
 }
 
-json Woo::fetchWithdrawals(const String& code, int since, int limit, const json& params) {
+json Woo::fetchWithdrawals(const std::string& code, int since, int limit, const json& params) {
     this->loadMarkets();
     auto request = json::object();
     Currency currency;
@@ -444,21 +444,21 @@ AsyncPullType Woo::fetchBalanceAsync(const json& params) {
     return async(&Woo::fetchBalance, params);
 }
 
-AsyncPullType Woo::fetchLedgerAsync(const String& code, int since, int limit,
+AsyncPullType Woo::fetchLedgerAsync(const std::string& code, int since, int limit,
                                       const json& params) {
     return async(&Woo::fetchLedger, code, since, limit, params);
 }
 
-AsyncPullType Woo::fetchDepositAddressAsync(const String& code, const json& params) {
+AsyncPullType Woo::fetchDepositAddressAsync(const std::string& code, const json& params) {
     return async(&Woo::fetchDepositAddress, code, params);
 }
 
-AsyncPullType Woo::fetchDepositsAsync(const String& code, int since, int limit,
+AsyncPullType Woo::fetchDepositsAsync(const std::string& code, int since, int limit,
                                         const json& params) {
     return async(&Woo::fetchDeposits, code, since, limit, params);
 }
 
-AsyncPullType Woo::fetchWithdrawalsAsync(const String& code, int since, int limit,
+AsyncPullType Woo::fetchWithdrawalsAsync(const std::string& code, int since, int limit,
                                            const json& params) {
     return async(&Woo::fetchWithdrawals, code, since, limit, params);
 }
@@ -541,7 +541,7 @@ json Woo::parseDepositAddress(const json& depositAddress, const Currency& curren
     };
 }
 
-json Woo::parseTransaction(const json& transaction, const String& type) {
+json Woo::parseTransaction(const json& transaction, const std::string& type) {
     auto id = this->safeString(transaction, "id");
     auto timestamp = this->safeInteger(transaction, "created_time");
     auto currencyId = this->safeString(transaction, "token");
@@ -575,7 +575,7 @@ json Woo::parseTransaction(const json& transaction, const String& type) {
     };
 }
 
-String Woo::parseTransactionStatus(const String& status) {
+std::string Woo::parseTransactionStatus(const std::string& status) {
     auto statuses = {
         {"NEW", "pending"},
         {"PROCESSING", "pending"},
@@ -614,8 +614,8 @@ json Woo::parseTicker(const json& ticker, const Market& market) {
     };
 }
 
-String Woo::sign(const String& path, const String& api, const String& method,
-                const json& params, const json& headers, const String& body) {
+std::string Woo::sign(const std::string& path, const std::string& api, const std::string& method,
+                const json& params, const json& headers, const std::string& body) {
     auto url = this->urls["api"][api];
     url = this->implodeParams(url, {{"hostname", this->hostname}});
     auto query = this->omit(params, this->extractParams(path));
@@ -636,9 +636,9 @@ String Woo::sign(const String& path, const String& api, const String& method,
             }
         } else {
             if (!query.empty()) {
-                auto queryString = this->urlencode(query);
-                auth += "?" + queryString;
-                url += "?" + queryString;
+                auto querystd::string = this->urlencode(query);
+                auth += "?" + querystd::string;
+                url += "?" + querystd::string;
             }
         }
         auto signature = this->hmac(this->encode(auth), this->encode(this->config_.secret));

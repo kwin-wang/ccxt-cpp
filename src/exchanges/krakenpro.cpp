@@ -103,12 +103,12 @@ json KrakenPro::fetchMarkets(const json& params) {
     json markets = json::array();
     
     for (const auto& market : response["instruments"]) {
-        String id = market["symbol"];
-        String baseId = market["underlying"];
-        String quoteId = market["quoteCurrency"];
-        String base = this->commonCurrencyCode(baseId);
-        String quote = this->commonCurrencyCode(quoteId);
-        String type = market["type"].get<String>();
+        std::string id = market["symbol"];
+        std::string baseId = market["underlying"];
+        std::string quoteId = market["quoteCurrency"];
+        std::string base = this->commonCurrencyCode(baseId);
+        std::string quote = this->commonCurrencyCode(quoteId);
+        std::string type = market["type"].get<std::string>();
         bool active = market["tradeable"];
         
         markets.push_back({
@@ -155,7 +155,7 @@ json KrakenPro::fetchMarkets(const json& params) {
     return markets;
 }
 
-json KrakenPro::fetchTicker(const String& symbol, const json& params) {
+json KrakenPro::fetchTicker(const std::string& symbol, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
     
@@ -194,8 +194,8 @@ json KrakenPro::fetchBalance(const json& params) {
     json result = {"info", response};
     
     for (const auto& balance : response["accounts"]) {
-        String currencyId = balance["currency"];
-        String code = this->commonCurrencyCode(currencyId);
+        std::string currencyId = balance["currency"];
+        std::string code = this->commonCurrencyCode(currencyId);
         
         result[code] = {
             {"free", balance["availableBalance"]},
@@ -207,8 +207,8 @@ json KrakenPro::fetchBalance(const json& params) {
     return result;
 }
 
-json KrakenPro::createOrder(const String& symbol, const String& type,
-                           const String& side, double amount,
+json KrakenPro::createOrder(const std::string& symbol, const std::string& type,
+                           const std::string& side, double amount,
                            double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -232,12 +232,12 @@ json KrakenPro::createOrder(const String& symbol, const String& type,
     return this->parseOrder(response["sendStatus"], market);
 }
 
-String KrakenPro::sign(const String& path, const String& api,
-                       const String& method, const json& params,
-                       const std::map<String, String>& headers,
+std::string KrakenPro::sign(const std::string& path, const std::string& api,
+                       const std::string& method, const json& params,
+                       const std::map<std::string, std::string>& headers,
                        const json& body) {
-    String url = this->urls["api"][api] + "/" + path;
-    String timestamp = std::to_string(this->milliseconds());
+    std::string url = this->urls["api"][api] + "/" + path;
+    std::string timestamp = std::to_string(this->milliseconds());
     
     if (api == "public") {
         if (!params.empty()) {
@@ -246,12 +246,12 @@ String KrakenPro::sign(const String& path, const String& api,
     } else {
         this->checkRequiredCredentials();
         
-        String nonce = this->nonce().str();
-        String auth = path + nonce + timestamp;
+        std::string nonce = this->nonce().str();
+        std::string auth = path + nonce + timestamp;
         
         if (method == "GET") {
             if (!params.empty()) {
-                String query = this->urlencode(this->keysort(params));
+                std::string query = this->urlencode(this->keysort(params));
                 url += "?" + query;
                 auth += query;
             }
@@ -262,15 +262,15 @@ String KrakenPro::sign(const String& path, const String& api,
             }
         }
         
-        String signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
+        std::string signature = this->hmac(auth, this->base64ToBinary(this->config_.secret),
                                     "sha512", "base64");
         
-        const_cast<std::map<String, String>&>(headers)["APIKey"] = this->config_.apiKey;
-        const_cast<std::map<String, String>&>(headers)["Nonce"] = nonce;
-        const_cast<std::map<String, String>&>(headers)["Authent"] = signature;
+        const_cast<std::map<std::string, std::string>&>(headers)["APIKey"] = this->config_.apiKey;
+        const_cast<std::map<std::string, std::string>&>(headers)["Nonce"] = nonce;
+        const_cast<std::map<std::string, std::string>&>(headers)["Authent"] = signature;
         
         if (method != "GET") {
-            const_cast<std::map<String, String>&>(headers)["Content-Type"] = "application/json";
+            const_cast<std::map<std::string, std::string>&>(headers)["Content-Type"] = "application/json";
         }
     }
     
@@ -278,9 +278,9 @@ String KrakenPro::sign(const String& path, const String& api,
 }
 
 json KrakenPro::parseOrder(const json& order, const Market& market) {
-    String id = this->getOrderId(order);
-    String timestamp = this->safeInteger(order, "receivedTime");
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string id = this->getOrderId(order);
+    std::string timestamp = this->safeInteger(order, "receivedTime");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
     
     return {
         {"id", id},
@@ -307,7 +307,7 @@ json KrakenPro::parseOrder(const json& order, const Market& market) {
     };
 }
 
-String KrakenPro::getOrderId(const json& order) {
+std::string KrakenPro::getOrderId(const json& order) {
     if (order.contains("orderId")) {
         return order["orderId"];
     } else if (order.contains("orderid")) {
@@ -318,8 +318,8 @@ String KrakenPro::getOrderId(const json& order) {
     return "";
 }
 
-json KrakenPro::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json KrakenPro::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"placed", "open"},
         {"cancelled", "canceled"},
         {"untriggered", "open"},

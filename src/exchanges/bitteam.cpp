@@ -76,7 +76,7 @@ Json bitteam::fetchMarkets(const json& params) {
     return this->parseMarkets(response);
 }
 
-Json bitteam::fetchTicker(const String& symbol, const json& params) {
+Json bitteam::fetchTicker(const std::string& symbol, const json& params) {
     auto market = this->market(symbol);
     auto request = this->extend(params, {
         "symbol": market["id"]
@@ -87,7 +87,7 @@ Json bitteam::fetchTicker(const String& symbol, const json& params) {
     return ticker;
 }
 
-Json bitteam::fetchOrderBook(const String& symbol, int limit, const json& params) {
+Json bitteam::fetchOrderBook(const std::string& symbol, int limit, const json& params) {
     auto market = this->market(symbol);
     auto request = this->extend(params, {
         "symbol": market["id"]
@@ -99,7 +99,7 @@ Json bitteam::fetchOrderBook(const String& symbol, int limit, const json& params
     return this->parseOrderBook(response, symbol);
 }
 
-Json bitteam::fetchTrades(const String& symbol, int since, int limit, const json& params) {
+Json bitteam::fetchTrades(const std::string& symbol, int since, int limit, const json& params) {
     auto market = this->market(symbol);
     auto request = this->extend(params, {
         "symbol": market["id"]
@@ -116,7 +116,7 @@ Json bitteam::fetchBalance(const json& params) {
     return this->parseBalance(response);
 }
 
-Json bitteam::createOrder(const String& symbol, const String& type, const String& side,
+Json bitteam::createOrder(const std::string& symbol, const std::string& type, const std::string& side,
                          double amount, double price, const json& params) {
     auto market = this->market(symbol);
     auto request = {
@@ -139,19 +139,19 @@ boost::future<Json> bitteam::fetchMarketsAsync(const json& params) {
     });
 }
 
-boost::future<Json> bitteam::fetchTickerAsync(const String& symbol, const json& params) {
+boost::future<Json> bitteam::fetchTickerAsync(const std::string& symbol, const json& params) {
     return boost::async([this, symbol, params]() {
         return this->fetchTicker(symbol, params);
     });
 }
 
-boost::future<Json> bitteam::fetchOrderBookAsync(const String& symbol, int limit, const json& params) {
+boost::future<Json> bitteam::fetchOrderBookAsync(const std::string& symbol, int limit, const json& params) {
     return boost::async([this, symbol, limit, params]() {
         return this->fetchOrderBook(symbol, limit, params);
     });
 }
 
-boost::future<Json> bitteam::fetchTradesAsync(const String& symbol, int since, int limit, const json& params) {
+boost::future<Json> bitteam::fetchTradesAsync(const std::string& symbol, int since, int limit, const json& params) {
     return boost::async([this, symbol, since, limit, params]() {
         return this->fetchTrades(symbol, since, limit, params);
     });
@@ -163,8 +163,8 @@ boost::future<Json> bitteam::fetchBalanceAsync(const json& params) {
     });
 }
 
-boost::future<Json> bitteam::createOrderAsync(const String& symbol, const String& type,
-                                            const String& side, double amount,
+boost::future<Json> bitteam::createOrderAsync(const std::string& symbol, const std::string& type,
+                                            const std::string& side, double amount,
                                             double price, const json& params) {
     return boost::async([this, symbol, type, side, amount, price, params]() {
         return this->createOrder(symbol, type, side, amount, price, params);
@@ -172,8 +172,8 @@ boost::future<Json> bitteam::createOrderAsync(const String& symbol, const String
 }
 
 // Helper methods
-String bitteam::sign(const String& path, const String& api, const String& method,
-                    const json& params, const std::map<String, String>& headers,
+std::string bitteam::sign(const std::string& path, const std::string& api, const std::string& method,
+                    const json& params, const std::map<std::string, std::string>& headers,
                     const json& body) {
     auto url = this->urls["api"]["rest"] + "/" + this->version + "/" + path;
     
@@ -200,8 +200,8 @@ String bitteam::sign(const String& path, const String& api, const String& method
     return url;
 }
 
-void bitteam::handleErrors(const String& httpCode, const String& reason, const String& url,
-                          const String& method, const json& headers, const json& body,
+void bitteam::handleErrors(const std::string& httpCode, const std::string& reason, const std::string& url,
+                          const std::string& method, const json& headers, const json& body,
                           const json& response, const json& requestHeaders,
                           const json& requestBody) {
     if (!response.contains("success")) {
@@ -216,11 +216,11 @@ void bitteam::handleErrors(const String& httpCode, const String& reason, const S
     auto message = this->safeString(response, "message", "Unknown error");
     auto feedback = this->id + " " + message;
     
-    if (message.find("Invalid signature") != String::npos) {
+    if (message.find("Invalid signature") != std::string::npos) {
         throw AuthenticationError(feedback);
-    } else if (message.find("Insufficient funds") != String::npos) {
+    } else if (message.find("Insufficient funds") != std::string::npos) {
         throw InsufficientFunds(feedback);
-    } else if (message.find("Order not found") != String::npos) {
+    } else if (message.find("Order not found") != std::string::npos) {
         throw OrderNotFound(feedback);
     }
     

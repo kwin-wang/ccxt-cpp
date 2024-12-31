@@ -189,12 +189,12 @@ nlohmann::json Bit2c::cancelOrder(const std::string& id, const std::string& symb
 }
 
 std::string Bit2c::createSignature(const std::string& timestamp, const std::string& method,
-                           const std::string& path, const std::string& queryString) {
-    std::string signString = timestamp + method + path;
-    if (!queryString.empty()) {
-        signString += "?" + queryString;
+                           const std::string& path, const std::string& querystd::string) {
+    std::string signstd::string = timestamp + method + path;
+    if (!querystd::string.empty()) {
+        signstd::string += "?" + querystd::string;
     }
-    return hmac(signString, secret, "sha512", "hex");
+    return hmac(signstd::string, secret, "sha512", "hex");
 }
 
 // Async Market Data API

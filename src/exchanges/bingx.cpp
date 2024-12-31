@@ -158,33 +158,33 @@ boost::future<json> BingX::fetchMarketsAsync(const json& params) {
 }
 
 // Helper function to make async requests
-boost::future<json> BingX::makeAsyncRequest(const String& path, const String& api,
-                                          const String& method, const json& params,
-                                          const std::map<String, String>& headers,
+boost::future<json> BingX::makeAsyncRequest(const std::string& path, const std::string& api,
+                                          const std::string& method, const json& params,
+                                          const std::map<std::string, std::string>& headers,
                                           const json& body) {
     return boost::async([=]() {
         return request(path, api, method, params, headers, body);
     });
 }
 
-String BingX::sign(const String& path, const String& api,
-                  const String& method, const json& params,
-                  const std::map<String, String>& headers,
+std::string BingX::sign(const std::string& path, const std::string& api,
+                  const std::string& method, const json& params,
+                  const std::map<std::string, std::string>& headers,
                   const json& body) {
     auto timestamp = std::to_string(Exchange::milliseconds());
-    auto queryString = buildQueryString(params);
+    auto querystd::string = buildQuerystd::string(params);
     
     if (api == "private") {
-        auto signature = createSignature(timestamp, method, path, queryString);
-        queryString += "&timestamp=" + timestamp + "&signature=" + signature;
+        auto signature = createSignature(timestamp, method, path, querystd::string);
+        querystd::string += "&timestamp=" + timestamp + "&signature=" + signature;
     }
     
-    return path + (queryString.empty() ? "" : "?" + queryString);
+    return path + (querystd::string.empty() ? "" : "?" + querystd::string);
 }
 
-String BingX::createSignature(const String& timestamp, const String& method,
-                            const String& path, const String& queryString) {
-    auto message = timestamp + method + path + queryString;
+std::string BingX::createSignature(const std::string& timestamp, const std::string& method,
+                            const std::string& path, const std::string& querystd::string) {
+    auto message = timestamp + method + path + querystd::string;
     return hmac(message, secret, "sha256");
 }
 
@@ -201,9 +201,9 @@ json BingX::parseBalance(const json& response) {
     json result = {{"info", response}};
     
     for (const auto& balance : balances) {
-        String currencyId = balance["asset"];
-        String code = this->commonCurrencyCode(currencyId);
-        String account = {
+        std::string currencyId = balance["asset"];
+        std::string code = this->commonCurrencyCode(currencyId);
+        std::string account = {
             {"free", this->safeFloat(balance, "free")},
             {"used", this->safeFloat(balance, "locked")},
             {"total", this->safeFloat(balance, "total")}
@@ -214,8 +214,8 @@ json BingX::parseBalance(const json& response) {
     return result;
 }
 
-json BingX::createOrder(const String& symbol, const String& type,
-                       const String& side, double amount,
+json BingX::createOrder(const std::string& symbol, const std::string& type,
+                       const std::string& side, double amount,
                        double price, const json& params) {
     this->loadMarkets();
     Market market = this->market(symbol);
@@ -238,13 +238,13 @@ json BingX::createOrder(const String& symbol, const String& type,
 }
 
 json BingX::parseOrder(const json& order, const Market& market) {
-    String status = this->parseOrderStatus(this->safeString(order, "status"));
-    String symbol = market["symbol"];
-    String timestamp = this->safeString(order, "time");
-    String price = this->safeString(order, "price");
-    String amount = this->safeString(order, "origQty");
-    String filled = this->safeString(order, "executedQty");
-    String cost = this->safeString(order, "cummulativeQuoteQty");
+    std::string status = this->parseOrderStatus(this->safeString(order, "status"));
+    std::string symbol = market["symbol"];
+    std::string timestamp = this->safeString(order, "time");
+    std::string price = this->safeString(order, "price");
+    std::string amount = this->safeString(order, "origQty");
+    std::string filled = this->safeString(order, "executedQty");
+    std::string cost = this->safeString(order, "cummulativeQuoteQty");
     
     return {
         {"id", this->safeString(order, "orderId")},
@@ -271,8 +271,8 @@ json BingX::parseOrder(const json& order, const Market& market) {
     };
 }
 
-json BingX::parseOrderStatus(const String& status) {
-    static const std::map<String, String> statuses = {
+json BingX::parseOrderStatus(const std::string& status) {
+    static const std::map<std::string, std::string> statuses = {
         {"NEW", "open"},
         {"PARTIALLY_FILLED", "open"},
         {"FILLED", "closed"},
@@ -292,7 +292,7 @@ json BingX::fetchTime(const json& params) {
     };
 }
 
-json BingX::fetchTradingFee(const String& symbol, const json& params) {
+json BingX::fetchTradingFee(const std::string& symbol, const json& params) {
     if (symbol.empty()) {
         throw ArgumentsRequired("fetchTradingFee requires a symbol argument");
     }
@@ -310,7 +310,7 @@ json BingX::fetchTradingFee(const String& symbol, const json& params) {
     };
 }
 
-json BingX::transfer(const String& code, double amount, const String& fromAccount, const String& toAccount, const json& params) {
+json BingX::transfer(const std::string& code, double amount, const std::string& fromAccount, const std::string& toAccount, const json& params) {
     loadMarkets();
     Currency currency = getCurrency(code);
     json request = {
@@ -323,7 +323,7 @@ json BingX::transfer(const String& code, double amount, const String& fromAccoun
     return parseTransfer(response);
 }
 
-json BingX::setLeverage(int leverage, const String& symbol, const json& params) {
+json BingX::setLeverage(int leverage, const std::string& symbol, const json& params) {
     loadMarkets();
     Market market = getMarket(symbol);
     json request = {
@@ -333,10 +333,10 @@ json BingX::setLeverage(int leverage, const String& symbol, const json& params) 
     return request("contract/leverage", "swap/v1/private", "POST", extend(request, params));
 }
 
-json BingX::setMarginMode(const String& marginMode, const String& symbol, const json& params) {
+json BingX::setMarginMode(const std::string& marginMode, const std::string& symbol, const json& params) {
     loadMarkets();
     Market market = getMarket(symbol);
-    String mode = marginMode.to_upper();
+    std::string mode = marginMode.to_upper();
     if (mode != "ISOLATED" && mode != "CROSS") {
         throw BadRequest("marginMode must be either 'ISOLATED' or 'CROSS'");
     }
@@ -347,7 +347,7 @@ json BingX::setMarginMode(const String& marginMode, const String& symbol, const 
     return request("contract/marginMode", "swap/v1/private", "POST", extend(request, params));
 }
 
-json BingX::setPositionMode(const String& hedged, const String& symbol, const json& params) {
+json BingX::setPositionMode(const std::string& hedged, const std::string& symbol, const json& params) {
     loadMarkets();
     Market market = getMarket(symbol);
     json request = {

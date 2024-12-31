@@ -4,9 +4,10 @@
 #include <map>
 #include <nlohmann/json.hpp>
 #include <fstream>
-namespace ccxt {
+#include <boost/coroutine2/coroutine.hpp>
 using json = nlohmann::json;
-
+using AsyncPullType = boost::coroutines2::coroutine<json>::pull_type;
+namespace ccxt {
 struct Config {
     std::string apiKey;
     std::string secret;
