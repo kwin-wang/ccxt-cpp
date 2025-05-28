@@ -2,7 +2,7 @@
   "name": "CCXT C++ Development",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".devcontainer"
+    "context": ".."
   },
 
   // 无需 features
@@ -26,5 +26,5 @@
   // Dockerfile 已经装包，这里可以省略
   "postCreateCommand": "",
 
-  "remoteUser": "vscode"
+  "remoteUser": "root"
 }

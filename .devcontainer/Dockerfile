@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04
+FROM ubuntu:22.04
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
