@@ -9,5 +9,9 @@ RUN apt-get update -y && \
         libboost-filesystem-dev \
         libboost-context-dev \
         libgtest-dev \
-        googletest && \
+        googletest  \
+        cmake  \
+        git  \
+        build-essential  \
+        libboost-all-dev  && \
     rm -rf /var/lib/apt/lists/*

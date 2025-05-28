@@ -1,10 +1,10 @@
 #!/bin/bash  
   
 # 更新包管理器  
-sudo apt-get update  
+apt-get update  
   
 # 安装项目依赖  
-sudo apt-get install -y \  
+apt-get install -y \  
     build-essential \  
     cmake \  
     libcurl4-openssl-dev \  
