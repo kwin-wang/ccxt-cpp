@@ -1,27 +1,39 @@
-{  
-    "name": "CCXT C++ Development",  
-    "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04",  
-    "features": {  
-        "ghcr.io/devcontainers/features/cmake:1": {  
-            "version": "latest"  
-        },  
-        "ghcr.io/devcontainers/features/git:1": {}  
-    },  
-    "customizations": {  
-        "vscode": {  
-            "extensions": [  
-                "ms-vscode.cpptools",  
-                "ms-vscode.cmake-tools",  
-                "ms-vscode.cpptools-extension-pack",  
-                "twxs.cmake",  
-                "ms-vscode.hexeditor"  
-            ],  
-            "settings": {  
-                "C_Cpp.default.cppStandard": "c++17",  
-                "cmake.configureOnOpen": true  
-            }  
-        }  
-    },  
-    "postCreateCommand": "bash .devcontainer/setup.sh",  
-    "remoteUser": "vscode"  
-}
+{
+    "name": "CCXT C++ Development",
+    "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04",
+  
+    "features": {
+      "ghcr.io/devcontainers/features/apt-packages:1": {
+        "packages": [
+          "libssl-dev",
+          "libcurl4-openssl-dev",
+          "nlohmann-json3-dev",
+          "libboost-system-dev",
+          "libboost-filesystem-dev",
+          "libboost-context-dev",
+          "libgtest-dev",
+          "googletest"
+        ]
+      }
+    },
+  
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "ms-vscode.cpptools",
+          "ms-vscode.cmake-tools",
+          "twxs.cmake",
+          "ms-vscode.hexeditor"
+        ],
+        "settings": {
+          "C_Cpp.default.cppStandard": "c++17",
+          "cmake.configureOnOpen": true
+        }
+      }
+    },
+  
+    // 如果上面已经装包，这里可以为空或删除
+    "postCreateCommand": "",
+  
+    "remoteUser": "vscode"
+  }
