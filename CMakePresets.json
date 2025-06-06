@@ -1,0 +1,87 @@
+{
+    "version": 3,
+  
+    "configurePresets": [
+      {
+        "name": "base",
+        "hidden": true,
+        "generator": "Ninja",                   
+        "cacheVariables": {
+          "CMAKE_TOOLCHAIN_FILE": "/Users/10000090/vcpkg/scripts/buildsystems/vcpkg.cmake",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        }
+      },
+  
+      {
+        "name": "mac-release",
+        "displayName": "macOS Release (x86_64)",
+        "inherits": "base",
+        "binaryDir": "${sourceDir}/build/mac-release",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "x64-osx",
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "mac-debug",
+        "displayName": "macOS Debug (x86_64)",
+        "inherits": "base",
+        "binaryDir": "${sourceDir}/build/mac-debug",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "x64-osx",
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+  
+      {
+        "name": "mac-arm-release",
+        "displayName": "macOS ARM Release (M1/M2)",
+        "inherits": "base",
+        "binaryDir": "${sourceDir}/build/mac-arm-release",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "arm64-osx",
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "mac-arm-debug",
+        "displayName": "macOS ARM Debug (M1/M2)",
+        "inherits": "base",
+        "binaryDir": "${sourceDir}/build/mac-arm-debug",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "arm64-osx",
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+  
+      {
+        "name": "linux-release",
+        "hidden": true,
+        "inherits": "base",
+        "binaryDir": "${sourceDir}/build/linux-release",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "x64-linux",
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "win-release",
+        "hidden": true,
+        "inherits": "base",
+        "binaryDir": "${sourceDir}/build/win-release",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "x64-windows",
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      }
+    ],
+  
+    "buildPresets": [
+      { "name": "mac-release",      "configurePreset": "mac-release"      },
+      { "name": "mac-debug",        "configurePreset": "mac-debug"        },
+      { "name": "mac-arm-release",  "configurePreset": "mac-arm-release"  },
+      { "name": "mac-arm-debug",    "configurePreset": "mac-arm-debug"    }
+    ]
+  }
+  
+  

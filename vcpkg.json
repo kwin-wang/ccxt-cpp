@@ -1,0 +1,12 @@
+{
+    "name": "ccxt",
+    "version-string": "0.1.0",
+    "dependencies": [
+        "cpr",
+        "nlohmann-json",
+        "boost-beast",
+        "boost-asio",
+        "boost-coroutine2",
+        "openssl"
+    ]
+}

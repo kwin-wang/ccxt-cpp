@@ -74,4 +74,6 @@ node_modules/
 vendor/
 
 # Log files
-*.log 
+*.log
+/include/
+vcpkg_installed/
